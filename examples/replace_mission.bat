@@ -23,4 +23,4 @@ move "Missions\mission.miz" "realweather\mission.miz" :: realweather expects "mi
 cd realweather                                        :: CWD must be parent directory of binary
 call realweather.exe
 cd ..
-move "realweather\realweather.miz" "Missions\DSMC_Gorgas_001.miz"
+move "realweather\realweather.miz" "Missions\mission.miz"
