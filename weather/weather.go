@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/evogelsa/DCS-real-weather/util"
@@ -13,13 +12,7 @@ import (
 
 func GetWeather() WeatherData {
 	// parse config file for parameters
-	var config util.Configuration
-	file, err := os.Open("config.json")
-	util.Must(err)
-	defer file.Close()
-	decoder := json.NewDecoder(file)
-	err = decoder.Decode(&config)
-	util.Must(err)
+	config := util.ParseConfig()
 
 	// create http client to fetch weather data, timeout after 5 sec
 	timeout := time.Duration(5 * time.Second)

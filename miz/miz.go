@@ -2,7 +2,6 @@ package miz
 
 import (
 	"archive/zip"
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -143,18 +142,12 @@ func sysTime() int {
 // parseTime returns system time in seconds with offset defined in config file
 func parseTime() int {
 	// parse config file for parameters
-	var config util.Configuration
-	file, err := os.Open("config.json")
-	util.Must(err)
-	defer file.Close()
-	decoder := json.NewDecoder(file)
-	err = decoder.Decode(&config)
-	util.Must(err)
+	config := util.ParseConfig()
 
 	// get system time in second
 	t := sysTime()
 	// add hour offset from configuration file
-	t += config.TimeOffset * 60 * 60
+	t += config.HourOffset * 60 * 60
 	t %= 24 * 60 * 60
 
 	return t
@@ -230,8 +223,7 @@ func checkFog(data weather.WeatherData) int {
 // Unzip will decompress a zip archive, moving all files and folders
 // within the zip file to dest, taken from https://golangcode.com/unzip-files-in-go/
 func Unzip() ([]string, error) {
-
-	src := MISSION_NAME
+	src := util.ParseConfig().InputFile
 	dest := "mission_unpacked"
 
 	var filenames []string
@@ -298,7 +290,8 @@ func Unzip() ([]string, error) {
 func Zip() {
 	baseFolder := "mission_unpacked/"
 
-	outFile, err := os.Create("realweather.miz")
+	dest := util.ParseConfig().OutputFile
+	outFile, err := os.Create(dest)
 	util.Must(err)
 	defer outFile.Close()
 

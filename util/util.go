@@ -1,5 +1,10 @@
 package util
 
+import (
+	"encoding/json"
+	"os"
+)
+
 // Must performs a lazy error "check"
 func Must(err error) {
 	if err != nil {
@@ -11,5 +16,19 @@ func Must(err error) {
 type Configuration struct {
 	APIKey     string `json:"api-key"`
 	ICAO       string `json:"icao"`
-	TimeOffset int    `json:"time-offset"`
+	HourOffset int    `json:"hour-offset"`
+	InputFile  string `json:"input-file"`
+	OutputFile string `json:"output-file"`
+}
+
+func ParseConfig() Configuration {
+	var config Configuration
+	file, err := os.Open("config.json")
+	Must(err)
+	defer file.Close()
+	decoder := json.NewDecoder(file)
+	err = decoder.Decode(&config)
+	Must(err)
+
+	return config
 }

@@ -1,0 +1,7 @@
+{
+    "api-key": "",
+    "icao": "UGKO",
+    "hour-offset": 0,
+    "input-mission-file": "mission.miz",
+    "output-mission-file": "realweather.miz"
+}
