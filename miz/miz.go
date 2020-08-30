@@ -53,47 +53,62 @@ func Update(data weather.WeatherData) {
 		if strings.Contains(line, `["at8000"]`) && !strings.Contains(line, "end of") {
 			// use ground speed to estimate speed at 8000 feet
 			speed := int(data.Data[0].Wind.SpeedKTS)
-			speed = int(windSpeed(8000, 100, float64(speed), 0.05))
+			speed = int(windSpeed(8000, 100, float64(speed), 0.04))
 			lines[i+startWeather+2] = "\t\t\t\t[\"speed\"] = " + strconv.Itoa(speed) + ","
+			fmt.Println("speed at 8000:", speed)
 
 			// offset wind direction by [45,90), dcs expects direction wind moves towards
 			dir := rand.Intn(45) + 45 + int(data.Data[0].Wind.Degrees+180)
 			dir %= 360
 			lines[i+startWeather+3] = "\t\t\t\t[\"dir\"] = " + strconv.Itoa(dir) + ","
+			fmt.Println("dir at 8000", dir)
 		} else if strings.Contains(line, `["at2000"]`) && !strings.Contains(line, "end of") {
 			// estimate speed at 2000 feet
 			speed := int(data.Data[0].Wind.SpeedKTS)
-			speed = int(windSpeed(2000, 100, float64(speed), 0.05))
+			speed = int(windSpeed(2000, 100, float64(speed), 0.04))
 			lines[i+startWeather+2] = "\t\t\t\t[\"speed\"] = " + strconv.Itoa(speed) + ","
+			fmt.Println("speed at 2000", speed)
 
 			// offset wind direction by [0,45), dcs expects direction wind moves towards
 			dir := rand.Intn(45) + int(data.Data[0].Wind.Degrees+180)
 			dir %= 360
 			lines[i+startWeather+3] = "\t\t\t\t[\"dir\"] = " + strconv.Itoa(dir) + ","
+			fmt.Println("dir at 2000", dir)
 		} else if strings.Contains(line, `["atGround"]`) && !strings.Contains(line, "end of") {
 			// use metar reported data for ground conditions
 			speed := int(data.Data[0].Wind.SpeedKTS)
 			lines[i+startWeather+2] = "\t\t\t\t[\"speed\"] = " + strconv.Itoa(speed) + ","
+			fmt.Println("speed at ground:", speed)
 
 			dir := int(data.Data[0].Wind.Degrees + 180)
 			dir %= 360
 			lines[i+startWeather+3] = "\t\t\t\t[\"dir\"] = " + strconv.Itoa(dir) + ","
+			fmt.Println("dir at ground:", dir)
+		} else if strings.Contains(line, `["groundTurbulence"]`) {
+			// check for gusting and use to set ground turbulence
+			gust := float32((data.Data[0].Wind.GustKTS) * 0.514444)
+			gustStr := fmt.Sprintf("%f", gust)
+			lines[i+startWeather] = "\t\t[\"groundTurbulence\"] = " + gustStr + ","
+			fmt.Println("gust:", gust)
 		} else if strings.Contains(line, `["temperature"]`) {
 			// replace temperature with metar report
-			lines[i+startWeather] = "\t\t\t[\"temperature\"] = " +
-				strconv.Itoa(int(data.Data[0].Temperature.Celsius)) + ","
+			temp := int(data.Data[0].Temperature.Celsius)
+			lines[i+startWeather] = "\t\t\t[\"temperature\"] = " + strconv.Itoa(temp) + ","
+			fmt.Println("temperature:", temp)
 		} else if strings.Contains(line, `["qnh"]`) {
 			// dcs has linear scale from inHg to "units" given by factor of 25.4
 			// round to nearest int
-			lines[i+startWeather] = "\t\t[\"qnh\"] = " +
-				strconv.Itoa(int(data.Data[0].Barometer.Hg*25.4+.5)) + ","
+			qnh := int(data.Data[0].Barometer.Hg*25.4 + .5)
+			lines[i+startWeather] = "\t\t[\"qnh\"] = " + strconv.Itoa(qnh) + ","
+			fmt.Println("qnh:", qnh)
 		} else if strings.Contains(line, `["fog"]`) && !strings.Contains(line, "end of") {
 			// thickness is assumed to be 300 for now
-			if checkFog(data) > 0 {
+			fog := checkFog(data)
+			if fog > 0 {
 				lines[i+startWeather+2] = "\t\t\t[\"thickness\"] = 300,"
-				lines[i+startWeather+3] = "\t\t\t[\"visibility\"] = " +
-					strconv.Itoa(checkFog(data)) + ","
+				lines[i+startWeather+3] = "\t\t\t[\"visibility\"] = " + strconv.Itoa(fog) + ","
 			}
+			fmt.Println("fog:", fog)
 		} else if strings.Contains(line, `["enable_fog"]`) {
 			// enable fog if checkFog returns a valid visibility
 			if checkFog(data) > 0 {
@@ -108,6 +123,11 @@ func Update(data weather.WeatherData) {
 			lines[i+startWeather+3] = "\t\t\t[\"density\"] = " + strconv.Itoa(density) + ","
 			lines[i+startWeather+4] = "\t\t\t[\"base\"] = " + strconv.Itoa(base) + ","
 			lines[i+startWeather+5] = "\t\t\t[\"iprecptns\"] = " + strconv.Itoa(precip) + ","
+			fmt.Println("clouds:")
+			fmt.Println("\tthickness:", thickness)
+			fmt.Println("\tdensity:", density)
+			fmt.Println("\tbase:", base)
+			fmt.Println("precip:", precip)
 		}
 	}
 
@@ -116,10 +136,14 @@ func Update(data weather.WeatherData) {
 	lines[startDate+2] = "\t\t[\"Day\"] = " + strconv.Itoa(day) + ","
 	lines[startDate+3] = "\t\t[\"Year\"] = " + strconv.Itoa(year) + ","
 	lines[startDate+4] = "\t\t[\"Month\"] = " + strconv.Itoa(month) + ","
+	fmt.Println("year:", year)
+	fmt.Println("month:", month)
+	fmt.Println("day:", day)
 
 	// update mission time
 	t := parseTime()
 	lines[startTime] = "\t[\"start_time\"] = " + strconv.Itoa(t) + ","
+	fmt.Println("time:", t)
 
 	// overwrite file with newly changed mission
 	output := strings.Join(lines, "\n")

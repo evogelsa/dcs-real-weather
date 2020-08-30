@@ -142,5 +142,9 @@ type Wind struct {
 	SpeedKPH float32 `json:"speed_kph"`
 	SpeedKTS float32 `json:"speed_kts"`
 	SpeedMPH float32 `json:"speed_mph"`
-	SppedMPS float32 `json:"spped_mps"`
+	SpeedMPS float32 `json:"speed_mps"`
+	GustKPH  float32 `json:"gust_kph"`
+	GustKTS  float32 `json:"gust_kts"`
+	GustMPH  float32 `json:"gust_mph"`
+	GustMPS  float32 `json:"gust_mps"`
 }
