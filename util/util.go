@@ -17,8 +17,8 @@ type Configuration struct {
 	APIKey     string `json:"api-key"`
 	ICAO       string `json:"icao"`
 	HourOffset int    `json:"hour-offset"`
-	InputFile  string `json:"input-file"`
-	OutputFile string `json:"output-file"`
+	InputFile  string `json:"input-mission-file"`
+	OutputFile string `json:"output-mission-file"`
 }
 
 func ParseConfig() Configuration {

@@ -224,6 +224,7 @@ func checkFog(data weather.WeatherData) int {
 // within the zip file to dest, taken from https://golangcode.com/unzip-files-in-go/
 func Unzip() ([]string, error) {
 	src := util.ParseConfig().InputFile
+	fmt.Println("Source file:", src)
 	dest := "mission_unpacked"
 
 	var filenames []string
