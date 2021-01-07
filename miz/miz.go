@@ -86,7 +86,7 @@ func Update(data weather.WeatherData) {
 			fmt.Println("dir at ground:", dir)
 		} else if strings.Contains(line, `["groundTurbulence"]`) {
 			// check for gusting and use to set ground turbulence
-			gust := float32((data.Data[0].Wind.GustKTS) * 0.514444)
+			gust := float32((data.Data[0].Wind.GustMPS) * 0.514444)
 			gustStr := fmt.Sprintf("%f", gust)
 			lines[i+startWeather] = "\t\t[\"groundTurbulence\"] = " + gustStr + ","
 			fmt.Println("gust:", gust)
