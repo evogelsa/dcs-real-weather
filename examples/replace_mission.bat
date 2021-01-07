@@ -19,8 +19,8 @@ rename "Missions\backups\mission.miz" "%d%_%t%_mission.miz"
 
 :: Move mission into realweather working directory and move updated mission
 :: back into missions folder
-move "Missions\mission.miz" "realweather\mission.miz" :: realweather expects "mission.miz"
-cd realweather                                        :: CWD must be parent directory of binary
+move "Missions\mission.miz" "realweather\mission.miz"
+cd realweather
 call realweather.exe
 cd ..
 move "realweather\realweather.miz" "Missions\mission.miz"

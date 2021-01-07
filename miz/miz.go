@@ -157,24 +157,16 @@ func windSpeed(targHeight, refHeight, refSpeed, roughness float64) float64 {
 	return refSpeed * ((math.Log(targHeight / roughness)) / (math.Log(refHeight / roughness)))
 }
 
-// sysTime returns system time in seconds
-func sysTime() int {
-	t := time.Now()
-	return ((t.Hour()*60)+t.Minute())*60 + t.Second()
-}
-
 // parseTime returns system time in seconds with offset defined in config file
 func parseTime() int {
 	// parse config file for parameters
 	config := util.ParseConfig()
 
 	// get system time in second
-	t := sysTime()
-	// add hour offset from configuration file
-	t += config.HourOffset * 60 * 60
-	t %= 24 * 60 * 60
+	t := time.Now()
+	t.Add(time.Duration(config.HourOffset) * time.Hour)
 
-	return t
+	return ((t.Hour()*60)+t.Minute())*60 + t.Second()
 }
 
 // parseDate returns year, month, day from METAR observed
