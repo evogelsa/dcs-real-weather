@@ -164,7 +164,7 @@ func parseTime() int {
 
 	// get system time in second
 	t := time.Now()
-	t.Add(time.Duration(config.HourOffset) * time.Hour)
+	t = t.Add(config.HourOffset * time.Hour)
 
 	return ((t.Hour()*60)+t.Minute())*60 + t.Second()
 }
