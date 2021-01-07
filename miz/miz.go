@@ -52,7 +52,7 @@ func Update(data weather.WeatherData) {
 	for i, line := range weatherLines {
 		if strings.Contains(line, `["at8000"]`) && !strings.Contains(line, "end of") {
 			// use ground speed to estimate speed at 8000 feet
-			speed := int(data.Data[0].Wind.SpeedKTS)
+			speed := int(data.Data[0].Wind.SpeedMPS)
 			speed = int(windSpeed(8000, 100, float64(speed), 0.04))
 			lines[i+startWeather+2] = "\t\t\t\t[\"speed\"] = " + strconv.Itoa(speed) + ","
 			fmt.Println("speed at 8000:", speed)
@@ -64,7 +64,7 @@ func Update(data weather.WeatherData) {
 			fmt.Println("dir at 8000", dir)
 		} else if strings.Contains(line, `["at2000"]`) && !strings.Contains(line, "end of") {
 			// estimate speed at 2000 feet
-			speed := int(data.Data[0].Wind.SpeedKTS)
+			speed := int(data.Data[0].Wind.SpeedMPS)
 			speed = int(windSpeed(2000, 100, float64(speed), 0.04))
 			lines[i+startWeather+2] = "\t\t\t\t[\"speed\"] = " + strconv.Itoa(speed) + ","
 			fmt.Println("speed at 2000", speed)
@@ -76,7 +76,7 @@ func Update(data weather.WeatherData) {
 			fmt.Println("dir at 2000", dir)
 		} else if strings.Contains(line, `["atGround"]`) && !strings.Contains(line, "end of") {
 			// use metar reported data for ground conditions
-			speed := int(data.Data[0].Wind.SpeedKTS)
+			speed := int(data.Data[0].Wind.SpeedMPS)
 			lines[i+startWeather+2] = "\t\t\t\t[\"speed\"] = " + strconv.Itoa(speed) + ","
 			fmt.Println("speed at ground:", speed)
 
