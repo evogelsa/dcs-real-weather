@@ -39,8 +39,8 @@ set origDir=%cd%
 
 rem Start Perun and SRS - these do not need to be included in the restart loop
 if not %startAll%==0 (
-    if not %perun%==[] (start "" "%perun%" 48621 1 "%srsClients%" "%lotatcStats%" 1)
-    if not %srsParentDir%==[] (
+    if not "%perun%"=="" (start "" "%perun%" 48621 1 "%srsClients%" "%lotatcStats%" 1)
+    if not "%srsParentDir%"=="" (
         cd "%srsParentDir%"
         start "" "SR-Server.exe"
         cd %origDir%
