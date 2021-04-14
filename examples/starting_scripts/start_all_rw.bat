@@ -9,8 +9,8 @@ rem DEFINE PATHS BELOW
 
 rem Required: DCS paths
 set dcs=C:\Program Files\Eagle Dynamics\DCS World OpenBeta Server\bin\DCS_updater.exe
-set inputFile=C:\Users\admin\Saved Games\DCS.openbeta_server\Missions\SVR2_PG_010_AD.miz
-set outputFile=C:\Users\admin\Saved Games\DCS.openbeta_server\Missions\SVR2_PG_010_RW.miz
+set inputFile=C:\Users\admin\Saved Games\DCS.openbeta_server\Missions\Mission.miz
+set outputFile=C:\Users\admin\Saved Games\DCS.openbeta_server\Missions\RealWeather.miz
 
 rem Other programs to start
 
@@ -41,9 +41,9 @@ rem Start Perun and SRS - these do not need to be included in the restart loop
 if not %startAll%==0 (
     if not "%perun%"=="" (start "" "%perun%" 48621 1 "%srsClients%" "%lotatcStats%" 1)
     if not "%srsParentDir%"=="" (
-        cd "%srsParentDir%"
+        cd /d "%srsParentDir%"
         start "" "SR-Server.exe"
-        cd %origDir%
+        cd /d %origDir%
     )
 )
 

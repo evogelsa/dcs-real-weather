@@ -2,9 +2,16 @@ package util
 
 import (
 	"encoding/json"
+	"math"
 	"os"
 	"time"
 )
+
+func Clamp(v, min, max float64) float64 {
+	v = math.Max(v, min)
+	v = math.Min(v, max)
+	return v
+}
 
 // Must performs a lazy error "check"
 func Must(err error) {

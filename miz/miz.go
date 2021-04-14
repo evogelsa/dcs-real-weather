@@ -50,23 +50,29 @@ func Update(data weather.WeatherData) {
 	weatherLines := lines[startWeather:endWeather]
 
 	for i, line := range weatherLines {
+
 		if strings.Contains(line, `["at8000"]`) && !strings.Contains(line, "end of") {
-			// use ground speed to estimate speed at 8000 feet
-			speed := int(data.Data[0].Wind.SpeedMPS)
-			speed = int(windSpeed(8000, 100, float64(speed), 0.04))
-			lines[i+startWeather+2] = "\t\t\t\t[\"speed\"] = " + strconv.Itoa(speed) + ","
-			fmt.Println("speed at 8000:", speed)
+			// use ground speed to estimate speed at 8000 meters
+			speed := data.Data[0].Wind.SpeedMPS
+			speed = windSpeed(8000, 1.5, speed, 0.04)
+			speedStr := fmt.Sprintf("%0.3f", speed)
+
+			lines[i+startWeather+2] = "\t\t\t\t[\"speed\"] = " + speedStr + ","
+			fmt.Println("speed at 8000m:", speed)
 
 			// offset wind direction by [45,90), dcs expects direction wind moves towards
 			dir := rand.Intn(45) + 45 + int(data.Data[0].Wind.Degrees+180)
 			dir %= 360
 			lines[i+startWeather+3] = "\t\t\t\t[\"dir\"] = " + strconv.Itoa(dir) + ","
-			fmt.Println("dir at 8000", dir)
+			fmt.Println("dir at 8000m:", dir)
+
 		} else if strings.Contains(line, `["at2000"]`) && !strings.Contains(line, "end of") {
-			// estimate speed at 2000 feet
-			speed := int(data.Data[0].Wind.SpeedMPS)
-			speed = int(windSpeed(2000, 100, float64(speed), 0.04))
-			lines[i+startWeather+2] = "\t\t\t\t[\"speed\"] = " + strconv.Itoa(speed) + ","
+			// estimate speed at 2000 meters
+			speed := data.Data[0].Wind.SpeedMPS
+			speed = windSpeed(2000, 1.5, speed, 0.04)
+			speedStr := fmt.Sprintf("%0.3f", speed)
+
+			lines[i+startWeather+2] = "\t\t\t\t[\"speed\"] = " + speedStr + ","
 			fmt.Println("speed at 2000", speed)
 
 			// offset wind direction by [0,45), dcs expects direction wind moves towards
@@ -74,33 +80,41 @@ func Update(data weather.WeatherData) {
 			dir %= 360
 			lines[i+startWeather+3] = "\t\t\t\t[\"dir\"] = " + strconv.Itoa(dir) + ","
 			fmt.Println("dir at 2000", dir)
+
 		} else if strings.Contains(line, `["atGround"]`) && !strings.Contains(line, "end of") {
 			// use metar reported data for ground conditions
-			speed := int(data.Data[0].Wind.SpeedMPS)
-			lines[i+startWeather+2] = "\t\t\t\t[\"speed\"] = " + strconv.Itoa(speed) + ","
+			speed := data.Data[0].Wind.SpeedMPS
+			speedStr := fmt.Sprintf("%0.3f", speed)
+
+			lines[i+startWeather+2] = "\t\t\t\t[\"speed\"] = " + speedStr + ","
 			fmt.Println("speed at ground:", speed)
 
 			dir := int(data.Data[0].Wind.Degrees + 180)
 			dir %= 360
 			lines[i+startWeather+3] = "\t\t\t\t[\"dir\"] = " + strconv.Itoa(dir) + ","
 			fmt.Println("dir at ground:", dir)
+
 		} else if strings.Contains(line, `["groundTurbulence"]`) {
 			// check for gusting and use to set ground turbulence
-			gust := float32(data.Data[0].Wind.GustMPS)
-			gustStr := fmt.Sprintf("%f", gust)
+			gust := data.Data[0].Wind.GustMPS
+			gustStr := fmt.Sprintf("%0.3f", gust)
 			lines[i+startWeather] = "\t\t[\"groundTurbulence\"] = " + gustStr + ","
 			fmt.Println("gust:", gust)
+
 		} else if strings.Contains(line, `["temperature"]`) {
 			// replace temperature with metar report
 			temp := int(data.Data[0].Temperature.Celsius)
 			lines[i+startWeather] = "\t\t\t[\"temperature\"] = " + strconv.Itoa(temp) + ","
 			fmt.Println("temperature:", temp)
+
 		} else if strings.Contains(line, `["qnh"]`) {
-			// dcs has linear scale from inHg to "units" given by factor of 25.4
+			// dcs expects QNH in mmHg = inHg * 25.4
+
 			// round to nearest int
 			qnh := int(data.Data[0].Barometer.Hg*25.4 + .5)
 			lines[i+startWeather] = "\t\t[\"qnh\"] = " + strconv.Itoa(qnh) + ","
 			fmt.Println("qnh:", qnh)
+
 		} else if strings.Contains(line, `["fog"]`) && !strings.Contains(line, "end of") {
 			// thickness is assumed to be 300 for now
 			fog := checkFog(data)
@@ -109,25 +123,43 @@ func Update(data weather.WeatherData) {
 				lines[i+startWeather+3] = "\t\t\t[\"visibility\"] = " + strconv.Itoa(fog) + ","
 			}
 			fmt.Println("fog:", fog)
+
 		} else if strings.Contains(line, `["enable_fog"]`) {
 			// enable fog if checkFog returns a valid visibility
 			if checkFog(data) > 0 {
-				lines[i+startWeather] = "\t\t[\"enable_fog\"] = true" + ","
+				lines[i+startWeather] = "\t\t[\"enable_fog\"] = true,"
 			} else {
-				lines[i+startWeather] = "\t\t[\"enable_fog\"] = false" + ","
+				lines[i+startWeather] = "\t\t[\"enable_fog\"] = false,"
 			}
+
+		} else if strings.Contains(line, `["dust_density"]`) {
+			dust := checkDust(data)
+			if dust > 0 {
+				lines[i+startWeather] = "\t\t[\"dust_density\"] = " + strconv.Itoa(dust) + ","
+			}
+
+		} else if strings.Contains(line, `["enable_dust"]`) {
+			if checkDust(data) > 0 {
+				lines[i+startWeather] = "\t\t[\"enable_dust\"] = true,"
+			} else {
+				lines[i+startWeather] = "\t\t[\"enable_dust\"] = false,"
+			}
+
 		} else if strings.Contains(line, `["clouds"]`) && !strings.Contains(line, "end of") {
-			thickness, density, base := checkClouds(data)
-			precip := checkPrecip(data)
-			lines[i+startWeather+2] = "\t\t\t[\"thickness\"] = " + strconv.Itoa(thickness) + ","
-			lines[i+startWeather+3] = "\t\t\t[\"density\"] = " + strconv.Itoa(density) + ","
-			lines[i+startWeather+4] = "\t\t\t[\"base\"] = " + strconv.Itoa(base) + ","
-			lines[i+startWeather+5] = "\t\t\t[\"iprecptns\"] = " + strconv.Itoa(precip) + ","
+			preset, base := checkClouds(data)
+
+			lines[i+startWeather+2] = "\t\t\t[\"thickness\"] = 200,"
+			lines[i+startWeather+3] = "\t\t\t[\"density\"] = 0,"
+			if preset == "" {
+				lines[i+startWeather+4] = ""
+			} else {
+				lines[i+startWeather+4] = "\t\t\t[\"preset\"] = " + preset + ","
+			}
+			lines[i+startWeather+5] = "\t\t\t[\"base\"] = " + strconv.Itoa(base) + ","
+			lines[i+startWeather+6] = "\t\t\t[\"iprecptns\"] = 0,"
 			fmt.Println("clouds:")
-			fmt.Println("\tthickness:", thickness)
-			fmt.Println("\tdensity:", density)
+			fmt.Println("\tpreset:", preset)
 			fmt.Println("\tbase:", base)
-			fmt.Println("precip:", precip)
 		}
 	}
 
@@ -194,34 +226,55 @@ func checkPrecip(data weather.WeatherData) int {
 
 // checkClouds returns the thickness, density and base of the first cloud
 // layer reported in the METAR in feet
-func checkClouds(data weather.WeatherData) (int, int, int) {
+func checkClouds(data weather.WeatherData) (string, int) {
+	var ceiling bool
+	var preset string
+	var base int
+
 	for _, cloud := range data.Data[0].Clouds {
-		if cloud.Feet >= 984 {
-			var thickness int // 0 - 2000
-			var density int   // 0 - 10
-			var base int = int(cloud.Feet * .305)
-			switch cloud.Code {
-			case "FEW":
-				thickness = rand.Intn(500)
-				density = rand.Intn(3)
-			case "SCT":
-				thickness = rand.Intn(1000)
-				density = rand.Intn(3) + 3
-			case "BKN":
-				thickness = rand.Intn(1500)
-				density = rand.Intn(3) + 6
-			case "OVC":
-				thickness = rand.Intn(2000)
-				density = rand.Intn(2) + 9 // 9 or 10
-			}
-			if checkPrecip(data) == 2 {
-				density = 10
-			}
-			return thickness, density, base
+		if cloud.Code == "BKN" || cloud.Code == "OVC" {
+			ceiling = true
 		}
 	}
-	// return no clouds
-	return 2000, 0, 5000
+
+	for _, cloud := range data.Data[0].Clouds {
+		if (cloud.Code == "FEW" || cloud.Code == "SCT") && ceiling {
+			continue
+		}
+		preset, base = selectPreset(cloud.Code, int(cloud.Meters))
+	}
+
+	precip := checkPrecip(data)
+	if precip > 0 {
+		preset, base = selectPreset("OVC+RA", base)
+	}
+
+	return preset, base
+}
+
+func selectPreset(kind string, base int) (string, int) {
+	var validPresets []weather.CloudPreset
+
+	if kind == "CAVOK" {
+		return "", 0
+	}
+
+	for _, preset := range weather.CloudPresets[kind] {
+		if preset.MinBase <= base && base <= preset.MaxBase {
+			validPresets = append(validPresets, preset)
+		}
+	}
+	nValids := len(validPresets)
+	if nValids > 0 {
+		preset := validPresets[rand.Intn(nValids)]
+		return preset.Name, base
+	} else {
+		print(kind)
+		nPresets := len(weather.CloudPresets[kind])
+		preset := weather.CloudPresets[kind][rand.Intn(nPresets)]
+		base = int(util.Clamp(float64(base), float64(preset.MinBase), float64(preset.MaxBase)))
+		return preset.Name, base
+	}
 }
 
 // checkFog looks for either misty or foggy conditions and returns and integer
@@ -229,8 +282,20 @@ func checkClouds(data weather.WeatherData) (int, int, int) {
 func checkFog(data weather.WeatherData) int {
 	for _, condition := range data.Data[0].Conditions {
 		if condition.Code == "FG" || condition.Code == "BR" {
-			// dcs visiblity scales with feet by factor of .305
-			return int(data.Data[0].Visibility.MilesFloat*5280*.305 + .5)
+			return int(data.Data[0].Visibility.MetersFloat)
+		}
+	}
+	return 0
+}
+
+// checkFog looks for either misty or foggy conditions and returns and integer
+// representing dcs visiblity scale
+func checkDust(data weather.WeatherData) int {
+	for _, condition := range data.Data[0].Conditions {
+		if condition.Code == "HZ" || condition.Code == "DU" ||
+			condition.Code == "SA" || condition.Code == "PO" ||
+			condition.Code == "DS" || condition.Code == "SS" {
+			return int(data.Data[0].Visibility.MetersFloat)
 		}
 	}
 	return 0

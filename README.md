@@ -15,6 +15,11 @@ This will be needed to fetch the weather data. You'll then want to edit the
 summary of their purpose is provided below. Some reasonable defaults are
 provided for most options.
 
+Second step is to create the mission file you want to be updated with the METAR
+weather. The input mission file you supply must have one of the preset cloud
+types selected in order for it to update properly, but the other weather options
+should not matter.
+
 ### Config file parameters
 
 | Key         | Type   | Description                                        |
@@ -29,4 +34,4 @@ After you have edited the config to your liking it is recommended you place the
 binary into its own directory along with the config file. You can either
 manually move the `input-file` into this directory and run the binary, or you
 can accomplish this task through a script. An example batch script is provided
-in [examples](./examples/replace_mission.bat)
+in [examples](./examples)

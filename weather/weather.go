@@ -71,27 +71,27 @@ type Data struct {
 }
 
 type Barometer struct {
-	Hg  float32 `json:"hg"`
-	HPa float32 `json:"hpa"`
-	KPa float32 `json:"kpa"`
-	MB  float32 `json:"mb"`
+	Hg  float64 `json:"hg"`
+	HPa float64 `json:"hpa"`
+	KPa float64 `json:"kpa"`
+	MB  float64 `json:"mb"`
 }
 
 type Ceiling struct {
-	BaseFeetAGL   float32 `json:"base_feet_agl"`
-	BaseMetersAGL float32 `json:"base_meters_agl"`
+	BaseFeetAGL   float64 `json:"base_feet_agl"`
+	BaseMetersAGL float64 `json:"base_meters_agl"`
 	Code          string  `json:"code"`
-	Feet          float32 `json:"feet"`
-	Meters        float32 `json:"meters"`
+	Feet          float64 `json:"feet"`
+	Meters        float64 `json:"meters"`
 	Text          string  `json:"text"`
 }
 
 type Clouds struct {
-	BaseFeetAGL   float32 `json:"base_feet_agl"`
-	BaseMetersAGL float32 `json:"base_meters_agl"`
+	BaseFeetAGL   float64 `json:"base_feet_agl"`
+	BaseMetersAGL float64 `json:"base_meters_agl"`
 	Code          string  `json:"code"`
-	Feet          float32 `json:"feet"`
-	Meters        float32 `json:"meters"`
+	Feet          float64 `json:"feet"`
+	Meters        float64 `json:"meters"`
 	Text          string  `json:"text"`
 }
 
@@ -101,23 +101,23 @@ type Conditions struct {
 }
 
 type Dewpoint struct {
-	Celsius    float32 `json:"celsius"`
-	Fahrenheit float32 `json:"fahrenheit"`
+	Celsius    float64 `json:"celsius"`
+	Fahrenheit float64 `json:"fahrenheit"`
 }
 
 type Elevation struct {
-	Feet   float32 `json:"feet"`
-	Meters float32 `json:"meters"`
+	Feet   float64 `json:"feet"`
+	Meters float64 `json:"meters"`
 }
 
 type FlightCategory string
 
 type Humidity struct {
-	Percent float32 `json:"percent"`
+	Percent float64 `json:"percent"`
 }
 
 type Location struct {
-	Coordinates []float32 `json:"coordinates"`
+	Coordinates []float64 `json:"coordinates"`
 	Type        string    `json:"type"`
 }
 
@@ -126,25 +126,74 @@ type Station struct {
 }
 
 type Temperature struct {
-	Celsius    float32 `json:"celsius"`
-	Fahrenheit float32 `json:"fahrenheit"`
+	Celsius    float64 `json:"celsius"`
+	Fahrenheit float64 `json:"fahrenheit"`
 }
 
 type Visibility struct {
 	Meters      string  `json:"meters"`
-	MetersFloat float32 `json:"meters_float"`
+	MetersFloat float64 `json:"meters_float"`
 	Miles       string  `json:"miles"`
-	MilesFloat  float32 `json:"miles_float"`
+	MilesFloat  float64 `json:"miles_float"`
 }
 
 type Wind struct {
-	Degrees  float32 `json:"degrees"`
-	SpeedKPH float32 `json:"speed_kph"`
-	SpeedKTS float32 `json:"speed_kts"`
-	SpeedMPH float32 `json:"speed_mph"`
-	SpeedMPS float32 `json:"speed_mps"`
-	GustKPH  float32 `json:"gust_kph"`
-	GustKTS  float32 `json:"gust_kts"`
-	GustMPH  float32 `json:"gust_mph"`
-	GustMPS  float32 `json:"gust_mps"`
+	Degrees  float64 `json:"degrees"`
+	SpeedKPH float64 `json:"speed_kph"`
+	SpeedKTS float64 `json:"speed_kts"`
+	SpeedMPH float64 `json:"speed_mph"`
+	SpeedMPS float64 `json:"speed_mps"`
+	GustKPH  float64 `json:"gust_kph"`
+	GustKTS  float64 `json:"gust_kts"`
+	GustMPH  float64 `json:"gust_mph"`
+	GustMPS  float64 `json:"gust_mps"`
+}
+
+type CloudPreset struct {
+	Name    string
+	MinBase int
+	MaxBase int
+}
+
+var CloudPresets map[string][]CloudPreset = map[string][]CloudPreset{
+	"FEW": {
+		{`"Preset1"`, 840, 4200},  // Light Scattered 1
+		{`"Preset2"`, 1260, 2520}, // Light Scattered 2
+	},
+	"SCT": {
+		{`"Preset3"`, 840, 2520},   // High Scattered 1
+		{`"Preset4"`, 1260, 2520},  // High Scattered 2
+		{`"Preset5"`, 1260, 4620},  // Scattered 1
+		{`"Preset6"`, 1260, 4200},  // Scattered 2
+		{`"Preset7"`, 1680, 5040},  // Scattered 3
+		{`"Preset8"`, 3780, 5460},  // High Scattered 3
+		{`"Preset9"`, 1680, 3780},  // Scattered 4
+		{`"Preset10"`, 1260, 4200}, // Scattered 5
+		{`"Preset11"`, 2520, 5460}, // Scattered 6
+		{`"Preset12"`, 1680, 3360}, // Scattered 7
+	},
+	"BKN": {
+		{`"Preset13"`, 1680, 3360}, // Broken 1
+		{`"Preset14"`, 1680, 3360}, // Broken 2
+		{`"Preset15"`, 840, 5040},  // Broken 3
+		{`"Preset16"`, 1260, 4200}, // Broken 4
+		{`"Preset17"`, 0, 2520},    // Broken 5
+		{`"Preset18"`, 0, 3780},    // Broken 6
+		{`"Preset19"`, 0, 2940},    // Broken 7
+		{`"Preset20"`, 0, 3780},    // Broken 8
+	},
+	"OVC": {
+		{`"Preset21"`, 1260, 4200}, // Overcast 1
+		{`"Preset22"`, 420, 4200},  // Overcast 2
+		{`"Preset23"`, 840, 3360},  // Overcast 3
+		{`"Preset24"`, 420, 2520},  // Overcast 4
+		{`"Preset25"`, 420, 3360},  // Overcast 5
+		{`"Preset26"`, 420, 2940},  // Overcast 6
+		{`"Preset27"`, 420, 2520},  // Overcast 7
+	},
+	"OVC+RA": {
+		{`"RainyPreset1"`, 420, 2940}, // Overcast And Rain 1
+		{`"RainyPreset2"`, 840, 2520}, // Overcast And Rain 2
+		{`"RainyPreset3"`, 840, 2520}, // Overcast And Rain 3
+	},
 }
