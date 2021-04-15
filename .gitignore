@@ -8,3 +8,4 @@ bin/
 config.json
 mission.miz
 realweather.miz
+tmp/
