@@ -35,7 +35,7 @@ func GetWeather() WeatherData {
 	body, err := ioutil.ReadAll(resp.Body)
 	util.Must(err)
 
-	fmt.Println(string(body))
+	fmt.Println("Received data:", string(body))
 
 	// format json resposne into weatherdata struct
 	var res WeatherData

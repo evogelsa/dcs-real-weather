@@ -7,13 +7,14 @@ import (
 	"time"
 )
 
+// Clamp returns a value that does not exceed the specified range [min, max]
 func Clamp(v, min, max float64) float64 {
 	v = math.Max(v, min)
 	v = math.Min(v, max)
 	return v
 }
 
-// Must performs a lazy error "check"
+// Must panics on error
 func Must(err error) {
 	if err != nil {
 		panic(err)
@@ -29,6 +30,8 @@ type Configuration struct {
 	OutputFile string        `json:"output-mission-file"`
 }
 
+// ParseConfig reads config.json and returns a Configuration struct of the
+// parameters found
 func ParseConfig() Configuration {
 	var config Configuration
 	file, err := os.Open("config.json")
