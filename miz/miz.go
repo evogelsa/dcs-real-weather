@@ -276,7 +276,7 @@ func checkClouds(data weather.WeatherData) (string, int) {
 func selectPreset(kind string, base int) (string, int) {
 	var validPresets []weather.CloudPreset
 
-	if kind == "CAVOK" {
+	if kind == "CAVOK" || kind == "CLR" {
 		return "", 0
 	}
 
