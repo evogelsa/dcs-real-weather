@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"math"
 	"math/rand"
 	"os"
@@ -47,156 +48,161 @@ func Update(data weather.WeatherData) {
 		}
 	}
 
-	// separate just weather lines from file to decrease risk of finding duplicates
-	weatherLines := lines[startWeather:endWeather]
+	if util.Config.UpdateWeather {
+		// separate just weather lines from file to decrease risk of finding duplicates
+		weatherLines := lines[startWeather:endWeather]
 
-	for i, line := range weatherLines {
-		switch {
-		// calculate wind speed at 8000 meters
-		case strings.Contains(line, `["at8000"]`) && !strings.Contains(line, "end of"):
-			// use ground speed to estimate speed at 8000 meters
-			speed := data.Data[0].Wind.SpeedMPS
-			speed = windSpeed(8000, 1.5, speed, 0.04)
-			speedStr := fmt.Sprintf("%0.3f", speed)
+		for i, line := range weatherLines {
+			switch {
+			// calculate wind speed at 8000 meters
+			case strings.Contains(line, `["at8000"]`) && !strings.Contains(line, "end of"):
+				// use ground speed to estimate speed at 8000 meters
+				speed := data.Data[0].Wind.SpeedMPS
+				speed = windSpeed(8000, 1.5, speed, 0.04)
+				speedStr := fmt.Sprintf("%0.3f", speed)
 
-			// replace line with calculated speed and save result
-			lines[i+startWeather+2] = "\t\t\t\t[\"speed\"] = " + speedStr + ","
-			fmt.Println("Updated wind:")
-			fmt.Println("\tAt 8000 meters:")
-			fmt.Println("\t\tSpeed m/s:", speedStr)
+				// replace line with calculated speed and save result
+				lines[i+startWeather+2] = "\t\t\t\t[\"speed\"] = " + speedStr + ","
+				log.Println("Updated wind:")
+				log.Println("\tAt 8000 meters:")
+				log.Println("\t\tSpeed m/s:", speedStr)
 
-			// offset wind direction by [45,90), dcs expects direction wind moves towards
-			dir := rand.Intn(45) + 45 + int(data.Data[0].Wind.Degrees+180)
-			dir %= 360
-			lines[i+startWeather+3] = "\t\t\t\t[\"dir\"] = " + strconv.Itoa(dir) + ","
-			fmt.Println("\t\tDirection:", (dir+180)%360)
+				// offset wind direction by [45,90), dcs expects direction wind moves towards
+				dir := rand.Intn(45) + 45 + int(data.Data[0].Wind.Degrees+180)
+				dir %= 360
+				lines[i+startWeather+3] = "\t\t\t\t[\"dir\"] = " + strconv.Itoa(dir) + ","
+				log.Println("\t\tDirection:", (dir+180)%360)
 
-		// calculate wind speed at 2000 meters
-		case strings.Contains(line, `["at2000"]`) && !strings.Contains(line, "end of"):
-			// use ground speed to estimate speed at 2000 meters
-			speed := data.Data[0].Wind.SpeedMPS
-			speed = windSpeed(2000, 1.5, speed, 0.04)
-			speedStr := fmt.Sprintf("%0.3f", speed)
+				// calculate wind speed at 2000 meters
+			case strings.Contains(line, `["at2000"]`) && !strings.Contains(line, "end of"):
+				// use ground speed to estimate speed at 2000 meters
+				speed := data.Data[0].Wind.SpeedMPS
+				speed = windSpeed(2000, 1.5, speed, 0.04)
+				speedStr := fmt.Sprintf("%0.3f", speed)
 
-			// replace line with calculated speed and save result
-			lines[i+startWeather+2] = "\t\t\t\t[\"speed\"] = " + speedStr + ","
-			fmt.Println("\tAt 2000 meters:")
-			fmt.Println("\t\tSpeed m/s:", speedStr)
+				// replace line with calculated speed and save result
+				lines[i+startWeather+2] = "\t\t\t\t[\"speed\"] = " + speedStr + ","
+				log.Println("\tAt 2000 meters:")
+				log.Println("\t\tSpeed m/s:", speedStr)
 
-			// offset wind direction by [0,45), dcs expects direction wind moves towards
-			dir := rand.Intn(45) + int(data.Data[0].Wind.Degrees+180)
-			dir %= 360
-			lines[i+startWeather+3] = "\t\t\t\t[\"dir\"] = " + strconv.Itoa(dir) + ","
-			fmt.Println("\t\tDirection:", (dir+180)%360)
+				// offset wind direction by [0,45), dcs expects direction wind moves towards
+				dir := rand.Intn(45) + int(data.Data[0].Wind.Degrees+180)
+				dir %= 360
+				lines[i+startWeather+3] = "\t\t\t\t[\"dir\"] = " + strconv.Itoa(dir) + ","
+				log.Println("\t\tDirection:", (dir+180)%360)
 
-		// update wind speed for ground level
-		case strings.Contains(line, `["atGround"]`) && !strings.Contains(line, "end of"):
-			// use metar reported data for ground conditions
-			speed := data.Data[0].Wind.SpeedMPS
-			speedStr := fmt.Sprintf("%0.3f", speed)
+				// update wind speed for ground level
+			case strings.Contains(line, `["atGround"]`) && !strings.Contains(line, "end of"):
+				// use metar reported data for ground conditions
+				speed := data.Data[0].Wind.SpeedMPS
+				speedStr := fmt.Sprintf("%0.3f", speed)
 
-			lines[i+startWeather+2] = "\t\t\t\t[\"speed\"] = " + speedStr + ","
-			fmt.Println("\tAt 0 meters:")
-			fmt.Println("\t\tSpeed m/s:", speedStr)
+				lines[i+startWeather+2] = "\t\t\t\t[\"speed\"] = " + speedStr + ","
+				log.Println("\tAt 0 meters:")
+				log.Println("\t\tSpeed m/s:", speedStr)
 
-			dir := int(data.Data[0].Wind.Degrees + 180)
-			dir %= 360
-			lines[i+startWeather+3] = "\t\t\t\t[\"dir\"] = " + strconv.Itoa(dir) + ","
-			fmt.Println("\t\tDirection:", (dir+180)%360)
+				dir := int(data.Data[0].Wind.Degrees + 180)
+				dir %= 360
+				lines[i+startWeather+3] = "\t\t\t\t[\"dir\"] = " + strconv.Itoa(dir) + ","
+				log.Println("\t\tDirection:", (dir+180)%360)
 
-		// update turbulence using gust data from metar
-		case strings.Contains(line, `["groundTurbulence"]`):
-			// check for gusting and use to set ground turbulence
-			gust := data.Data[0].Wind.GustMPS
-			gustStr := fmt.Sprintf("%0.3f", gust)
-			lines[i+startWeather] = "\t\t[\"groundTurbulence\"] = " + gustStr + ","
-			fmt.Println("Turbulence:", gust)
+				// update turbulence using gust data from metar
+			case strings.Contains(line, `["groundTurbulence"]`):
+				// check for gusting and use to set ground turbulence
+				gust := data.Data[0].Wind.GustMPS
+				gustStr := fmt.Sprintf("%0.3f", gust)
+				lines[i+startWeather] = "\t\t[\"groundTurbulence\"] = " + gustStr + ","
+				log.Println("Turbulence:", gust)
 
-		// update temperature
-		case strings.Contains(line, `["temperature"]`):
-			temp := int(data.Data[0].Temperature.Celsius)
-			lines[i+startWeather] = "\t\t\t[\"temperature\"] = " + strconv.Itoa(temp) + ","
-			fmt.Println("Temperature Celsius:", temp)
+				// update temperature
+			case strings.Contains(line, `["temperature"]`):
+				temp := int(data.Data[0].Temperature.Celsius)
+				lines[i+startWeather] = "\t\t\t[\"temperature\"] = " + strconv.Itoa(temp) + ","
+				log.Println("Temperature Celsius:", temp)
 
-		// update QNH
-		case strings.Contains(line, `["qnh"]`):
-			// dcs expects QNH in mmHg = inHg * 25.4
-			qnh := int(data.Data[0].Barometer.Hg*25.4 + .5)
-			lines[i+startWeather] = "\t\t[\"qnh\"] = " + strconv.Itoa(qnh) + ","
-			fmt.Println("QNH mmHg:", qnh)
+				// update QNH
+			case strings.Contains(line, `["qnh"]`):
+				// dcs expects QNH in mmHg = inHg * 25.4
+				qnh := int(data.Data[0].Barometer.Hg*25.4 + .5)
+				lines[i+startWeather] = "\t\t[\"qnh\"] = " + strconv.Itoa(qnh) + ","
+				log.Println("QNH mmHg:", qnh)
 
-		// update fog visibility
-		case strings.Contains(line, `["fog"]`) && !strings.Contains(line, "end of"):
-			// thickness is assumed to be 100 meters for now since this is not
-			// reported in the metar
-			fog := checkFog(data)
-			if fog > 0 {
-				lines[i+startWeather+2] = "\t\t\t[\"thickness\"] = 100,"
-				lines[i+startWeather+3] = "\t\t\t[\"visibility\"] = " + strconv.Itoa(fog) + ","
+				// update fog visibility
+			case strings.Contains(line, `["fog"]`) && !strings.Contains(line, "end of"):
+				// thickness is assumed to be 100 meters for now since this is not
+				// reported in the metar
+				fog := checkFog(data)
+				if fog > 0 {
+					lines[i+startWeather+2] = "\t\t\t[\"thickness\"] = 100,"
+					lines[i+startWeather+3] = "\t\t\t[\"visibility\"] = " + strconv.Itoa(fog) + ","
+				}
+				log.Println("Fog Visibility meters:", fog)
+
+				// enable or disable fog
+			case strings.Contains(line, `["enable_fog"]`):
+				// enable fog if checkFog returns a valid visibility
+				if checkFog(data) > 0 {
+					lines[i+startWeather] = "\t\t[\"enable_fog\"] = true,"
+					log.Println("Fog Enabled:", true)
+				} else {
+					lines[i+startWeather] = "\t\t[\"enable_fog\"] = false,"
+					log.Println("Fog Enabled:", false)
+				}
+
+				// update dust visibility
+			case strings.Contains(line, `["dust_density"]`):
+				dust := checkDust(data)
+				if dust > 0 {
+					lines[i+startWeather] = "\t\t[\"dust_density\"] = " + strconv.Itoa(dust) + ","
+					log.Println("Dust Visibility meters:", dust)
+				}
+
+				// enable or disable dust
+			case strings.Contains(line, `["enable_dust"]`):
+				if checkDust(data) > 0 {
+					lines[i+startWeather] = "\t\t[\"enable_dust\"] = true,"
+					log.Println("Dust Enabled:", true)
+				} else {
+					lines[i+startWeather] = "\t\t[\"enable_dust\"] = false,"
+					log.Println("Dust Enabled:", false)
+				}
+
+				// update clouds
+			case strings.Contains(line, `["clouds"]`) && !strings.Contains(line, "end of"):
+				preset, base := checkClouds(data)
+
+				lines[i+startWeather+2] = "\t\t\t[\"thickness\"] = 200,"
+				lines[i+startWeather+3] = "\t\t\t[\"density\"] = 0,"
+				if preset == "" {
+					lines[i+startWeather+4] = ""
+				} else {
+					lines[i+startWeather+4] = "\t\t\t[\"preset\"] = " + preset + ","
+				}
+				lines[i+startWeather+5] = "\t\t\t[\"base\"] = " + strconv.Itoa(base) + ","
+				lines[i+startWeather+6] = "\t\t\t[\"iprecptns\"] = 0,"
+				log.Println("Clouds:")
+				log.Println("\tPreset:", preset)
+				log.Println("\tBase meters:", base)
 			}
-			fmt.Println("Fog Visibility meters:", fog)
-
-		// enable or disable fog
-		case strings.Contains(line, `["enable_fog"]`):
-			// enable fog if checkFog returns a valid visibility
-			if checkFog(data) > 0 {
-				lines[i+startWeather] = "\t\t[\"enable_fog\"] = true,"
-				fmt.Println("Fog Enabled:", true)
-			} else {
-				lines[i+startWeather] = "\t\t[\"enable_fog\"] = false,"
-				fmt.Println("Fog Enabled:", false)
-			}
-
-		// update dust visibility
-		case strings.Contains(line, `["dust_density"]`):
-			dust := checkDust(data)
-			if dust > 0 {
-				lines[i+startWeather] = "\t\t[\"dust_density\"] = " + strconv.Itoa(dust) + ","
-				fmt.Println("Dust Visibility meters:", dust)
-			}
-
-		// enable or disable dust
-		case strings.Contains(line, `["enable_dust"]`):
-			if checkDust(data) > 0 {
-				lines[i+startWeather] = "\t\t[\"enable_dust\"] = true,"
-				fmt.Println("Dust Enabled:", true)
-			} else {
-				lines[i+startWeather] = "\t\t[\"enable_dust\"] = false,"
-				fmt.Println("Dust Enabled:", false)
-			}
-
-		// update clouds
-		case strings.Contains(line, `["clouds"]`) && !strings.Contains(line, "end of"):
-			preset, base := checkClouds(data)
-
-			lines[i+startWeather+2] = "\t\t\t[\"thickness\"] = 200,"
-			lines[i+startWeather+3] = "\t\t\t[\"density\"] = 0,"
-			if preset == "" {
-				lines[i+startWeather+4] = ""
-			} else {
-				lines[i+startWeather+4] = "\t\t\t[\"preset\"] = " + preset + ","
-			}
-			lines[i+startWeather+5] = "\t\t\t[\"base\"] = " + strconv.Itoa(base) + ","
-			lines[i+startWeather+6] = "\t\t\t[\"iprecptns\"] = 0,"
-			fmt.Println("Clouds:")
-			fmt.Println("\tPreset:", preset)
-			fmt.Println("\tBase meters:", base)
 		}
 	}
 
-	// update mission date
-	year, month, day := parseDate(data)
-	lines[startDate+2] = "\t\t[\"Day\"] = " + strconv.Itoa(day) + ","
-	lines[startDate+3] = "\t\t[\"Year\"] = " + strconv.Itoa(year) + ","
-	lines[startDate+4] = "\t\t[\"Month\"] = " + strconv.Itoa(month) + ","
-	fmt.Println("year:", year)
-	fmt.Println("month:", month)
-	fmt.Println("day:", day)
+	// update mission date and time if update-time true in config
+	if util.Config.UpdateTime {
+		// update date
+		year, month, day := parseDate(data)
+		lines[startDate+2] = "\t\t[\"Day\"] = " + strconv.Itoa(day) + ","
+		lines[startDate+3] = "\t\t[\"Year\"] = " + strconv.Itoa(year) + ","
+		lines[startDate+4] = "\t\t[\"Month\"] = " + strconv.Itoa(month) + ","
+		log.Println("year:", year)
+		log.Println("month:", month)
+		log.Println("day:", day)
 
-	// update mission time
-	t := parseTime()
-	lines[startTime] = "\t[\"start_time\"] = " + strconv.Itoa(t) + ","
-	fmt.Println("time:", t)
+		// update time
+		t := parseTime()
+		lines[startTime] = "\t[\"start_time\"] = " + strconv.Itoa(t) + ","
+		log.Println("time:", t)
+	}
 
 	// overwrite file with newly changed mission
 	output := strings.Join(lines, "\n")
@@ -212,12 +218,9 @@ func windSpeed(targHeight, refHeight, refSpeed, roughness float64) float64 {
 
 // parseTime returns system time in seconds with offset defined in config file
 func parseTime() int {
-	// parse config file for parameters
-	config := util.ParseConfig()
-
 	// get system time in second
 	t := time.Now()
-	t = t.Add(config.HourOffset * time.Hour)
+	t = t.Add(util.Config.HourOffset * time.Hour)
 
 	return ((t.Hour()*60)+t.Minute())*60 + t.Second()
 }
@@ -276,7 +279,7 @@ func checkClouds(data weather.WeatherData) (string, int) {
 func selectPreset(kind string, base int) (string, int) {
 	var validPresets []weather.CloudPreset
 
-	if kind == "CAVOK" || kind == "CLR" {
+	if kind == "CAVOK" || kind == "CLR" || kind == "SKC" || kind == "NSC" || kind == "NCD" {
 		return "", 0
 	}
 
@@ -325,8 +328,8 @@ func checkDust(data weather.WeatherData) int {
 // Unzip will decompress a zip archive, moving all files and folders
 // within the zip file to dest, taken from https://golangcode.com/unzip-files-in-go/
 func Unzip() ([]string, error) {
-	src := util.ParseConfig().InputFile
-	fmt.Println("Source file:", src)
+	src := util.Config.InputFile
+	log.Println("Source file:", src)
 	dest := "mission_unpacked"
 
 	var filenames []string
@@ -383,7 +386,7 @@ func Unzip() ([]string, error) {
 			return filenames, err
 		}
 	}
-	fmt.Println("unzipped:\n" + strings.Join(filenames, "\n"))
+	log.Println("unzipped:\n\t" + strings.Join(filenames, "\n\t"))
 
 	return filenames, nil
 }
@@ -393,7 +396,7 @@ func Unzip() ([]string, error) {
 func Zip() {
 	baseFolder := "mission_unpacked/"
 
-	dest := util.ParseConfig().OutputFile
+	dest := util.Config.OutputFile
 	outFile, err := os.Create(dest)
 	util.Must(err)
 	defer outFile.Close()
@@ -404,7 +407,7 @@ func Zip() {
 
 	err = w.Close()
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 }
 
@@ -415,7 +418,7 @@ func addFiles(w *zip.Writer, basePath, baseInZip string) {
 	util.Must(err)
 
 	for _, file := range files {
-		fmt.Println(basePath + file.Name())
+		log.Println(basePath + file.Name())
 		if !file.IsDir() {
 			dat, err := ioutil.ReadFile(basePath + file.Name())
 			util.Must(err)
@@ -430,8 +433,8 @@ func addFiles(w *zip.Writer, basePath, baseInZip string) {
 
 			// Recurse
 			newBase := basePath + file.Name() + "/"
-			fmt.Println("Recursing and Adding SubDir: " + file.Name())
-			fmt.Println("Recursing and Adding SubDir: " + newBase)
+			log.Println("Recursing and Adding SubDir: " + file.Name())
+			log.Println("Recursing and Adding SubDir: " + newBase)
 
 			addFiles(w, newBase, baseInZip+file.Name()+"/")
 		}
@@ -442,5 +445,5 @@ func addFiles(w *zip.Writer, basePath, baseInZip string) {
 func Clean() {
 	directory := "mission_unpacked/"
 	os.RemoveAll(directory)
-	fmt.Println("Removed mission_unpacked")
+	log.Println("Removed mission_unpacked")
 }

@@ -7,6 +7,9 @@ import (
 )
 
 func main() {
+	// parse configuration file
+	util.ParseConfig()
+
 	// get METAR report
 	data := weather.GetWeather()
 

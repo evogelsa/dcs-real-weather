@@ -3,5 +3,8 @@
     "icao": "UGKO",
     "hour-offset": 0,
     "input-mission-file": "mission.miz",
-    "output-mission-file": "realweather.miz"
+    "output-mission-file": "realweather.miz",
+    "update-time": true,
+    "update-weather": true,
+    "logfile": "output.log"
 }

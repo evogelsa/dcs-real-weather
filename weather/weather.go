@@ -2,8 +2,8 @@ package weather
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"time"
 
@@ -11,20 +11,17 @@ import (
 )
 
 func GetWeather() WeatherData {
-	// parse config file for parameters
-	config := util.ParseConfig()
-
 	// create http client to fetch weather data, timeout after 5 sec
 	timeout := time.Duration(5 * time.Second)
 	client := http.Client{Timeout: timeout}
 
 	request, err := http.NewRequest(
 		"GET",
-		"https://api.checkwx.com/metar/"+config.ICAO+"/decoded",
+		"https://api.checkwx.com/metar/"+util.Config.ICAO+"/decoded",
 		nil,
 	)
 	util.Must(err)
-	request.Header.Set("X-API-Key", config.APIKey)
+	request.Header.Set("X-API-Key", util.Config.APIKey)
 
 	// make api request
 	resp, err := client.Do(request)
@@ -35,7 +32,7 @@ func GetWeather() WeatherData {
 	body, err := ioutil.ReadAll(resp.Body)
 	util.Must(err)
 
-	fmt.Println("Received data:", string(body))
+	log.Println("Received data:", string(body))
 
 	// format json resposne into weatherdata struct
 	var res WeatherData
