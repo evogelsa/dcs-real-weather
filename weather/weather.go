@@ -64,7 +64,7 @@ func LogMETAR(wx WeatherData) {
 	metar += fmt.Sprintf("%03d%02dKT ", int(data.Wind.Degrees), int(data.Wind.SpeedKTS))
 
 	// visibility
-	metar += fmt.Sprintf("%sSM ", data.Visibility.Miles)
+	metar += fmt.Sprintf("%dSM ", int(data.Visibility.MilesFloat))
 
 	// clouds
 	if SelectedPreset == "" {
