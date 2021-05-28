@@ -25,4 +25,6 @@ func main() {
 
 	// remove unpacked contents from directory
 	miz.Clean()
+
+	weather.LogMETAR(data)
 }

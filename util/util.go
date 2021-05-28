@@ -33,6 +33,7 @@ type Configuration struct {
 	UpdateTime    bool          `json:"update-time"`
 	UpdateWeather bool          `json:"update-weather"`
 	Logfile       string        `json:"logfile"`
+	Remarks       string        `json:"metar-remarks"`
 }
 
 // ParseConfig reads config.json and returns a Configuration struct of the

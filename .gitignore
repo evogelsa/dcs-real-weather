@@ -9,4 +9,4 @@ config.json
 mission.miz
 realweather.miz
 tmp/
-output.log
+*.log

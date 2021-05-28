@@ -170,6 +170,7 @@ func Update(data weather.WeatherData) {
 				// update clouds
 			case strings.Contains(line, `["clouds"]`) && !strings.Contains(line, "end of"):
 				preset, base := checkClouds(data)
+				weather.SelectedPreset = preset
 
 				lines[i+startWeather+2] = "\t\t\t[\"thickness\"] = 200,"
 				lines[i+startWeather+3] = "\t\t\t[\"density\"] = 0,"

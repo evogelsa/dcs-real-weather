@@ -6,5 +6,6 @@
     "output-mission-file": "realweather.miz",
     "update-time": true,
     "update-weather": true,
-    "logfile": "output.log"
+    "logfile": "logfile.log",
+    "metar-remarks": ""
 }
