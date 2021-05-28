@@ -22,13 +22,17 @@ should not matter.
 
 ### Config file parameters
 
-| Key         | Type   | Description                                        |
-|-------------|--------|----------------------------------------------------|
-| api-key     | string | API key from [checkwx](https://www.checkwxapi.com) |
-| icao        | string | airport ICAO where you want to get METAR from      |
-| hour-offset | int    | mission time offset from system time               |
-| input-file  | string | mission file which will be used to modify          |
-| output-file | string | name of mission file which will be output          |
+| Key                 | Type   | Description                                   |
+|---------------------|--------|-----------------------------------------------|
+| api-key             | string | API key [checkwx](https://www.checkwxapi.com) |
+| icao                | string | airport ICAO where you want to get METAR from |
+| hour-offset         | int    | mission time offset from system time          |
+| input-mission-file  | string | mission file which will be used to modify     |
+| output-mission-file | string | name of mission file which will be output     |
+| update-time         | bool   | whether or not to update time of mission      |
+| update-weather      | bool   | whether or not to update weather of mission   |
+| logfile             | string | name log, "" will disable logfile             |
+| metar-remarks       | string | remarks to add to metar                       |
 
 After you have edited the config to your liking it is recommended you place the
 binary into its own directory along with the config file. You can either
