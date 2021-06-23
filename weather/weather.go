@@ -66,6 +66,11 @@ func LogMETAR(wx WeatherData) {
 	// visibility
 	metar += fmt.Sprintf("%dSM ", int(data.Visibility.MilesFloat))
 
+	// conditions
+	for _, cond := range data.Conditions {
+		metar += fmt.Sprintf("%s ", cond.Code)
+	}
+
 	// clouds
 	if SelectedPreset == "" {
 		metar += "CLR "
@@ -270,35 +275,35 @@ type cloud struct {
 
 var (
 	decodePreset = map[string][]cloud{
-		"Preset1":      []cloud{{"FEW", "070"}},
-		"Preset2":      []cloud{{"FEW", "080"}, {"SCT", "230"}},
-		"Preset3":      []cloud{{"SCT", "080"}, {"FEW", "210"}},
-		"Preset4":      []cloud{{"SCT", "080"}, {"SCT", "240"}},
-		"Preset5":      []cloud{{"SCT", "140"}, {"FEW", "270"}, {"BKN", "400"}},
-		"Preset6":      []cloud{{"SCT", "080"}, {"FEW", "400"}},
-		"Preset7":      []cloud{{"BKN", "075"}, {"SCT", "210"}, {"SCT", "400"}},
-		"Preset8":      []cloud{{"SCT", "180"}, {"FEW", "360"}, {"FEW", "400"}},
-		"Preset9":      []cloud{{"BKN", "075"}, {"SCT", "200"}, {"FEW", "410"}},
-		"Preset10":     []cloud{{"SCT", "180"}, {"FEW", "360"}, {"FEW", "400"}},
-		"Preset11":     []cloud{{"BKN", "180"}, {"BKN", "320"}, {"FEW", "410"}},
-		"Preset12":     []cloud{{"BKN", "120"}, {"SCT", "220"}, {"FEW", "410"}},
-		"Preset13":     []cloud{{"BKN", "120"}, {"BKN", "260"}, {"FEW", "410"}},
-		"Preset14":     []cloud{{"BKN", "070"}, {"FEW", "410"}},
-		"Preset15":     []cloud{{"SCT", "140"}, {"BKN", "240"}, {"FEW", "400"}},
-		"Preset16":     []cloud{{"BKN", "140"}, {"BKN", "280"}, {"FEW", "400"}},
-		"Preset17":     []cloud{{"BKN", "070"}, {"BKN", "200"}, {"BKN", "320"}},
-		"Preset18":     []cloud{{"BKN", "130"}, {"BKN", "250"}, {"BKN", "380"}},
-		"Preset19":     []cloud{{"OVC", "090"}, {"BKN", "230"}, {"BKN", "310"}},
-		"Preset20":     []cloud{{"BKN", "130"}, {"BKN", "280"}, {"FEW", "380"}},
-		"Preset21":     []cloud{{"BKN", "070"}, {"OVC", "170"}},
-		"Preset22":     []cloud{{"OVC", "070"}, {"BKN", "170"}},
-		"Preset23":     []cloud{{"OVC", "110"}, {"BKN", "180"}, {"SCT", "320"}},
-		"Preset24":     []cloud{{"OVC", "030"}, {"OVC", "170"}, {"BKN", "340"}},
-		"Preset25":     []cloud{{"OVC", "120"}, {"OVC", "220"}, {"OVC", "400"}},
-		"Preset26":     []cloud{{"OVC", "090"}, {"BKN", "230"}, {"SCT", "320"}},
-		"Preset27":     []cloud{{"OVC", "080"}, {"BKN", "250"}, {"BKN", "340"}},
-		"RainyPreset1": []cloud{{"OVC", "030"}, {"OVC", "280"}, {"FEW", "400"}},
-		"RainyPreset2": []cloud{{"OVC", "030"}, {"SCT", "180"}, {"FEW", "400"}},
-		"RainyPreset3": []cloud{{"OVC", "060"}, {"OVC", "190"}, {"SCT", "340"}},
+		`"Preset1"`:      {{"FEW", "070"}},
+		`"Preset2"`:      {{"FEW", "080"}, {"SCT", "230"}},
+		`"Preset3"`:      {{"SCT", "080"}, {"FEW", "210"}},
+		`"Preset4"`:      {{"SCT", "080"}, {"SCT", "240"}},
+		`"Preset5"`:      {{"SCT", "140"}, {"FEW", "270"}, {"BKN", "400"}},
+		`"Preset6"`:      {{"SCT", "080"}, {"FEW", "400"}},
+		`"Preset7"`:      {{"BKN", "075"}, {"SCT", "210"}, {"SCT", "400"}},
+		`"Preset8"`:      {{"SCT", "180"}, {"FEW", "360"}, {"FEW", "400"}},
+		`"Preset9"`:      {{"BKN", "075"}, {"SCT", "200"}, {"FEW", "410"}},
+		`"Preset10"`:     {{"SCT", "180"}, {"FEW", "360"}, {"FEW", "400"}},
+		`"Preset11"`:     {{"BKN", "180"}, {"BKN", "320"}, {"FEW", "410"}},
+		`"Preset12"`:     {{"BKN", "120"}, {"SCT", "220"}, {"FEW", "410"}},
+		`"Preset13"`:     {{"BKN", "120"}, {"BKN", "260"}, {"FEW", "410"}},
+		`"Preset14"`:     {{"BKN", "070"}, {"FEW", "410"}},
+		`"Preset15"`:     {{"SCT", "140"}, {"BKN", "240"}, {"FEW", "400"}},
+		`"Preset16"`:     {{"BKN", "140"}, {"BKN", "280"}, {"FEW", "400"}},
+		`"Preset17"`:     {{"BKN", "070"}, {"BKN", "200"}, {"BKN", "320"}},
+		`"Preset18"`:     {{"BKN", "130"}, {"BKN", "250"}, {"BKN", "380"}},
+		`"Preset19"`:     {{"OVC", "090"}, {"BKN", "230"}, {"BKN", "310"}},
+		`"Preset20"`:     {{"BKN", "130"}, {"BKN", "280"}, {"FEW", "380"}},
+		`"Preset21"`:     {{"BKN", "070"}, {"OVC", "170"}},
+		`"Preset22"`:     {{"OVC", "070"}, {"BKN", "170"}},
+		`"Preset23"`:     {{"OVC", "110"}, {"BKN", "180"}, {"SCT", "320"}},
+		`"Preset24"`:     {{"OVC", "030"}, {"OVC", "170"}, {"BKN", "340"}},
+		`"Preset25"`:     {{"OVC", "120"}, {"OVC", "220"}, {"OVC", "400"}},
+		`"Preset26"`:     {{"OVC", "090"}, {"BKN", "230"}, {"SCT", "320"}},
+		`"Preset27"`:     {{"OVC", "080"}, {"BKN", "250"}, {"BKN", "340"}},
+		`"RainyPreset1"`: {{"OVC", "030"}, {"OVC", "280"}, {"FEW", "400"}},
+		`"RainyPreset2"`: {{"OVC", "030"}, {"SCT", "180"}, {"FEW", "400"}},
+		`"RainyPreset3"`: {{"OVC", "060"}, {"OVC", "190"}, {"SCT", "340"}},
 	}
 )
