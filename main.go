@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log"
+	
 	"github.com/evogelsa/DCS-real-weather/miz"
 	"github.com/evogelsa/DCS-real-weather/util"
 	"github.com/evogelsa/DCS-real-weather/weather"
@@ -17,14 +19,22 @@ func main() {
 	_, err := miz.Unzip()
 	util.Must(err)
 
-	// update mission file with weather data
-	miz.Update(data)
-
+	if data.WeatherDatas > 0 {
+		if int(data.Data[0].Barometer.Hg*25.4 + .5) > 0 {
+			// update mission file with weather data
+			miz.Update(data)
+		} else {
+			log.Println("Incorrect weather data. No real weather applied to mission file.")
+		}
+	}
+	
 	// repack mission file contents and form realweather.miz output
 	miz.Zip()
 
 	// remove unpacked contents from directory
 	miz.Clean()
 
-	weather.LogMETAR(data)
+	if data.WeatherDatas > 0 {
+		weather.LogMETAR(data) 
+	}
 }
