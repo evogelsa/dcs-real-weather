@@ -16,13 +16,6 @@ func Clamp(v, min, max float64) float64 {
 	return v
 }
 
-// Must panics on error
-func Must(err error) {
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
 // Configuration is the structure of config.json to be parsed
 type Configuration struct {
 	APIKey        string        `json:"api-key"`
@@ -41,17 +34,28 @@ type Configuration struct {
 func ParseConfig() {
 	var config Configuration
 	file, err := os.Open("config.json")
-	Must(err)
+	if err != nil {
+		log.Fatalf("Error opening config.json: %v\n", err)
+	}
+
 	defer file.Close()
 	decoder := json.NewDecoder(file)
 	err = decoder.Decode(&config)
-	Must(err)
+	if err != nil {
+		log.Fatalf("Error decoding config.json: %v\n", err)
+	}
 
 	Config = config
 
 	if Config.Logfile != "" {
-		f, err := os.OpenFile(Config.Logfile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
-		Must(err)
+		f, err := os.OpenFile(
+			Config.Logfile,
+			os.O_WRONLY|os.O_CREATE|os.O_APPEND,
+			0644,
+		)
+		if err != nil {
+			log.Printf("Error opening logfile: %v\n", err)
+		}
 		// defer f.Close()
 
 		mw := io.MultiWriter(os.Stdout, f)
