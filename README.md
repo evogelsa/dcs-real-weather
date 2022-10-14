@@ -9,33 +9,47 @@ Not extensively tested.
 
 ## Usage
 
-First step is to create an API key at [checkwx](https://www.checkwxapi.com/).
-This will be needed to fetch the weather data. You'll then want to edit the
-`config.json` file provided in the zip download. Each field is required and a
-summary of their purpose is provided below. Some reasonable defaults are
-provided for most options.
+1) Create an account at [checkwx](https://checkwxapi.com/).
+2) Find your API key from your account details and copy this.
+3) Download the [latest release](/releases/latest/).
+4) Edit the `config.json` provided in the zip. Add your API key and configure
+the other settings to your liking. A description of each of the settings is
+provided [below](#config-file-parameters).
+5) Place the config file inside the same directory that the realweather.exe file
+is located.
+6) Create or configure the mission file you want to be updated with the real
+weather. **Important: the mission file you want to be updated must have a cloud
+preset already selected in order to work. This cloud preset will be changed
+after running the utility.**
+7) To run the utility you may either manually run the realweather.exe, or you
+can use a script to automate the process. Some examples are provided in
+[examples](/examples).
 
-Second step is to create the mission file you want to be updated with the METAR
-weather. The input mission file you supply must have one of the preset cloud
-types selected in order for it to update properly, but the other weather options
-should not matter.
+## Notes
 
-### Config file parameters
+* Remember to have a cloud preset already selected in the input mission file.
+This preset will get changed when the realweather utility updates the mission,
+but having the preset selected is important for ensuring the structure of the
+mission file is correct.
+* It is recommended that you keep a master copy of your input mission file, and
+then reupdate this mission every server restart cycle. You can accomplish this
+through your normal restarting script, but an example is provided in
+[examples](/examples) if you do not already have something like this set up.
+* If your input mission file is not in the same directory as realweather.exe,
+make sure that you have an absolute path to the file in your config. However,
+it's recommended that you use a relative path and copy the input mission into
+the realweather directory as part of your server start/restart script.
+
+## Config file parameters
 
 | Key                 | Type   | Description                                   |
 |---------------------|--------|-----------------------------------------------|
-| api-key             | string | API key [checkwx](https://www.checkwxapi.com) |
+| api-key             | string | [checkwx](https://www.checkwxapi.com) API key |
 | icao                | string | airport ICAO where you want to get METAR from |
 | hour-offset         | int    | mission time offset from system time          |
-| input-mission-file  | string | mission file which will be used to modify     |
-| output-mission-file | string | name of mission file which will be output     |
+| input-mission-file  | string | path of the mission file to be updated        |
+| output-mission-file | string | path of the mission file that will be output  |
 | update-time         | bool   | whether or not to update time of mission      |
 | update-weather      | bool   | whether or not to update weather of mission   |
-| logfile             | string | name log, "" will disable logfile             |
+| logfile             | string | name of log, "" will disable logfile          |
 | metar-remarks       | string | remarks to add to metar                       |
-
-After you have edited the config to your liking it is recommended you place the
-binary into its own directory along with the config file. You can either
-manually move the `input-file` into this directory and run the binary, or you
-can accomplish this task through a script. An example batch script is provided
-in [examples](./examples)
