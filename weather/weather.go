@@ -13,7 +13,7 @@ import (
 
 var SelectedPreset string
 
-func GetWeather() WeatherData {
+func GetWeather() (WeatherData, error) {
 	// create http client to fetch weather data, timeout after 5 sec
 	timeout := time.Duration(5 * time.Second)
 	client := http.Client{Timeout: timeout}
@@ -23,30 +23,49 @@ func GetWeather() WeatherData {
 		"https://api.checkwx.com/metar/"+util.Config.ICAO+"/decoded",
 		nil,
 	)
-	util.Must(err)
+	if err != nil {
+		return WeatherData{}, err
+	}
 	request.Header.Set("X-API-Key", util.Config.APIKey)
 
 	// make api request
 	resp, err := client.Do(request)
-	util.Must(err)
+	if err != nil {
+		return WeatherData{}, fmt.Errorf(
+			"Error making request to CheckWX: %v",
+			err,
+		)
+	}
+
+	// verify response OK
+	if resp.StatusCode != http.StatusOK {
+		return WeatherData{}, fmt.Errorf("CheckWX bad status: %v", resp.Status)
+	}
 	defer resp.Body.Close()
 
 	// parse response byte array
 	body, err := ioutil.ReadAll(resp.Body)
-	util.Must(err)
+	if err != nil {
+		return WeatherData{}, fmt.Errorf(
+			"Error parsing CheckWX response: %v",
+			err,
+		)
+	}
 
 	log.Println("Received data:", string(body))
 
 	// format json resposne into weatherdata struct
 	var res WeatherData
 	err = json.Unmarshal(body, &res)
-	util.Must(err)
+	if err != nil {
+		return WeatherData{}, err
+	}
 
-	return res
+	return res, nil
 }
 
 // LogMETAR generates a metar based on the weather settings added to the DCS miz
-func LogMETAR(wx WeatherData) {
+func LogMETAR(wx WeatherData) error {
 	data := wx.Data[0]
 
 	var metar string
@@ -56,12 +75,18 @@ func LogMETAR(wx WeatherData) {
 
 	// get observed time, no need to translate time zone since it's in Zulu
 	t, err := time.Parse("2006-01-02T15:04Z", data.Observed)
-	util.Must(err)
+	if err != nil {
+		return fmt.Errorf("Error parsing METAR time: %v", err)
+	}
 	// want format DDHHMMZ
 	metar += fmt.Sprintf("%02d%02d%02dZ ", t.Day(), t.Hour(), t.Minute())
 
 	// winds DIRSPDKT
-	metar += fmt.Sprintf("%03d%02dKT ", int(data.Wind.Degrees), int(data.Wind.SpeedKTS))
+	metar += fmt.Sprintf(
+		"%03d%02dKT ",
+		int(data.Wind.Degrees),
+		int(data.Wind.SpeedKTS),
+	)
 
 	// visibility
 	metar += fmt.Sprintf("%dSM ", int(data.Visibility.MilesFloat))
@@ -113,6 +138,8 @@ func LogMETAR(wx WeatherData) {
 	}
 
 	log.Println(metar)
+
+	return nil
 }
 
 type WeatherData struct {
@@ -307,3 +334,28 @@ var (
 		`"RainyPreset3"`: {{"OVC", "060"}, {"OVC", "190"}, {"SCT", "340"}},
 	}
 )
+
+var DefaultWeather WeatherData = WeatherData{
+	Data: []Data{
+		{
+			Wind: Wind{
+				SpeedMPS: 1.25,
+				Degrees:  270,
+				GustMPS:  3,
+			},
+			Temperature: Temperature{
+				Celsius: 15,
+			},
+			Barometer: Barometer{
+				Hg: 29.92,
+			},
+			Clouds: []Clouds{
+				{
+					Code: "CLR",
+				},
+			},
+			Observed: time.Now().Format("2006/01/02"),
+		},
+	},
+	WeatherDatas: 1,
+}

@@ -20,10 +20,12 @@ import (
 
 const MISSION_NAME string = "mission.miz"
 
-func Update(data weather.WeatherData) {
+func Update(data weather.WeatherData) error {
 	// open mission lua file
 	input, err := ioutil.ReadFile("mission_unpacked/mission")
-	util.Must(err)
+	if err != nil {
+		return fmt.Errorf("Error reading unpacked mission file: %v", err)
+	}
 
 	// create string array of mission file separated by lines
 	lines := strings.Split(string(input), "\n")
@@ -70,7 +72,9 @@ func Update(data weather.WeatherData) {
 				// offset wind direction by [45,90), dcs expects direction wind moves towards
 				dir := rand.Intn(45) + 45 + int(data.Data[0].Wind.Degrees+180)
 				dir %= 360
-				lines[i+startWeather+3] = "\t\t\t\t[\"dir\"] = " + strconv.Itoa(dir) + ","
+				lines[i+startWeather+3] = "\t\t\t\t[\"dir\"] = " + strconv.Itoa(
+					dir,
+				) + ","
 				log.Println("\t\tDirection:", (dir+180)%360)
 
 				// calculate wind speed at 2000 meters
@@ -88,7 +92,9 @@ func Update(data weather.WeatherData) {
 				// offset wind direction by [0,45), dcs expects direction wind moves towards
 				dir := rand.Intn(45) + int(data.Data[0].Wind.Degrees+180)
 				dir %= 360
-				lines[i+startWeather+3] = "\t\t\t\t[\"dir\"] = " + strconv.Itoa(dir) + ","
+				lines[i+startWeather+3] = "\t\t\t\t[\"dir\"] = " + strconv.Itoa(
+					dir,
+				) + ","
 				log.Println("\t\tDirection:", (dir+180)%360)
 
 				// update wind speed for ground level
@@ -103,7 +109,9 @@ func Update(data weather.WeatherData) {
 
 				dir := int(data.Data[0].Wind.Degrees + 180)
 				dir %= 360
-				lines[i+startWeather+3] = "\t\t\t\t[\"dir\"] = " + strconv.Itoa(dir) + ","
+				lines[i+startWeather+3] = "\t\t\t\t[\"dir\"] = " + strconv.Itoa(
+					dir,
+				) + ","
 				log.Println("\t\tDirection:", (dir+180)%360)
 
 				// update turbulence using gust data from metar
@@ -117,14 +125,18 @@ func Update(data weather.WeatherData) {
 				// update temperature
 			case strings.Contains(line, `["temperature"]`):
 				temp := int(data.Data[0].Temperature.Celsius)
-				lines[i+startWeather] = "\t\t\t[\"temperature\"] = " + strconv.Itoa(temp) + ","
+				lines[i+startWeather] = "\t\t\t[\"temperature\"] = " + strconv.Itoa(
+					temp,
+				) + ","
 				log.Println("Temperature Celsius:", temp)
 
 				// update QNH
 			case strings.Contains(line, `["qnh"]`):
 				// dcs expects QNH in mmHg = inHg * 25.4
 				qnh := int(data.Data[0].Barometer.Hg*25.4 + .5)
-				lines[i+startWeather] = "\t\t[\"qnh\"] = " + strconv.Itoa(qnh) + ","
+				lines[i+startWeather] = "\t\t[\"qnh\"] = " + strconv.Itoa(
+					qnh,
+				) + ","
 				log.Println("QNH mmHg:", qnh)
 
 				// update fog visibility
@@ -134,7 +146,9 @@ func Update(data weather.WeatherData) {
 				fog := checkFog(data)
 				if fog > 0 {
 					lines[i+startWeather+2] = "\t\t\t[\"thickness\"] = 100,"
-					lines[i+startWeather+3] = "\t\t\t[\"visibility\"] = " + strconv.Itoa(fog) + ","
+					lines[i+startWeather+3] = "\t\t\t[\"visibility\"] = " + strconv.Itoa(
+						fog,
+					) + ","
 				}
 				log.Println("Fog Visibility meters:", fog)
 
@@ -153,7 +167,9 @@ func Update(data weather.WeatherData) {
 			case strings.Contains(line, `["dust_density"]`):
 				dust := checkDust(data)
 				if dust > 0 {
-					lines[i+startWeather] = "\t\t[\"dust_density\"] = " + strconv.Itoa(dust) + ","
+					lines[i+startWeather] = "\t\t[\"dust_density\"] = " + strconv.Itoa(
+						dust,
+					) + ","
 					log.Println("Dust Visibility meters:", dust)
 				}
 
@@ -179,7 +195,9 @@ func Update(data weather.WeatherData) {
 				} else {
 					lines[i+startWeather+4] = "\t\t\t[\"preset\"] = " + preset + ","
 				}
-				lines[i+startWeather+5] = "\t\t\t[\"base\"] = " + strconv.Itoa(base) + ","
+				lines[i+startWeather+5] = "\t\t\t[\"base\"] = " + strconv.Itoa(
+					base,
+				) + ","
 				lines[i+startWeather+6] = "\t\t\t[\"iprecptns\"] = 0,"
 				log.Println("Clouds:")
 				log.Println("\tPreset:", preset)
@@ -191,7 +209,11 @@ func Update(data weather.WeatherData) {
 	// update mission date and time if update-time true in config
 	if util.Config.UpdateTime {
 		// update date
-		year, month, day := parseDate(data)
+		year, month, day, err := parseDate(data)
+		if err != nil {
+			return fmt.Errorf("Error parsing date: %v", err)
+		}
+
 		lines[startDate+2] = "\t\t[\"Day\"] = " + strconv.Itoa(day) + ","
 		lines[startDate+3] = "\t\t[\"Year\"] = " + strconv.Itoa(year) + ","
 		lines[startDate+4] = "\t\t[\"Month\"] = " + strconv.Itoa(month) + ","
@@ -208,7 +230,11 @@ func Update(data weather.WeatherData) {
 	// overwrite file with newly changed mission
 	output := strings.Join(lines, "\n")
 	err = ioutil.WriteFile("mission_unpacked/mission", []byte(output), 0644)
-	util.Must(err)
+	if err != nil {
+		return fmt.Errorf("Error writing to unpacked mission file: %v", err)
+	}
+
+	return nil
 }
 
 // returns extrapolated wind speed at given height using log law
@@ -227,14 +253,23 @@ func parseTime() int {
 }
 
 // parseDate returns year, month, day from METAR observed
-func parseDate(data weather.WeatherData) (int, int, int) {
+func parseDate(data weather.WeatherData) (int, int, int, error) {
 	year, err := strconv.Atoi(data.Data[0].Observed[0:4])
-	util.Must(err)
+	if err != nil {
+		return 0, 0, 0, fmt.Errorf("Error parsing year from data: %v", err)
+	}
+
 	month, err := strconv.Atoi(data.Data[0].Observed[5:7])
-	util.Must(err)
+	if err != nil {
+		return 0, 0, 0, fmt.Errorf("Error parsing month from data: %v", err)
+	}
+
 	day, err := strconv.Atoi(data.Data[0].Observed[8:10])
-	util.Must(err)
-	return year, month, day
+	if err != nil {
+		return 0, 0, 0, fmt.Errorf("Error parsing day from data: %v", err)
+	}
+
+	return year, month, day, nil
 }
 
 // checkPrecip returns 0 for clear, 1 for rain, and 2 for thunderstorms
@@ -280,7 +315,8 @@ func checkClouds(data weather.WeatherData) (string, int) {
 func selectPreset(kind string, base int) (string, int) {
 	var validPresets []weather.CloudPreset
 
-	if kind == "CAVOK" || kind == "CLR" || kind == "SKC" || kind == "NSC" || kind == "NCD" {
+	if kind == "CAVOK" || kind == "CLR" || kind == "SKC" || kind == "NSC" ||
+		kind == "NCD" {
 		return "", 0
 	}
 
@@ -347,7 +383,10 @@ func Unzip() ([]string, error) {
 		fpath := filepath.Join(dest, f.Name)
 
 		// Check for ZipSlip. More Info: http://bit.ly/2MsjAWE
-		if !strings.HasPrefix(fpath, filepath.Clean(dest)+string(os.PathSeparator)) {
+		if !strings.HasPrefix(
+			fpath,
+			filepath.Clean(dest)+string(os.PathSeparator),
+		) {
 			return filenames, fmt.Errorf("%s: illegal file path", fpath)
 		}
 
@@ -367,7 +406,11 @@ func Unzip() ([]string, error) {
 			return filenames, err
 		}
 
-		outFile, err := os.OpenFile(fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+		outFile, err := os.OpenFile(
+			fpath,
+			os.O_WRONLY|os.O_CREATE|os.O_TRUNC,
+			f.Mode(),
+		)
 		if err != nil {
 			return filenames, err
 		}
@@ -394,12 +437,14 @@ func Unzip() ([]string, error) {
 
 // Zip takes the unpacked mission and recreates the mission file
 // taken from https://golangcode.com/create-zip-files-in-go/
-func Zip() {
+func Zip() error {
 	baseFolder := "mission_unpacked/"
 
 	dest := util.Config.OutputFile
 	outFile, err := os.Create(dest)
-	util.Must(err)
+	if err != nil {
+		return fmt.Errorf("Error creating output file: %v", err)
+	}
 	defer outFile.Close()
 
 	w := zip.NewWriter(outFile)
@@ -408,28 +453,47 @@ func Zip() {
 
 	err = w.Close()
 	if err != nil {
-		log.Println(err)
+		return fmt.Errorf("Error closing output file: %v", err)
 	}
+
+	return nil
 }
 
 // addFiles handles adding each file in directory to zip archive
 // taken from https://golangcode.com/create-zip-files-in-go/
-func addFiles(w *zip.Writer, basePath, baseInZip string) {
+func addFiles(w *zip.Writer, basePath, baseInZip string) error {
 	files, err := ioutil.ReadDir(basePath)
-	util.Must(err)
+	if err != nil {
+		return fmt.Errorf("Error reading directory %v: %v", basePath, err)
+	}
 
 	for _, file := range files {
 		log.Println(basePath + file.Name())
 		if !file.IsDir() {
 			dat, err := ioutil.ReadFile(basePath + file.Name())
-			util.Must(err)
+			if err != nil {
+				return fmt.Errorf(
+					"Error reading file %v: %v",
+					basePath+file.Name(),
+					err,
+				)
+			}
 
 			// Add some files to the archive.
 			f, err := w.Create(baseInZip + file.Name())
-			util.Must(err)
+			if err != nil {
+				return fmt.Errorf(
+					"Error creating file %v: %v",
+					baseInZip+file.Name(),
+					err,
+				)
+			}
 
 			_, err = f.Write(dat)
-			util.Must(err)
+			if err != nil {
+				return fmt.Errorf("Error writing data: %v", err)
+			}
+
 		} else if file.IsDir() {
 
 			// Recurse
@@ -437,9 +501,14 @@ func addFiles(w *zip.Writer, basePath, baseInZip string) {
 			log.Println("Recursing and Adding SubDir: " + file.Name())
 			log.Println("Recursing and Adding SubDir: " + newBase)
 
-			addFiles(w, newBase, baseInZip+file.Name()+"/")
+			err := addFiles(w, newBase, baseInZip+file.Name()+"/")
+			if err != nil {
+				return fmt.Errorf("Error adding files from %v: %v", baseInZip+file.Name()+"/", err)
+			}
 		}
 	}
+
+	return nil
 }
 
 // Clean will remove the unpacked mission from directory
