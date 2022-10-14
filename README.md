@@ -11,7 +11,7 @@ Not extensively tested.
 
 1) Create an account at [checkwx](https://checkwxapi.com/).
 2) Find your API key from your account details and copy this.
-3) Download the [latest release](/releases/latest/).
+3) Download the [latest release](https://github.com/evogelsa/DCS-real-weather/releases/latest).
 4) Edit the `config.json` provided in the zip. Add your API key and configure
 the other settings to your liking. A description of each of the settings is
 provided [below](#config-file-parameters).
