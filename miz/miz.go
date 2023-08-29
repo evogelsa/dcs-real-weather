@@ -57,9 +57,8 @@ func Update(data weather.WeatherData) error {
 			switch {
 			// calculate wind speed at 8000 meters
 			case strings.Contains(line, `["at8000"]`) && !strings.Contains(line, "end of"):
-				// use ground speed to estimate speed at 8000 meters
-				speed := data.Data[0].Wind.SpeedMPS
-				speed = windSpeed(8000, speed)
+				// use reported wind speeds to estimate winds at 8000 meters
+				speed := windSpeed(8000, data)
 				speedStr := fmt.Sprintf("%0.3f", speed)
 
 				// replace line with calculated speed and save result
@@ -78,9 +77,8 @@ func Update(data weather.WeatherData) error {
 
 				// calculate wind speed at 2000 meters
 			case strings.Contains(line, `["at2000"]`) && !strings.Contains(line, "end of"):
-				// use ground speed to estimate speed at 2000 meters
-				speed := data.Data[0].Wind.SpeedMPS
-				speed = windSpeed(2000, speed)
+				// use reported wind speeds to estimate winds at 2000 meters
+				speed := windSpeed(2000, data)
 				speedStr := fmt.Sprintf("%0.3f", speed)
 
 				// replace line with calculated speed and save result
@@ -98,8 +96,8 @@ func Update(data weather.WeatherData) error {
 
 				// update wind speed for ground level
 			case strings.Contains(line, `["atGround"]`) && !strings.Contains(line, "end of"):
-				// use metar reported data for ground conditions
-				speed := data.Data[0].Wind.SpeedMPS
+				// use wind speeds estimated at 1m agl for ground winds
+				speed := windSpeed(1, data)
 				speedStr := fmt.Sprintf("%0.3f", speed)
 
 				lines[i+startWeather+2] = "\t\t\t\t[\"speed\"] = " + speedStr + ","
@@ -238,8 +236,13 @@ func Update(data weather.WeatherData) error {
 
 // returns extrapolated wind speed at given height using power law
 // https://en.wikipedia.org/wiki/Wind_profile_power_law
-func windSpeed(targHeight, refSpeed float64) float64 {
-	const refHeight = 9 // meters
+func windSpeed(targHeight float64, data weather.WeatherData) float64 {
+	refSpeed := data.Data[0].Wind.SpeedMPS
+	refHeight := data.Data[0].Elevation.Meters
+	if refHeight == 0 {
+		refHeight = 9 // default to 9 meters if elevation data is not provided
+	}
+
 	return refSpeed * math.Pow(targHeight/refHeight, util.Config.Stability)
 }
 
