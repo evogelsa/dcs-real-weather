@@ -4,7 +4,6 @@ import (
 	"archive/zip"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"math"
 	"math/rand"
@@ -22,7 +21,7 @@ const MISSION_NAME string = "mission.miz"
 
 func Update(data weather.WeatherData) error {
 	// open mission lua file
-	input, err := ioutil.ReadFile("mission_unpacked/mission")
+	input, err := os.ReadFile("mission_unpacked/mission")
 	if err != nil {
 		return fmt.Errorf("Error reading unpacked mission file: %v", err)
 	}
@@ -229,7 +228,7 @@ func Update(data weather.WeatherData) error {
 
 	// overwrite file with newly changed mission
 	output := strings.Join(lines, "\n")
-	err = ioutil.WriteFile("mission_unpacked/mission", []byte(output), 0644)
+	err = os.WriteFile("mission_unpacked/mission", []byte(output), 0644)
 	if err != nil {
 		return fmt.Errorf("Error writing to unpacked mission file: %v", err)
 	}
@@ -463,7 +462,7 @@ func Zip() error {
 // addFiles handles adding each file in directory to zip archive
 // taken from https://golangcode.com/create-zip-files-in-go/
 func addFiles(w *zip.Writer, basePath, baseInZip string) error {
-	files, err := ioutil.ReadDir(basePath)
+	files, err := os.ReadDir(basePath)
 	if err != nil {
 		return fmt.Errorf("Error reading directory %v: %v", basePath, err)
 	}
@@ -471,7 +470,7 @@ func addFiles(w *zip.Writer, basePath, baseInZip string) error {
 	for _, file := range files {
 		log.Println(basePath + file.Name())
 		if !file.IsDir() {
-			dat, err := ioutil.ReadFile(basePath + file.Name())
+			dat, err := os.ReadFile(basePath + file.Name())
 			if err != nil {
 				return fmt.Errorf(
 					"Error reading file %v: %v",
