@@ -60,7 +60,7 @@ func Update(data weather.WeatherData) error {
 			case strings.Contains(line, `["at8000"]`) && !strings.Contains(line, "end of"):
 				// use ground speed to estimate speed at 8000 meters
 				speed := data.Data[0].Wind.SpeedMPS
-				speed = windSpeed(8000, 1.5, speed, 0.04)
+				speed = windSpeed(8000, speed)
 				speedStr := fmt.Sprintf("%0.3f", speed)
 
 				// replace line with calculated speed and save result
@@ -81,7 +81,7 @@ func Update(data weather.WeatherData) error {
 			case strings.Contains(line, `["at2000"]`) && !strings.Contains(line, "end of"):
 				// use ground speed to estimate speed at 2000 meters
 				speed := data.Data[0].Wind.SpeedMPS
-				speed = windSpeed(2000, 1.5, speed, 0.04)
+				speed = windSpeed(2000, speed)
 				speedStr := fmt.Sprintf("%0.3f", speed)
 
 				// replace line with calculated speed and save result
@@ -237,10 +237,11 @@ func Update(data weather.WeatherData) error {
 	return nil
 }
 
-// returns extrapolated wind speed at given height using log law
-// https://websites.pmc.ucsc.edu/~jnoble/wind/extrap/
-func windSpeed(targHeight, refHeight, refSpeed, roughness float64) float64 {
-	return refSpeed * ((math.Log(targHeight / roughness)) / (math.Log(refHeight / roughness)))
+// returns extrapolated wind speed at given height using power law
+// https://en.wikipedia.org/wiki/Wind_profile_power_law
+func windSpeed(targHeight, refSpeed float64) float64 {
+	const refHeight = 9 // meters
+	return refSpeed * math.Pow(targHeight/refHeight, util.Config.Stability)
 }
 
 // parseTime returns system time in seconds with offset defined in config file

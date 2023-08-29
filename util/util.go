@@ -21,6 +21,7 @@ type Configuration struct {
 	APIKey        string        `json:"api-key"`
 	ICAO          string        `json:"icao"`
 	HourOffset    time.Duration `json:"hour-offset"`
+	Stability     float64       `json:"stability"`
 	InputFile     string        `json:"input-mission-file"`
 	OutputFile    string        `json:"output-mission-file"`
 	UpdateTime    bool          `json:"update-time"`

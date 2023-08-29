@@ -47,9 +47,12 @@ the realweather directory as part of your server start/restart script.
 | api-key             | string | [checkwx](https://www.checkwxapi.com) API key |
 | icao                | string | airport ICAO where you want to get METAR from |
 | hour-offset         | int    | mission time offset from system time          |
+| stability           | float  | [atmospheric stability number][1]             |
 | input-mission-file  | string | path of the mission file to be updated        |
 | output-mission-file | string | path of the mission file that will be output  |
 | update-time         | bool   | whether or not to update time of mission      |
 | update-weather      | bool   | whether or not to update weather of mission   |
 | logfile             | string | name of log, "" will disable logfile          |
 | metar-remarks       | string | remarks to add to metar                       |
+
+[1]: https://en.wikipedia.org/wiki/Wind_profile_power_law
