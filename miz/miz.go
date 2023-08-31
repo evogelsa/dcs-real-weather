@@ -58,7 +58,7 @@ func Update(data weather.WeatherData) error {
 			// calculate wind speed at 8000 meters
 			case strings.Contains(line, `["at8000"]`) && !strings.Contains(line, "end of"):
 				// use reported wind speeds to estimate winds at 8000 meters MSL
-				speed := windSpeed(8000-data.Data[0].Elevation.Meters, data)
+				speed := windSpeed(8000, data)
 				speedStr := fmt.Sprintf("%0.3f", speed)
 
 				// replace line with calculated speed and save result
@@ -78,7 +78,7 @@ func Update(data weather.WeatherData) error {
 				// calculate wind speed at 2000 meters
 			case strings.Contains(line, `["at2000"]`) && !strings.Contains(line, "end of"):
 				// use reported wind speeds to estimate winds at 2000 meters MSL
-				speed := windSpeed(2000-data.Data[0].Elevation.Meters, data)
+				speed := windSpeed(2000, data)
 				speedStr := fmt.Sprintf("%0.3f", speed)
 
 				// replace line with calculated speed and save result
@@ -236,9 +236,11 @@ func Update(data weather.WeatherData) error {
 
 // returns extrapolated wind speed at given height using power law
 // https://en.wikipedia.org/wiki/Wind_profile_power_law
-// targHeight is should be provided in meters AGL.
+// targHeight should be provided in meters MSL
 func windSpeed(targHeight float64, data weather.WeatherData) float64 {
-	const refHeight = 9 // meters per second
+	// default to 9 meters for reference height if elevation is below that
+	refHeight := math.Max(9, data.Data[0].Elevation.Meters)
+
 	refSpeed := data.Data[0].Wind.SpeedMPS
 
 	// enforce minimum targheight of 0
