@@ -237,11 +237,8 @@ func Update(data weather.WeatherData) error {
 // returns extrapolated wind speed at given height using power law
 // https://en.wikipedia.org/wiki/Wind_profile_power_law
 func windSpeed(targHeight float64, data weather.WeatherData) float64 {
+	const refHeight = 9 // meters per second
 	refSpeed := data.Data[0].Wind.SpeedMPS
-	refHeight := data.Data[0].Elevation.Meters
-	if refHeight == 0 {
-		refHeight = 9 // default to 9 meters if elevation data is not provided
-	}
 
 	return refSpeed * math.Pow(targHeight/refHeight, util.Config.Stability)
 }
