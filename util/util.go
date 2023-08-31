@@ -30,6 +30,8 @@ type Configuration struct {
 	Remarks       string        `json:"metar-remarks"`
 }
 
+var Config Configuration
+
 // ParseConfig reads config.json and returns a Configuration struct of the
 // parameters found
 func ParseConfig() {
@@ -48,6 +50,16 @@ func ParseConfig() {
 
 	Config = config
 
+	// stability must be a number greater than 0.
+	if Config.Stability <= 0 {
+		log.Printf(
+			"Parsed stability of %0.3f from config file, but stability must be greater than 0.\n",
+			Config.Stability,
+		)
+		log.Println("Stability will default to neutral stability of 0.143.")
+		Config.Stability = 0.143
+	}
+
 	if Config.Logfile != "" {
 		f, err := os.OpenFile(
 			Config.Logfile,
@@ -64,5 +76,3 @@ func ParseConfig() {
 		log.SetOutput(mw)
 	}
 }
-
-var Config Configuration
