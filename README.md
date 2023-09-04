@@ -18,19 +18,13 @@ provided [below](#config-file-parameters).
 5) Place the config file inside the same directory that the realweather.exe file
 is located.
 6) Create or configure the mission file you want to be updated with the real
-weather. **Important: the mission file you want to be updated must have a cloud
-preset already selected in order to work. This cloud preset will be changed
-after running the utility.**
+weather.
 7) To run the utility you may either manually run the realweather.exe, or you
 can use a script to automate the process. Some examples are provided in
 [examples](/examples).
 
 ## Notes
 
-* Remember to have a cloud preset already selected in the input mission file.
-This preset will get changed when the realweather utility updates the mission,
-but having the preset selected is important for ensuring the structure of the
-mission file is correct.
 * It is recommended that you keep a master copy of your input mission file, and
 then reupdate this mission every server restart cycle. You can accomplish this
 through your normal restarting script, but an example is provided in

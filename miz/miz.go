@@ -31,23 +31,7 @@ func Update(data weather.WeatherData) error {
 
 	// search file for section containing weather information, date info, and
 	// time info
-	var startWeather int
-	var endWeather int
-	var startDate int
-	var startTime int
-	for i, line := range lines {
-		if strings.Contains(line, `["weather"] =`) {
-			startWeather = i
-		} else if strings.Contains(line, `}, -- end of ["weather"]`) {
-			endWeather = i
-		} else if strings.Contains(line, `["date"] =`) {
-			startDate = i
-		} else if len(line) > 20 {
-			if strings.Contains(line[:20], "[\"start_time\"] =") {
-				startTime = i
-			}
-		}
-	}
+	var startWeather, endWeather, startDate, startTime int = searchLines(lines)
 
 	if util.Config.UpdateWeather {
 		// separate just weather lines from file to decrease risk of finding duplicates
@@ -187,11 +171,24 @@ func Update(data weather.WeatherData) error {
 
 				lines[i+startWeather+2] = "\t\t\t[\"thickness\"] = 200,"
 				lines[i+startWeather+3] = "\t\t\t[\"density\"] = 0,"
+
+				// if miz did not already contain a preset, add space for one
+				if !strings.Contains(lines[i+startWeather+4], `["preset"]`) {
+					lines = append(
+						lines[:i+startWeather+4+1],
+						lines[i+startWeather+4:]...,
+					)
+
+					// expanded lines by one so need to update indexes
+					startWeather, endWeather, startDate, startTime = searchLines(lines)
+				}
+
 				if preset == "" {
 					lines[i+startWeather+4] = ""
 				} else {
 					lines[i+startWeather+4] = "\t\t\t[\"preset\"] = " + preset + ","
 				}
+
 				lines[i+startWeather+5] = "\t\t\t[\"base\"] = " + strconv.Itoa(
 					base,
 				) + ","
@@ -232,6 +229,26 @@ func Update(data weather.WeatherData) error {
 	}
 
 	return nil
+}
+
+// returns indexes of various important lines in the file
+func searchLines(
+	lines []string,
+) (startWeather, endWeather, startDate, startTime int) {
+	for i, line := range lines {
+		if strings.Contains(line, `["weather"] =`) {
+			startWeather = i
+		} else if strings.Contains(line, `}, -- end of ["weather"]`) {
+			endWeather = i
+		} else if strings.Contains(line, `["date"] =`) {
+			startDate = i
+		} else if len(line) > 20 {
+			if strings.Contains(line[:20], "[\"start_time\"] =") {
+				startTime = i
+			}
+		}
+	}
+	return
 }
 
 // returns extrapolated wind speed at given height using power law
