@@ -1,7 +1,7 @@
 {
     "api-key": "",
     "icao": "UGKO",
-    "hour-offset": 0,
+    "time-offset": "-5h30m",
     "stability": 0.143,
     "input-mission-file": "mission.miz",
     "output-mission-file": "realweather.miz",

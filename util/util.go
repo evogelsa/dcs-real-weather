@@ -6,7 +6,6 @@ import (
 	"log"
 	"math"
 	"os"
-	"time"
 )
 
 // Clamp returns a value that does not exceed the specified range [min, max]
@@ -18,16 +17,16 @@ func Clamp(v, min, max float64) float64 {
 
 // Configuration is the structure of config.json to be parsed
 type Configuration struct {
-	APIKey        string        `json:"api-key"`
-	ICAO          string        `json:"icao"`
-	HourOffset    time.Duration `json:"hour-offset"`
-	Stability     float64       `json:"stability"`
-	InputFile     string        `json:"input-mission-file"`
-	OutputFile    string        `json:"output-mission-file"`
-	UpdateTime    bool          `json:"update-time"`
-	UpdateWeather bool          `json:"update-weather"`
-	Logfile       string        `json:"logfile"`
-	Remarks       string        `json:"metar-remarks"`
+	APIKey        string  `json:"api-key"`
+	ICAO          string  `json:"icao"`
+	TimeOffset    string  `json:"time-offset"`
+	Stability     float64 `json:"stability"`
+	InputFile     string  `json:"input-mission-file"`
+	OutputFile    string  `json:"output-mission-file"`
+	UpdateTime    bool    `json:"update-time"`
+	UpdateWeather bool    `json:"update-weather"`
+	Logfile       string  `json:"logfile"`
+	Remarks       string  `json:"metar-remarks"`
 }
 
 var Config Configuration

@@ -180,7 +180,9 @@ func Update(data weather.WeatherData) error {
 					)
 
 					// expanded lines by one so need to update indexes
-					startWeather, endWeather, startDate, startTime = searchLines(lines)
+					startWeather, endWeather, startDate, startTime = searchLines(
+						lines,
+					)
 				}
 
 				if preset == "" {
@@ -270,7 +272,17 @@ func windSpeed(targHeight float64, data weather.WeatherData) float64 {
 func parseTime() int {
 	// get system time in second
 	t := time.Now()
-	t = t.Add(util.Config.HourOffset * time.Hour)
+
+	offset, err := time.ParseDuration(util.Config.TimeOffset)
+	if err != nil {
+		offset = 0
+		log.Printf(
+			"Could not parse time-offset of %s: %v. Program will default to 0 offset",
+			util.Config.TimeOffset,
+			err,
+		)
+	}
+	t = t.Add(offset)
 
 	return ((t.Hour()*60)+t.Minute())*60 + t.Second()
 }
