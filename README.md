@@ -1,5 +1,9 @@
 # DCS Real Weather Updater
 
+[![Downloads](https://img.shields.io/github/downloads/evogelsa/DCS-real-weather/total?logo=GitHub)](https://github.com/evogelsa/DCS-real-weather/releases/latest)
+[![Latest Release](https://img.shields.io/github/v/release/evogelsa/DCS-real-weather?logo=GitHub)](https://github.com/evogelsa/DCS-real-weather/releases/latest)
+[![Discord](https://img.shields.io/discord/1148739727990722751?logo=Discord)](https://discord.com/invite/mjr2SpFuqq)
+
 ## About
 
 This program is a simple utility meant to be incorporated into a DCS server's
@@ -59,5 +63,21 @@ can use a script to automate the process. Some examples are provided in
 | update-weather      | bool   | whether or not to update weather of mission   |
 | logfile             | string | name of log, "" will disable logfile          |
 | metar-remarks       | string | remarks to add to metar, for logging only     |
+
+## Contributing
+
+Interested in helping to improve this project? Please see the [contributing
+guide](CONTRIBUTING.md) for guidelines on making suggestions, opening new
+issues, or contributing code. Thanks for your interest!
+
+## Enjoying this project?
+
+Please consider starring the project to show your support. If you
+would like to get more involved, read the [contributing guide](CONTRIBUTING.md)
+to see how you can improve DCS Real Weather. This started as a small personal
+project and has grown to a small user base over the past couple years. Feel
+free to spread the love by posting about DCS real weather or by sharing with
+friends. Also join our small [Discord](https://discord.com/invite/mjr2SpFuqq)
+community for support, announcements, and camaraderie.
 
 [1]: https://en.wikipedia.org/wiki/Wind_profile_power_law
