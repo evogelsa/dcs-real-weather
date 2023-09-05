@@ -4,6 +4,9 @@ __debug_bin
 # binaries
 bin/
 
+# syso
+resource.syso
+
 # testing files
 config.json
 mission.miz

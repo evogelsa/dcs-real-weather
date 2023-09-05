@@ -1,5 +1,7 @@
 package main
 
+//go:generate goversioninfo versioninfo/versioninfo.json
+
 import (
 	"log"
 
