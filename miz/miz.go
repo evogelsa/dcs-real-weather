@@ -25,13 +25,13 @@ func Update(data weather.WeatherData) error {
 		return fmt.Errorf("Error parsing mission file: %v", err)
 	}
 
-	if util.Config.UpdateWeather {
+	if util.Config.Options.UpdateWeather {
 		if err := updateWeather(data, l); err != nil {
 			return fmt.Errorf("Error updating weather: %v", err)
 		}
 	}
 
-	if util.Config.UpdateTime {
+	if util.Config.Options.UpdateTime {
 		if err := updateTime(data, l); err != nil {
 			return fmt.Errorf("Error updating time: %v", err)
 		}
@@ -257,7 +257,10 @@ func windSpeed(targHeight float64, data weather.WeatherData) float64 {
 	// enforce minimum targheight of 0
 	targHeight = math.Max(0, targHeight)
 
-	return refSpeed * math.Pow(targHeight/refHeight, util.Config.Stability)
+	return refSpeed * math.Pow(
+		targHeight/refHeight,
+		util.Config.Options.Wind.Stability,
+	)
 }
 
 // parseTime returns system time in seconds with offset defined in config file
@@ -265,12 +268,12 @@ func parseTime() int {
 	// get system time in second
 	t := time.Now()
 
-	offset, err := time.ParseDuration(util.Config.TimeOffset)
+	offset, err := time.ParseDuration(util.Config.Options.TimeOffset)
 	if err != nil {
 		offset = 0
 		log.Printf(
 			"Could not parse time-offset of %s: %v. Program will default to 0 offset",
-			util.Config.TimeOffset,
+			util.Config.Options.TimeOffset,
 			err,
 		)
 	}
@@ -392,7 +395,7 @@ func checkDust(data weather.WeatherData) int {
 // Unzip will decompress a zip archive, moving all files and folders
 // within the zip file to dest, taken from https://golangcode.com/unzip-files-in-go/
 func Unzip() ([]string, error) {
-	src := util.Config.InputFile
+	src := util.Config.Files.InputMission
 	log.Println("Source file:", src)
 	dest := "mission_unpacked"
 
@@ -467,7 +470,7 @@ func Unzip() ([]string, error) {
 func Zip() error {
 	baseFolder := "mission_unpacked/"
 
-	dest := util.Config.OutputFile
+	dest := util.Config.Files.OutputMission
 	outFile, err := os.Create(dest)
 	if err != nil {
 		return fmt.Errorf("Error creating output file: %v", err)

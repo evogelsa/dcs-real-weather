@@ -20,7 +20,7 @@ func GetWeather() (WeatherData, error) {
 
 	request, err := http.NewRequest(
 		"GET",
-		"https://api.checkwx.com/metar/"+util.Config.ICAO+"/decoded",
+		"https://api.checkwx.com/metar/"+util.Config.METAR.ICAO+"/decoded",
 		nil,
 	)
 	if err != nil {
@@ -133,9 +133,7 @@ func LogMETAR(wx WeatherData) error {
 	metar += "NOSIG "
 
 	// rmks
-	if util.Config.Remarks != "" {
-		metar += util.Config.Remarks
-	}
+	metar += util.Config.METAR.Remarks
 
 	log.Println(metar)
 

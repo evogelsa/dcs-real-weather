@@ -17,23 +17,40 @@ func Clamp(v, min, max float64) float64 {
 
 // Configuration is the structure of config.json to be parsed
 type Configuration struct {
-	APIKey        string  `json:"api-key"`
-	ICAO          string  `json:"icao"`
-	TimeOffset    string  `json:"time-offset"`
-	Stability     float64 `json:"stability"`
-	InputFile     string  `json:"input-mission-file"`
-	OutputFile    string  `json:"output-mission-file"`
-	UpdateTime    bool    `json:"update-time"`
-	UpdateWeather bool    `json:"update-weather"`
-	Logfile       string  `json:"logfile"`
-	Remarks       string  `json:"metar-remarks"`
+	APIKey string `json:"api-key"`
+	Files  struct {
+		InputMission  string `json:"input-mission"`
+		OutputMission string `json:"output-mission"`
+		Log           string `json:"log"`
+	} `json:"files"`
+	METAR struct {
+		ICAO    string `json:"icao"`
+		Remarks string `json:"remarks"`
+	} `json:"metar"`
+	Options struct {
+		UpdateTime    bool   `json:"update-time"`
+		UpdateWeather bool   `json:"update-weather"`
+		TimeOffset    string `json:"time-offset"`
+		Wind          struct {
+			Minimum   float64 `json:"minimum"`
+			Maximum   float64 `json:"maximum"`
+			Stability float64 `json:"stability"`
+		} `json:"wind"`
+		Clouds struct {
+			Base struct {
+				Minimum float64 `json:"minimum"`
+				Maximum float64 `json:"maximum"`
+			} `json:"base"`
+			DisallowedPresets []string `json:"disallowed-presets"`
+		}
+	} `json:"options"`
 }
 
 var Config Configuration
 
 // ParseConfig reads config.json and returns a Configuration struct of the
 // parameters found
-func ParseConfig() {
+func init() {
 	var config Configuration
 	file, err := os.Open("config.json")
 	if err != nil {
@@ -47,26 +64,24 @@ func ParseConfig() {
 		log.Fatalf("Error decoding config.json: %v\n", err)
 	}
 
-	Config = config
-
 	// stability must be a number greater than 0.
-	if Config.Stability <= 0 {
+	if config.Options.Wind.Stability <= 0 {
 		log.Printf(
 			"Parsed stability of %0.3f from config file, but stability must be greater than 0.\n",
-			Config.Stability,
+			config.Options.Wind.Stability,
 		)
 		log.Println("Stability will default to neutral stability of 0.143.")
-		Config.Stability = 0.143
+		config.Options.Wind.Stability = 0.143
 	}
 
-	if Config.Logfile != "" {
+	if config.Files.Log != "" {
 		f, err := os.OpenFile(
-			Config.Logfile,
+			config.Files.Log,
 			os.O_WRONLY|os.O_CREATE|os.O_APPEND,
 			0644,
 		)
 		if err != nil {
-			log.Printf("Error opening logfile: %v\n", err)
+			log.Printf("Error opening log file: %v\n", err)
 		}
 		// defer f.Close()
 
@@ -74,4 +89,6 @@ func ParseConfig() {
 
 		log.SetOutput(mw)
 	}
+
+	Config = config
 }

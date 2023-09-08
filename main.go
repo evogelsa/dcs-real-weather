@@ -6,14 +6,10 @@ import (
 	"log"
 
 	"github.com/evogelsa/DCS-real-weather/miz"
-	"github.com/evogelsa/DCS-real-weather/util"
 	"github.com/evogelsa/DCS-real-weather/weather"
 )
 
 func main() {
-	// parse configuration file
-	util.ParseConfig()
-
 	// get METAR report
 	var err error
 	var data weather.WeatherData
