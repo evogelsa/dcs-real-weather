@@ -53,13 +53,13 @@ func Update(data weather.WeatherData) error {
 }
 
 func updateWeather(data weather.WeatherData, l *lua.LState) error {
-	speed8000 := windSpeed(8000, data)
-	speed2000 := windSpeed(2000, data)
 	speedGround := windSpeed(1, data)
+	speed2000 := windSpeed(2000, data)
+	speed8000 := windSpeed(8000, data)
 
-	dir8000 := (rand.Intn(45) + 45 + int(data.Data[0].Wind.Degrees+180)) % 360
-	dir2000 := (rand.Intn(45) + int(data.Data[0].Wind.Degrees+180)) % 360
-	dirGround := int(data.Data[0].Wind.Degrees)
+	dirGround := int(data.Data[0].Wind.Degrees+180) % 360
+	dir2000 := (rand.Intn(45) + dirGround) % 360
+	dir8000 := (rand.Intn(45) + dir2000) % 360
 
 	if err := l.DoString(
 		fmt.Sprintf(
