@@ -37,12 +37,10 @@ type Configuration struct {
 			Stability float64 `json:"stability"`
 		} `json:"wind"`
 		Clouds struct {
-			Base struct {
-				Minimum float64 `json:"minimum"`
-				Maximum float64 `json:"maximum"`
-			} `json:"base"`
 			DisallowedPresets []string `json:"disallowed-presets"`
 		}
+		FogAllowed  bool `json:"fog-allowed"`
+		DustAllowed bool `json:"dust-allowed"`
 	} `json:"options"`
 }
 

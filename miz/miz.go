@@ -57,6 +57,18 @@ func updateWeather(data weather.WeatherData, l *lua.LState) error {
 	speed2000 := windSpeed(2000, data)
 	speed8000 := windSpeed(8000, data)
 
+	if util.Config.Options.Wind.Maximum >= 0 {
+		speedGround = math.Min(speedGround, util.Config.Options.Wind.Maximum)
+		speed2000 = math.Min(speed2000, util.Config.Options.Wind.Maximum)
+		speed8000 = math.Min(speed8000, util.Config.Options.Wind.Maximum)
+	}
+
+	if util.Config.Options.Wind.Minimum >= 0 {
+		speedGround = math.Max(speedGround, util.Config.Options.Wind.Minimum)
+		speed2000 = math.Max(speed2000, util.Config.Options.Wind.Minimum)
+		speed8000 = math.Max(speed8000, util.Config.Options.Wind.Minimum)
+	}
+
 	dirGround := int(data.Data[0].Wind.Degrees+180) % 360
 	dir2000 := (rand.Intn(45) + dirGround) % 360
 	dir8000 := (rand.Intn(45) + dir2000) % 360
@@ -122,7 +134,7 @@ func updateWeather(data weather.WeatherData, l *lua.LState) error {
 
 	fog := checkFog(data)
 
-	if fog > 0 {
+	if fog > 0 && util.Config.Options.FogAllowed {
 		if err := l.DoString(
 			// assume fog thickness 100 since not reported in metar
 			fmt.Sprintf(
@@ -149,7 +161,7 @@ func updateWeather(data weather.WeatherData, l *lua.LState) error {
 
 	dust := checkDust(data)
 
-	if dust > 0 {
+	if dust > 0 && util.Config.Options.DustAllowed {
 		if err := l.DoString(
 			fmt.Sprintf(
 				"mission.weather.dust_density = %d\n"+
@@ -174,6 +186,7 @@ func updateWeather(data weather.WeatherData, l *lua.LState) error {
 
 	preset, base := checkClouds(data)
 	weather.SelectedPreset = preset
+	weather.SelectedBase = base
 
 	if preset != "" {
 		if err := l.DoString(
@@ -327,16 +340,18 @@ func checkClouds(data weather.WeatherData) (string, int) {
 		}
 	}
 
+	precip := checkPrecip(data)
+	if precip > 0 {
+		preset, base = selectPreset("OVC+RA", base)
+		return preset, base
+	}
+
 	for _, cloud := range data.Data[0].Clouds {
 		if (cloud.Code == "FEW" || cloud.Code == "SCT") && ceiling {
 			continue
 		}
 		preset, base = selectPreset(cloud.Code, int(cloud.Meters))
-	}
-
-	precip := checkPrecip(data)
-	if precip > 0 {
-		preset, base = selectPreset("OVC+RA", base)
+		break
 	}
 
 	return preset, base
@@ -351,21 +366,43 @@ func selectPreset(kind string, base int) (string, int) {
 	}
 
 	for _, preset := range weather.CloudPresets[kind] {
-		if preset.MinBase <= base && base <= preset.MaxBase {
+		if presetAllowed(preset.Name) && preset.MinBase <= base && base <= preset.MaxBase {
 			validPresets = append(validPresets, preset)
 		}
 	}
-	nValids := len(validPresets)
-	if nValids > 0 {
-		preset := validPresets[rand.Intn(nValids)]
-		return preset.Name, base
-	} else {
-		print(kind)
-		nPresets := len(weather.CloudPresets[kind])
-		preset := weather.CloudPresets[kind][rand.Intn(nPresets)]
-		base = int(util.Clamp(float64(base), float64(preset.MinBase), float64(preset.MaxBase)))
+
+	if len(validPresets) > 0 {
+		preset := validPresets[rand.Intn(len(validPresets))]
 		return preset.Name, base
 	}
+
+	log.Printf("No weather presets with code=%s and base=%d. Expanding search to only %s\n", kind, base, kind)
+
+	for _, preset := range weather.CloudPresets[kind] {
+		if presetAllowed(preset.Name) {
+			validPresets = append(validPresets, preset)
+		}
+	}
+
+	if len(validPresets) == 0 {
+		log.Printf("No allowed presets for %s. Defaulting to CLR.", kind)
+		return "", 0
+	}
+
+	preset := validPresets[rand.Intn(len(validPresets))]
+	return preset.Name, rand.Intn(preset.MaxBase-preset.MinBase) + preset.MinBase
+}
+
+// presetAllowed checks if a preset is in the disallowed presets inside the
+// config file. If the preset is disallowed the func returns false
+func presetAllowed(preset string) bool {
+	for _, disallowed := range util.Config.Options.Clouds.DisallowedPresets {
+		if preset == `"`+disallowed+`"` {
+			return false
+		}
+	}
+
+	return true
 }
 
 // checkFog looks for either misty or foggy conditions and returns and integer

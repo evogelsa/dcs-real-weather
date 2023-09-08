@@ -19,11 +19,9 @@
       "stability": 0.143
     },
     "clouds": {
-      "base": {
-        "minimum": -1,
-        "maximum": -1
-      },
       "disallowed-presets": []
-    }
+    },
+    "fog-allowed": true,
+    "dust-allowed": true
   }
 }
