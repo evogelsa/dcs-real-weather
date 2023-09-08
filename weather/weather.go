@@ -12,6 +12,7 @@ import (
 )
 
 var SelectedPreset string
+var SelectedBase int
 
 func GetWeather() (WeatherData, error) {
 	// create http client to fetch weather data, timeout after 5 sec
@@ -101,15 +102,15 @@ func LogMETAR(wx WeatherData) error {
 		metar += "CLR "
 	} else {
 		clouds := decodePreset[SelectedPreset]
-		res := ""
 		for i, cld := range clouds {
 			if i == 0 {
-				res += fmt.Sprintf("%s%d ", cld.Name, int(data.Ceiling.Feet/100))
+				// convert base to hundreds of feet
+				base := int(float64(SelectedBase)*3.28+50) / 100
+				metar += fmt.Sprintf("%s%03d ", cld.Name, base)
 			} else {
-				res += fmt.Sprintf("%s%s ", cld.Name, cld.Base)
+				metar += fmt.Sprintf("%s%s ", cld.Name, cld.Base)
 			}
 		}
-		metar += res
 	}
 
 	// temperature
