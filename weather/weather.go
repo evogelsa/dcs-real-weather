@@ -3,7 +3,7 @@ package weather
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"time"
@@ -44,7 +44,7 @@ func GetWeather() (WeatherData, error) {
 	defer resp.Body.Close()
 
 	// parse response byte array
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return WeatherData{}, fmt.Errorf(
 			"Error parsing CheckWX response: %v",
