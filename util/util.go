@@ -39,8 +39,18 @@ type Configuration struct {
 		Clouds struct {
 			DisallowedPresets []string `json:"disallowed-presets"`
 		}
-		FogAllowed  bool `json:"fog-allowed"`
-		DustAllowed bool `json:"dust-allowed"`
+		Fog struct {
+			Enabled           bool `json:"enabled"`
+			ThicknessMinimum  int  `json:"thickness-minimum"`
+			ThicknessMaximum  int  `json:"thickness-maximum"`
+			VisibilityMinimum int  `json:"visibility-minimum"`
+			VisibilityMaximum int  `json:"visibility-maximum"`
+		} `json:"fog"`
+		Dust struct {
+			Enabled           bool `json:"enabled"`
+			VisibilityMinimum int  `json:"visibility-minimum"`
+			VisibilityMaximum int  `json:"visibility-maximum"`
+		} `json:"dust"`
 	} `json:"options"`
 }
 

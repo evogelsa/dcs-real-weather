@@ -21,7 +21,17 @@
     "clouds": {
       "disallowed-presets": []
     },
-    "fog-allowed": true,
-    "dust-allowed": true
+    "fog": {
+      "enabled": true,
+      "thickness-minimum": 0,
+      "thickness-maximum": 1000,
+      "visibility-minimum": 0,
+      "visibility-maximum": 6000
+    },
+    "dust": {
+      "enabled": true,
+      "visiblity-minimum": 300,
+      "visibility-maximum": 3000
+    }
   }
 }

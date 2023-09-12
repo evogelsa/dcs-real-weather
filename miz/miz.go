@@ -132,16 +132,16 @@ func updateWeather(data weather.WeatherData, l *lua.LState) error {
 
 	log.Printf("QNH mmHg: %d\n", qnh)
 
-	fog := checkFog(data)
+	fogVis, fogThick := checkFog(data)
 
-	if fog > 0 && util.Config.Options.FogAllowed {
+	if fogVis > 0 {
 		if err := l.DoString(
 			// assume fog thickness 100 since not reported in metar
 			fmt.Sprintf(
 				"mission.weather.enable_fog = true"+
-					"mission.weather.fog.thickness = 100\n"+
+					"mission.weather.fog.thickness = %d\n"+
 					"mission.weather.fog.visibility = %d\n",
-				fog,
+				fogThick, fogVis,
 			),
 		); err != nil {
 			return fmt.Errorf("Error updating fog: %v", err)
@@ -154,14 +154,15 @@ func updateWeather(data weather.WeatherData, l *lua.LState) error {
 
 	log.Printf(
 		"Fog:\n"+
+			"\tThickness meters: %d\n"+
 			"\tVisibility meters: %d\n"+
 			"\tEnabled: %t\n",
-		fog, fog > 0,
+		fogThick, fogVis, fogVis > 0,
 	)
 
 	dust := checkDust(data)
 
-	if dust > 0 && util.Config.Options.DustAllowed {
+	if dust > 0 {
 		if err := l.DoString(
 			fmt.Sprintf(
 				"mission.weather.dust_density = %d\n"+
@@ -407,23 +408,79 @@ func presetAllowed(preset string) bool {
 
 // checkFog looks for either misty or foggy conditions and returns and integer
 // representing dcs visiblity scale
-func checkFog(data weather.WeatherData) int {
+func checkFog(data weather.WeatherData) (visibility, thickness int) {
+	if !util.Config.Options.Fog.Enabled {
+		return
+	}
+
 	for _, condition := range data.Data[0].Conditions {
 		if condition.Code == "FG" || condition.Code == "BR" {
-			return int(data.Data[0].Visibility.MetersFloat)
+
+			if util.Config.Options.Fog.ThicknessMaximum > 1000 {
+				log.Println("Fog maximum thickness is set above max of 1000; defaulting to 1000")
+				util.Config.Options.Fog.ThicknessMaximum = 1000
+			}
+
+			if util.Config.Options.Fog.ThicknessMinimum < 0 {
+				log.Println("Fog minimum thickness is set below min of 0; defaulting to 0")
+				util.Config.Options.Fog.ThicknessMinimum = 0
+			}
+
+			thickness = rand.Intn(
+				util.Config.Options.Fog.ThicknessMaximum-
+					util.Config.Options.Fog.ThicknessMinimum,
+			) + util.Config.Options.Fog.ThicknessMinimum
+
+			if util.Config.Options.Fog.VisibilityMaximum > 6000 {
+				log.Println("Fog maximum visibility is set above max of 6000; defaulting to 6000")
+				util.Config.Options.Fog.VisibilityMaximum = 6000
+			}
+
+			if util.Config.Options.Fog.VisibilityMinimum < 0 {
+				log.Println("Fog minimum visibility is set below min of 0; defaulting to 0")
+				util.Config.Options.Fog.VisibilityMinimum = 0
+			}
+
+			visibility = int(util.Clamp(
+				data.Data[0].Visibility.MetersFloat,
+				float64(util.Config.Options.Fog.VisibilityMinimum),
+				float64(util.Config.Options.Fog.VisibilityMaximum),
+			))
+
+			return
 		}
 	}
-	return 0
+
+	return
 }
 
-// checkFog looks for either misty or foggy conditions and returns and integer
-// representing dcs visiblity scale
-func checkDust(data weather.WeatherData) int {
+// checkDust looks for dust conditions and returns a number representing
+// visibility in meters
+func checkDust(data weather.WeatherData) (visibility int) {
+	if !util.Config.Options.Dust.Enabled {
+		return
+	}
+
 	for _, condition := range data.Data[0].Conditions {
 		if condition.Code == "HZ" || condition.Code == "DU" ||
 			condition.Code == "SA" || condition.Code == "PO" ||
 			condition.Code == "DS" || condition.Code == "SS" {
-			return int(data.Data[0].Visibility.MetersFloat)
+
+			if util.Config.Options.Dust.VisibilityMinimum < 300 {
+				log.Println("Dust visibility minimum is set below min of 300; defaulting to 300")
+				util.Config.Options.Dust.VisibilityMinimum = 300
+			}
+
+			if util.Config.Options.Dust.VisibilityMaximum > 3000 {
+				log.Println("Dust visibility maximum is set above max of 3000; defaulting to 3000")
+				util.Config.Options.Dust.VisibilityMaximum = 3000
+			}
+
+			return int(util.Clamp(
+				data.Data[0].Visibility.MetersFloat,
+				float64(util.Config.Options.Dust.VisibilityMinimum),
+				float64(util.Config.Options.Dust.VisibilityMaximum),
+			))
 		}
 	}
 	return 0

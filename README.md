@@ -86,8 +86,18 @@ The config file looks like the following:
           "RainyPreset3"
           ] // List of weather presets you do not want to be chosen
     },
-    "fog-allowed": true, // set to false to disable fog
-    "dust-allowed": true // set to false to disable dust
+    "fog": {
+      "enabled": true,           // set to false to disable fog
+      "thickness-minimum": 0,    // min thickness of fog in meters, at least 0
+      "thickness-maximum": 1000, // max thickness of fog in meters, at most 1000
+      "visibility-minimum": 0,   // min vis through fog in meters, at least 0
+      "visibility-maximum": 6000 // max vis through fog in meters, at most 6000
+    },
+    "dust": {
+      "enabled": true,           // set to false to disable dust and smoke
+      "visibility-minimum": 300, // min vis through dust in meters, at least 300
+      "visibility-maximum": 3000 // max vis through dust in meters, at most 3000
+    }
   }
 }
 ```
