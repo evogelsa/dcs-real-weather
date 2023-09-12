@@ -3,11 +3,10 @@
 ## A small thank you
 
 Thanks for your interest in contributing to DCS Real Weather! This project
-started a personal hobby project for my own group's DCS server, and despite
-never advertising the project, it's now grown to a small community of users.
-The feedback from everyone who has used this tool has helped to improve it
-across the board, so your interest in continuing that trend is greatly
-appreciated.
+started a personal hobby project for my own group's DCS server, and it's now
+grown to a small community of users. The feedback from everyone who has used
+this tool has helped to improve it across the board, so your interest in
+continuing that trend is greatly appreciated.
 
 ## Why this guide exists
 

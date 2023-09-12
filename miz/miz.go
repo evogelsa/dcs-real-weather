@@ -15,242 +15,248 @@ import (
 
 	"github.com/evogelsa/DCS-real-weather/util"
 	"github.com/evogelsa/DCS-real-weather/weather"
+
+	lua "github.com/yuin/gopher-lua"
 )
 
-const MISSION_NAME string = "mission.miz"
-
 func Update(data weather.WeatherData) error {
-	// open mission lua file
-	input, err := os.ReadFile("mission_unpacked/mission")
-	if err != nil {
-		return fmt.Errorf("Error reading unpacked mission file: %v", err)
+	l := lua.NewState()
+	if err := l.DoFile("mission_unpacked/mission"); err != nil {
+		return fmt.Errorf("Error parsing mission file: %v", err)
 	}
 
-	// create string array of mission file separated by lines
-	lines := strings.Split(string(input), "\n")
-
-	// search file for section containing weather information, date info, and
-	// time info
-	var startWeather, endWeather, startDate, startTime int = searchLines(lines)
-
-	if util.Config.UpdateWeather {
-		// separate just weather lines from file to decrease risk of finding duplicates
-		weatherLines := lines[startWeather:endWeather]
-
-		for i, line := range weatherLines {
-			switch {
-			// calculate wind speed at 8000 meters
-			case strings.Contains(line, `["at8000"]`) && !strings.Contains(line, "end of"):
-				// use reported wind speeds to estimate winds at 8000 meters MSL
-				speed := windSpeed(8000, data)
-				speedStr := fmt.Sprintf("%0.3f", speed)
-
-				// replace line with calculated speed and save result
-				lines[i+startWeather+2] = "\t\t\t\t[\"speed\"] = " + speedStr + ","
-				log.Println("Updated wind:")
-				log.Println("\tAt 8000 meters:")
-				log.Println("\t\tSpeed m/s:", speedStr)
-
-				// offset wind direction by [45,90), dcs expects direction wind moves towards
-				dir := rand.Intn(45) + 45 + int(data.Data[0].Wind.Degrees+180)
-				dir %= 360
-				lines[i+startWeather+3] = "\t\t\t\t[\"dir\"] = " + strconv.Itoa(
-					dir,
-				) + ","
-				log.Println("\t\tDirection:", (dir+180)%360)
-
-				// calculate wind speed at 2000 meters
-			case strings.Contains(line, `["at2000"]`) && !strings.Contains(line, "end of"):
-				// use reported wind speeds to estimate winds at 2000 meters MSL
-				speed := windSpeed(2000, data)
-				speedStr := fmt.Sprintf("%0.3f", speed)
-
-				// replace line with calculated speed and save result
-				lines[i+startWeather+2] = "\t\t\t\t[\"speed\"] = " + speedStr + ","
-				log.Println("\tAt 2000 meters:")
-				log.Println("\t\tSpeed m/s:", speedStr)
-
-				// offset wind direction by [0,45), dcs expects direction wind moves towards
-				dir := rand.Intn(45) + int(data.Data[0].Wind.Degrees+180)
-				dir %= 360
-				lines[i+startWeather+3] = "\t\t\t\t[\"dir\"] = " + strconv.Itoa(
-					dir,
-				) + ","
-				log.Println("\t\tDirection:", (dir+180)%360)
-
-				// update wind speed for ground level
-			case strings.Contains(line, `["atGround"]`) && !strings.Contains(line, "end of"):
-				// use wind speeds estimated at 1m agl for ground winds
-				speed := windSpeed(1, data)
-				speedStr := fmt.Sprintf("%0.3f", speed)
-
-				lines[i+startWeather+2] = "\t\t\t\t[\"speed\"] = " + speedStr + ","
-				log.Println("\tAt 0 meters:")
-				log.Println("\t\tSpeed m/s:", speedStr)
-
-				dir := int(data.Data[0].Wind.Degrees + 180)
-				dir %= 360
-				lines[i+startWeather+3] = "\t\t\t\t[\"dir\"] = " + strconv.Itoa(
-					dir,
-				) + ","
-				log.Println("\t\tDirection:", (dir+180)%360)
-
-				// update turbulence using gust data from metar
-			case strings.Contains(line, `["groundTurbulence"]`):
-				// check for gusting and use to set ground turbulence
-				gust := data.Data[0].Wind.GustMPS
-				gustStr := fmt.Sprintf("%0.3f", gust)
-				lines[i+startWeather] = "\t\t[\"groundTurbulence\"] = " + gustStr + ","
-				log.Println("Turbulence:", gust)
-
-				// update temperature
-			case strings.Contains(line, `["temperature"]`):
-				temp := int(data.Data[0].Temperature.Celsius)
-				lines[i+startWeather] = "\t\t\t[\"temperature\"] = " + strconv.Itoa(
-					temp,
-				) + ","
-				log.Println("Temperature Celsius:", temp)
-
-				// update QNH
-			case strings.Contains(line, `["qnh"]`):
-				// dcs expects QNH in mmHg = inHg * 25.4
-				qnh := int(data.Data[0].Barometer.Hg*25.4 + .5)
-				lines[i+startWeather] = "\t\t[\"qnh\"] = " + strconv.Itoa(
-					qnh,
-				) + ","
-				log.Println("QNH mmHg:", qnh)
-
-				// update fog visibility
-			case strings.Contains(line, `["fog"]`) && !strings.Contains(line, "end of"):
-				// thickness is assumed to be 100 meters for now since this is not
-				// reported in the metar
-				fog := checkFog(data)
-				if fog > 0 {
-					lines[i+startWeather+2] = "\t\t\t[\"thickness\"] = 100,"
-					lines[i+startWeather+3] = "\t\t\t[\"visibility\"] = " + strconv.Itoa(
-						fog,
-					) + ","
-				}
-				log.Println("Fog Visibility meters:", fog)
-
-				// enable or disable fog
-			case strings.Contains(line, `["enable_fog"]`):
-				// enable fog if checkFog returns a valid visibility
-				if checkFog(data) > 0 {
-					lines[i+startWeather] = "\t\t[\"enable_fog\"] = true,"
-					log.Println("Fog Enabled:", true)
-				} else {
-					lines[i+startWeather] = "\t\t[\"enable_fog\"] = false,"
-					log.Println("Fog Enabled:", false)
-				}
-
-				// update dust visibility
-			case strings.Contains(line, `["dust_density"]`):
-				dust := checkDust(data)
-				if dust > 0 {
-					lines[i+startWeather] = "\t\t[\"dust_density\"] = " + strconv.Itoa(
-						dust,
-					) + ","
-					log.Println("Dust Visibility meters:", dust)
-				}
-
-				// enable or disable dust
-			case strings.Contains(line, `["enable_dust"]`):
-				if checkDust(data) > 0 {
-					lines[i+startWeather] = "\t\t[\"enable_dust\"] = true,"
-					log.Println("Dust Enabled:", true)
-				} else {
-					lines[i+startWeather] = "\t\t[\"enable_dust\"] = false,"
-					log.Println("Dust Enabled:", false)
-				}
-
-				// update clouds
-			case strings.Contains(line, `["clouds"]`) && !strings.Contains(line, "end of"):
-				preset, base := checkClouds(data)
-				weather.SelectedPreset = preset
-
-				lines[i+startWeather+2] = "\t\t\t[\"thickness\"] = 200,"
-				lines[i+startWeather+3] = "\t\t\t[\"density\"] = 0,"
-
-				// if miz did not already contain a preset, add space for one
-				if !strings.Contains(lines[i+startWeather+4], `["preset"]`) {
-					lines = append(
-						lines[:i+startWeather+4+1],
-						lines[i+startWeather+4:]...,
-					)
-
-					// expanded lines by one so need to update indexes
-					startWeather, endWeather, startDate, startTime = searchLines(
-						lines,
-					)
-				}
-
-				if preset == "" {
-					lines[i+startWeather+4] = ""
-				} else {
-					lines[i+startWeather+4] = "\t\t\t[\"preset\"] = " + preset + ","
-				}
-
-				lines[i+startWeather+5] = "\t\t\t[\"base\"] = " + strconv.Itoa(
-					base,
-				) + ","
-				lines[i+startWeather+6] = "\t\t\t[\"iprecptns\"] = 0,"
-				log.Println("Clouds:")
-				log.Println("\tPreset:", preset)
-				log.Println("\tBase meters:", base)
-			}
+	if util.Config.Options.UpdateWeather {
+		if err := updateWeather(data, l); err != nil {
+			return fmt.Errorf("Error updating weather: %v", err)
 		}
 	}
 
-	// update mission date and time if update-time true in config
-	if util.Config.UpdateTime {
-		// update date
-		year, month, day, err := parseDate(data)
-		if err != nil {
-			return fmt.Errorf("Error parsing date: %v", err)
+	if util.Config.Options.UpdateTime {
+		if err := updateTime(data, l); err != nil {
+			return fmt.Errorf("Error updating time: %v", err)
 		}
-
-		lines[startDate+2] = "\t\t[\"Day\"] = " + strconv.Itoa(day) + ","
-		lines[startDate+3] = "\t\t[\"Year\"] = " + strconv.Itoa(year) + ","
-		lines[startDate+4] = "\t\t[\"Month\"] = " + strconv.Itoa(month) + ","
-		log.Println("year:", year)
-		log.Println("month:", month)
-		log.Println("day:", day)
-
-		// update time
-		t := parseTime()
-		lines[startTime] = "\t[\"start_time\"] = " + strconv.Itoa(t) + ","
-		log.Println("time:", t)
 	}
 
-	// overwrite file with newly changed mission
-	output := strings.Join(lines, "\n")
-	err = os.WriteFile("mission_unpacked/mission", []byte(output), 0644)
-	if err != nil {
-		return fmt.Errorf("Error writing to unpacked mission file: %v", err)
+	if err := l.DoString(writemission); err != nil {
+		return fmt.Errorf("Error loading write mission file: %v", err)
+	}
+
+	if err := os.Remove("mission_unpacked/mission"); err != nil {
+		return fmt.Errorf("Error removing mission: %v", err)
+	}
+
+	if err := l.DoString(`writeMission(mission, "mission_unpacked/mission")`); err != nil {
+		return fmt.Errorf("Error writing mission file: %v", err)
 	}
 
 	return nil
 }
 
-// returns indexes of various important lines in the file
-func searchLines(
-	lines []string,
-) (startWeather, endWeather, startDate, startTime int) {
-	for i, line := range lines {
-		if strings.Contains(line, `["weather"] =`) {
-			startWeather = i
-		} else if strings.Contains(line, `}, -- end of ["weather"]`) {
-			endWeather = i
-		} else if strings.Contains(line, `["date"] =`) {
-			startDate = i
-		} else if len(line) > 20 {
-			if strings.Contains(line[:20], "[\"start_time\"] =") {
-				startTime = i
-			}
+func updateWeather(data weather.WeatherData, l *lua.LState) error {
+	speedGround := windSpeed(1, data)
+	speed2000 := windSpeed(2000, data)
+	speed8000 := windSpeed(8000, data)
+
+	if util.Config.Options.Wind.Maximum >= 0 {
+		speedGround = math.Min(speedGround, util.Config.Options.Wind.Maximum)
+		speed2000 = math.Min(speed2000, util.Config.Options.Wind.Maximum)
+		speed8000 = math.Min(speed8000, util.Config.Options.Wind.Maximum)
+	}
+
+	if util.Config.Options.Wind.Minimum >= 0 {
+		speedGround = math.Max(speedGround, util.Config.Options.Wind.Minimum)
+		speed2000 = math.Max(speed2000, util.Config.Options.Wind.Minimum)
+		speed8000 = math.Max(speed8000, util.Config.Options.Wind.Minimum)
+	}
+
+	dirGround := int(data.Data[0].Wind.Degrees+180) % 360
+	dir2000 := (rand.Intn(45) + dirGround) % 360
+	dir8000 := (rand.Intn(45) + dir2000) % 360
+
+	if err := l.DoString(
+		fmt.Sprintf(
+			"mission.weather.wind.at8000.speed = %0.3f\n"+
+				"mission.weather.wind.at8000.dir = %d\n"+
+				"mission.weather.wind.at2000.speed = %0.3f\n"+
+				"mission.weather.wind.at2000.dir = %d\n"+
+				"mission.weather.wind.atGround.speed = %0.3f\n"+
+				"mission.weather.wind.atGround.dir = %d\n",
+			speed8000, dir8000, speed2000, dir2000, speedGround, dirGround,
+		),
+	); err != nil {
+		return fmt.Errorf("Error updating winds: %v", err)
+	}
+
+	log.Printf(
+		"Winds:\n"+
+			"\tAt 8000 meters:\n"+
+			"\t\tSpeed m/s: %0.3f\n"+
+			"\t\tDirection: %d\n"+
+			"\tAt 2000 meters:\n"+
+			"\t\tSpeed m/s: %0.3f\n"+
+			"\t\tDirection: %d\n"+
+			"\tAt 1 meters:\n"+
+			"\t\tSpeed m/s: %0.3f\n"+
+			"\t\tDirection: %d\n",
+		speed8000, dir8000, speed2000, dir2000, speedGround, dirGround,
+	)
+
+	gust := data.Data[0].Wind.GustMPS
+
+	if err := l.DoString(
+		fmt.Sprintf("mission.weather.groundTurbulence = %0.4f\n", gust),
+	); err != nil {
+		return fmt.Errorf("Error updating turbulence: %v", err)
+	}
+
+	log.Printf("Gusts m/s: %0.3f\n", gust)
+
+	temp := data.Data[0].Temperature.Celsius
+
+	if err := l.DoString(
+		fmt.Sprintf("mission.weather.season.temperature = %0.3f\n", temp),
+	); err != nil {
+		return fmt.Errorf("Error updating temperature: %v", err)
+	}
+
+	log.Printf("Temperature Celsius: %0.3f\n", temp)
+
+	// qnh is in mmHg = inHg * 25.4
+	qnh := int(data.Data[0].Barometer.Hg*25.4 + 0.5)
+
+	if err := l.DoString(
+		fmt.Sprintf("mission.weather.qnh = %d\n", qnh),
+	); err != nil {
+		return fmt.Errorf("Error updating QNH: %v", err)
+	}
+
+	log.Printf("QNH mmHg: %d\n", qnh)
+
+	fogVis, fogThick := checkFog(data)
+
+	if fogVis > 0 {
+		if err := l.DoString(
+			// assume fog thickness 100 since not reported in metar
+			fmt.Sprintf(
+				"mission.weather.enable_fog = true\n"+
+					"mission.weather.fog.thickness = %d\n"+
+					"mission.weather.fog.visibility = %d\n",
+				fogThick, fogVis,
+			),
+		); err != nil {
+			return fmt.Errorf("Error updating fog: %v", err)
+		}
+	} else {
+		if err := l.DoString("mission.weather.enable_fog = false"); err != nil {
+			return fmt.Errorf("Error updating fog: %v", err)
 		}
 	}
-	return
+
+	log.Printf(
+		"Fog:\n"+
+			"\tThickness meters: %d\n"+
+			"\tVisibility meters: %d\n"+
+			"\tEnabled: %t\n",
+		fogThick, fogVis, fogVis > 0,
+	)
+
+	dust := checkDust(data)
+
+	if dust > 0 {
+		if err := l.DoString(
+			fmt.Sprintf(
+				"mission.weather.dust_density = %d\n"+
+					"mission.weather.enable_dust = true\n",
+				dust,
+			),
+		); err != nil {
+			return fmt.Errorf("Error updating dust: %v", err)
+		}
+	} else {
+		if err := l.DoString("mission.weather.enable_dust = false"); err != nil {
+			return fmt.Errorf("Error updating dust: %v", err)
+		}
+	}
+
+	log.Printf(
+		"Dust:\n"+
+			"\tVisibility meters: %d\n"+
+			"\tEnabled: %t\n",
+		dust, dust > 0,
+	)
+
+	preset, base := checkClouds(data)
+	weather.SelectedPreset = preset
+	weather.SelectedBase = base
+
+	if preset != "" {
+		if err := l.DoString(
+			fmt.Sprintf(
+				"mission.weather.clouds.thickness = 200\n"+
+					"mission.weather.clouds.density = 0\n"+
+					"mission.weather.clouds.preset = %s\n"+
+					"mission.weather.clouds.base = %d\n"+
+					"mission.weather.clouds.iprecptns = 0\n",
+				preset, base,
+			),
+		); err != nil {
+			return fmt.Errorf("Error updating clouds: %v", err)
+		}
+	} else {
+		if err := l.DoString(
+			fmt.Sprintf(
+				"mission.weather.clouds.thickness = 200\n"+
+					"mission.weather.clouds.density = 0\n"+
+					"mission.weather.clouds.preset = nil\n"+
+					"mission.weather.clouds.base = %d\n"+
+					"mission.weather.clouds.iprecptns = 0\n",
+				base,
+			),
+		); err != nil {
+			return fmt.Errorf("Error updating clouds: %v", err)
+		}
+	}
+
+	log.Printf(
+		"Clouds:\n"+
+			"\tPreset: %s\n"+
+			"\tBase meters: %d\n",
+		preset, base,
+	)
+
+	return nil
+}
+
+func updateTime(data weather.WeatherData, l *lua.LState) error {
+	year, month, day, err := parseDate(data)
+	if err != nil {
+		return fmt.Errorf("Error parsing date: %v", err)
+	}
+
+	t := parseTime()
+
+	if err := l.DoString(
+		fmt.Sprintf(
+			"mission.date.Year = %d\n"+
+				"mission.date.Month = %d\n"+
+				"mission.date.Day = %d\n"+
+				"mission.start_time = %d\n",
+			year, month, day, t,
+		),
+	); err != nil {
+		return fmt.Errorf("Error updating time: %v", err)
+	}
+
+	log.Printf(
+		"Time:\n"+
+			"\tYear: %d\n"+
+			"\tMonth: %d\n"+
+			"\tDay: %d\n"+
+			"\tStart Time: %d\n",
+		year, month, day, t,
+	)
+
+	return nil
 }
 
 // returns extrapolated wind speed at given height using power law
@@ -265,7 +271,10 @@ func windSpeed(targHeight float64, data weather.WeatherData) float64 {
 	// enforce minimum targheight of 0
 	targHeight = math.Max(0, targHeight)
 
-	return refSpeed * math.Pow(targHeight/refHeight, util.Config.Stability)
+	return refSpeed * math.Pow(
+		targHeight/refHeight,
+		util.Config.Options.Wind.Stability,
+	)
 }
 
 // parseTime returns system time in seconds with offset defined in config file
@@ -273,12 +282,12 @@ func parseTime() int {
 	// get system time in second
 	t := time.Now()
 
-	offset, err := time.ParseDuration(util.Config.TimeOffset)
+	offset, err := time.ParseDuration(util.Config.Options.TimeOffset)
 	if err != nil {
 		offset = 0
 		log.Printf(
 			"Could not parse time-offset of %s: %v. Program will default to 0 offset",
-			util.Config.TimeOffset,
+			util.Config.Options.TimeOffset,
 			err,
 		)
 	}
@@ -332,16 +341,18 @@ func checkClouds(data weather.WeatherData) (string, int) {
 		}
 	}
 
+	precip := checkPrecip(data)
+	if precip > 0 {
+		preset, base = selectPreset("OVC+RA", base)
+		return preset, base
+	}
+
 	for _, cloud := range data.Data[0].Clouds {
 		if (cloud.Code == "FEW" || cloud.Code == "SCT") && ceiling {
 			continue
 		}
 		preset, base = selectPreset(cloud.Code, int(cloud.Meters))
-	}
-
-	precip := checkPrecip(data)
-	if precip > 0 {
-		preset, base = selectPreset("OVC+RA", base)
+		break
 	}
 
 	return preset, base
@@ -356,42 +367,120 @@ func selectPreset(kind string, base int) (string, int) {
 	}
 
 	for _, preset := range weather.CloudPresets[kind] {
-		if preset.MinBase <= base && base <= preset.MaxBase {
+		if presetAllowed(preset.Name) && preset.MinBase <= base && base <= preset.MaxBase {
 			validPresets = append(validPresets, preset)
 		}
 	}
-	nValids := len(validPresets)
-	if nValids > 0 {
-		preset := validPresets[rand.Intn(nValids)]
-		return preset.Name, base
-	} else {
-		print(kind)
-		nPresets := len(weather.CloudPresets[kind])
-		preset := weather.CloudPresets[kind][rand.Intn(nPresets)]
-		base = int(util.Clamp(float64(base), float64(preset.MinBase), float64(preset.MaxBase)))
+
+	if len(validPresets) > 0 {
+		preset := validPresets[rand.Intn(len(validPresets))]
 		return preset.Name, base
 	}
-}
 
-// checkFog looks for either misty or foggy conditions and returns and integer
-// representing dcs visiblity scale
-func checkFog(data weather.WeatherData) int {
-	for _, condition := range data.Data[0].Conditions {
-		if condition.Code == "FG" || condition.Code == "BR" {
-			return int(data.Data[0].Visibility.MetersFloat)
+	log.Printf("No weather presets with code=%s and base=%d. Expanding search to only %s\n", kind, base, kind)
+
+	for _, preset := range weather.CloudPresets[kind] {
+		if presetAllowed(preset.Name) {
+			validPresets = append(validPresets, preset)
 		}
 	}
-	return 0
+
+	if len(validPresets) == 0 {
+		log.Printf("No allowed presets for %s. Defaulting to CLR.", kind)
+		return "", 0
+	}
+
+	preset := validPresets[rand.Intn(len(validPresets))]
+	return preset.Name, rand.Intn(preset.MaxBase-preset.MinBase) + preset.MinBase
+}
+
+// presetAllowed checks if a preset is in the disallowed presets inside the
+// config file. If the preset is disallowed the func returns false
+func presetAllowed(preset string) bool {
+	for _, disallowed := range util.Config.Options.Clouds.DisallowedPresets {
+		if preset == `"`+disallowed+`"` {
+			return false
+		}
+	}
+
+	return true
 }
 
 // checkFog looks for either misty or foggy conditions and returns and integer
 // representing dcs visiblity scale
-func checkDust(data weather.WeatherData) int {
+func checkFog(data weather.WeatherData) (visibility, thickness int) {
+	if !util.Config.Options.Fog.Enabled {
+		return
+	}
+
+	for _, condition := range data.Data[0].Conditions {
+		if condition.Code == "FG" || condition.Code == "BR" {
+
+			if util.Config.Options.Fog.ThicknessMaximum > 1000 {
+				log.Println("Fog maximum thickness is set above max of 1000; defaulting to 1000")
+				util.Config.Options.Fog.ThicknessMaximum = 1000
+			}
+
+			if util.Config.Options.Fog.ThicknessMinimum < 0 {
+				log.Println("Fog minimum thickness is set below min of 0; defaulting to 0")
+				util.Config.Options.Fog.ThicknessMinimum = 0
+			}
+
+			thickness = rand.Intn(
+				util.Config.Options.Fog.ThicknessMaximum-
+					util.Config.Options.Fog.ThicknessMinimum,
+			) + util.Config.Options.Fog.ThicknessMinimum
+
+			if util.Config.Options.Fog.VisibilityMaximum > 6000 {
+				log.Println("Fog maximum visibility is set above max of 6000; defaulting to 6000")
+				util.Config.Options.Fog.VisibilityMaximum = 6000
+			}
+
+			if util.Config.Options.Fog.VisibilityMinimum < 0 {
+				log.Println("Fog minimum visibility is set below min of 0; defaulting to 0")
+				util.Config.Options.Fog.VisibilityMinimum = 0
+			}
+
+			visibility = int(util.Clamp(
+				data.Data[0].Visibility.MetersFloat,
+				float64(util.Config.Options.Fog.VisibilityMinimum),
+				float64(util.Config.Options.Fog.VisibilityMaximum),
+			))
+
+			return
+		}
+	}
+
+	return
+}
+
+// checkDust looks for dust conditions and returns a number representing
+// visibility in meters
+func checkDust(data weather.WeatherData) (visibility int) {
+	if !util.Config.Options.Dust.Enabled {
+		return
+	}
+
 	for _, condition := range data.Data[0].Conditions {
 		if condition.Code == "HZ" || condition.Code == "DU" ||
 			condition.Code == "SA" || condition.Code == "PO" ||
 			condition.Code == "DS" || condition.Code == "SS" {
-			return int(data.Data[0].Visibility.MetersFloat)
+
+			if util.Config.Options.Dust.VisibilityMinimum < 300 {
+				log.Println("Dust visibility minimum is set below min of 300; defaulting to 300")
+				util.Config.Options.Dust.VisibilityMinimum = 300
+			}
+
+			if util.Config.Options.Dust.VisibilityMaximum > 3000 {
+				log.Println("Dust visibility maximum is set above max of 3000; defaulting to 3000")
+				util.Config.Options.Dust.VisibilityMaximum = 3000
+			}
+
+			return int(util.Clamp(
+				data.Data[0].Visibility.MetersFloat,
+				float64(util.Config.Options.Dust.VisibilityMinimum),
+				float64(util.Config.Options.Dust.VisibilityMaximum),
+			))
 		}
 	}
 	return 0
@@ -400,7 +489,7 @@ func checkDust(data weather.WeatherData) int {
 // Unzip will decompress a zip archive, moving all files and folders
 // within the zip file to dest, taken from https://golangcode.com/unzip-files-in-go/
 func Unzip() ([]string, error) {
-	src := util.Config.InputFile
+	src := util.Config.Files.InputMission
 	log.Println("Source file:", src)
 	dest := "mission_unpacked"
 
@@ -475,7 +564,7 @@ func Unzip() ([]string, error) {
 func Zip() error {
 	baseFolder := "mission_unpacked/"
 
-	dest := util.Config.OutputFile
+	dest := util.Config.Files.OutputMission
 	outFile, err := os.Create(dest)
 	if err != nil {
 		return fmt.Errorf("Error creating output file: %v", err)
@@ -552,3 +641,50 @@ func Clean() {
 	os.RemoveAll(directory)
 	log.Println("Removed mission_unpacked")
 }
+
+// lua function to write table to file
+const writemission = `
+do
+	function writeMission(t, f)
+
+		local function writeMissionHelper(obj, cnt)
+
+			local cnt = cnt or 0
+
+			if type(obj) == "table" then
+
+				io.write("\n", string.rep("\t", cnt), "{\n")
+				cnt = cnt + 1
+
+				for k,v in pairs(obj) do
+
+					if type(k) == "string" then
+						io.write(string.rep("\t",cnt), '["'..k..'"]', ' = ')
+					end
+
+					if type(k) == "number" then
+						io.write(string.rep("\t",cnt), "["..k.."]", " = ")
+					end
+
+					writeMissionHelper(v, cnt)
+					io.write(",\n")
+				end
+
+				cnt = cnt-1
+				io.write(string.rep("\t", cnt), "}")
+
+			elseif type(obj) == "string" then
+				io.write(string.format("%q", obj))
+
+			else
+				io.write(tostring(obj))
+			end
+		end
+
+		io.output(f)
+		io.write("mission =")
+		writeMissionHelper(t)
+		io.output(io.stdout)
+	end
+end
+`

@@ -1,12 +1,37 @@
 {
-    "api-key": "",
+  "api-key": "",
+  "files": {
+    "input-mission": "mission.miz",
+    "output-mission": "realweather.miz",
+    "log": "logfile.log"
+  },
+  "metar": {
     "icao": "UGKO",
-    "time-offset": "-5h30m",
-    "stability": 0.143,
-    "input-mission-file": "mission.miz",
-    "output-mission-file": "realweather.miz",
+    "remarks": ""
+  },
+  "options": {
     "update-time": true,
     "update-weather": true,
-    "logfile": "logfile.log",
-    "metar-remarks": ""
+    "time-offset": "-2h30m",
+    "wind": {
+      "minimum": -1,
+      "maximum": -1,
+      "stability": 0.143
+    },
+    "clouds": {
+      "disallowed-presets": []
+    },
+    "fog": {
+      "enabled": true,
+      "thickness-minimum": 0,
+      "thickness-maximum": 1000,
+      "visibility-minimum": 0,
+      "visibility-maximum": 6000
+    },
+    "dust": {
+      "enabled": true,
+      "visiblity-minimum": 300,
+      "visibility-maximum": 3000
+    }
+  }
 }

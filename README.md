@@ -34,6 +34,11 @@ can use a script to automate the process. Some examples are provided in
 [examples](/examples).
 10) Enjoy automatic weather updates to your mission!
 
+Alternatively if you prefer a more feature-full and comprehensive DCS server
+experience, check out [DCS Server
+Bot](https://github.com/Special-K-s-Flightsim-Bots/DCSServerBot). Real Weather
+is a supported extension and can be integrated directly with the tool.
+
 ## Notes
 
 * It is recommended that you keep a master copy of your input mission file, and
@@ -51,18 +56,96 @@ can use a script to automate the process. Some examples are provided in
 
 ## Config file parameters
 
-| Key                 | Type   | Description                                   |
-|---------------------|--------|-----------------------------------------------|
-| api-key             | string | [checkwx](https://www.checkwxapi.com) API key |
-| icao                | string | airport ICAO where you want to get METAR from |
-| time-offset         | string | time offset from system time, e.g. "-5h30m"   |
-| stability           | number | [atmospheric stability number][1]             |
-| input-mission-file  | string | path of the mission file to be updated        |
-| output-mission-file | string | path of the mission file that will be output  |
-| update-time         | bool   | whether or not to update time of mission      |
-| update-weather      | bool   | whether or not to update weather of mission   |
-| logfile             | string | name of log, "" will disable logfile          |
-| metar-remarks       | string | remarks to add to metar, for logging only     |
+The config file looks like the following:
+
+```json
+{
+  "api-key": "", // your api key from checkwx
+  "files": {
+    "input-mission": "mission.miz",      // path of mission file to be updated
+    "output-mission": "realweather.miz", // path of output mission file
+    "log": "logfile.log"                 // path of log file, "" disables
+  },
+  "metar": {
+    "icao": "KDLH", // ICAO of the aiport to fetch METAR from
+    "remarks": ""   // addtional remarks to add to METAR, for logging only
+  },
+  "options": {
+    "update-time": true,     // set to false to disable time being updated
+    "update-weather": true,  // set to false to disable weather being updated
+    "time-offset": "-5h30m", // time offset from system time
+    "wind": {
+      "minimum": -1,     // maximum allowed wind speed in m/s, negative disables
+      "maximum": -1,     // minimum allowed wind speed in m/s, negative disables
+      "stability": 0.143 // atmospheric stability used in wind profile power law
+    },
+    "clouds": {
+      "disallowed-presets": [
+          "RainyPreset1",
+          "RainyPreset2",
+          "RainyPreset3"
+          ] // List of weather presets you do not want to be chosen
+    },
+    "fog": {
+      "enabled": true,           // set to false to disable fog
+      "thickness-minimum": 0,    // min thickness of fog in meters, at least 0
+      "thickness-maximum": 1000, // max thickness of fog in meters, at most 1000
+      "visibility-minimum": 0,   // min vis through fog in meters, at least 0
+      "visibility-maximum": 6000 // max vis through fog in meters, at most 6000
+    },
+    "dust": {
+      "enabled": true,           // set to false to disable dust and smoke
+      "visibility-minimum": 300, // min vis through dust in meters, at least 300
+      "visibility-maximum": 3000 // max vis through dust in meters, at most 3000
+    }
+  }
+}
+```
+
+Additional notes:
+
+* For more info on stability, see the following [1][1], [2][2], [3][3].
+* Min and max wind speeds can be disabled by setting to a negative number
+* Time offset takes a string that can consist of hours, minutes, and seconds.
+These are specified by "h", "m", and "s".
+* Fog thickness is not reported by a METAR, so the thickness in DCS will be a
+randomly chosen value between your configured min and max.
+* Presets you can disallow are presented in the following table. Please note
+the lowest cloud layer's altitude may vary since Real Weather will try to
+match it to the METAR as best as possible.
+
+| Preset Name    | Cloud Layers         |
+|----------------|----------------------|
+| "Preset1"      | FEW070               |
+| "Preset2"      | FEW080 SCT230        |
+| "Preset3"      | SCT080 FEW210        |
+| "Preset4"      | SCT080 SCT240        |
+| "Preset5"      | SCT140 FEW270 BKN400 |
+| "Preset6"      | SCT080 FEW400        |
+| "Preset7"      | BKN075 SCT210 SCT400 |
+| "Preset8"      | SCT180 FEW360 FEW400 |
+| "Preset9"      | BKN075 SCT200 FEW410 |
+| "Preset10"     | SCT180 FEW360 FEW400 |
+| "Preset11"     | BKN180 BKN320 FEW410 |
+| "Preset12"     | BKN120 SCT220 FEW410 |
+| "Preset13"     | BKN120 BKN260 FEW410 |
+| "Preset14"     | BKN070 FEW410        |
+| "Preset15"     | SCT140 BKN240 FEW400 |
+| "Preset16"     | BKN140 BKN280 FEW400 |
+| "Preset17"     | BKN070 BKN200 BKN320 |
+| "Preset18"     | BKN130 BKN250 BKN380 |
+| "Preset19"     | OVC090 BKN230 BKN310 |
+| "Preset20"     | BKN130 BKN280 FEW380 |
+| "Preset21"     | BKN070 OVC170        |
+| "Preset22"     | OVC070 BKN170        |
+| "Preset23"     | OVC110 BKN180 SCT320 |
+| "Preset24"     | OVC030 OVC170 BKN340 |
+| "Preset25"     | OVC120 OVC220 OVC400 |
+| "Preset26"     | OVC090 BKN230 SCT320 |
+| "Preset27"     | OVC080 BKN250 BKN340 |
+| "RainyPreset1" | OVC030 OVC280 FEW400 |
+| "RainyPreset2" | OVC030 SCT180 FEW400 |
+| "RainyPreset3" | OVC060 OVC190 SCT340 |
 
 ## Contributing
 
@@ -78,6 +161,10 @@ to see how you can improve DCS Real Weather. This started as a small personal
 project and has grown to a small user base over the past couple years. Feel
 free to spread the love by posting about DCS real weather or by sharing with
 friends. Also join our small [Discord](https://discord.com/invite/mjr2SpFuqq)
-community for support, announcements, and camaraderie.
+community for support, announcements, and camaraderie. For those interested in
+supporting the project financially, please see the "sponsor" button at the top
+of the page for options. Thanks!
 
 [1]: https://en.wikipedia.org/wiki/Wind_profile_power_law
+[2]: https://www.engineeringtoolbox.com/wind-shear-d_1215.html
+[3]: https://en.wikipedia.org/wiki/Wind_gradient#Wind_turbines

@@ -6,13 +6,12 @@ import (
 	"log"
 
 	"github.com/evogelsa/DCS-real-weather/miz"
-	"github.com/evogelsa/DCS-real-weather/util"
 	"github.com/evogelsa/DCS-real-weather/weather"
 )
 
 func main() {
-	// parse configuration file
-	util.ParseConfig()
+	// log version
+	log.Println("Using Real Weather v1.9.0")
 
 	// get METAR report
 	var err error
@@ -32,13 +31,17 @@ func main() {
 	// sanity check data before updating mission
 	if data.WeatherDatas > 0 && data.Data[0].Barometer.Hg > 0 {
 		// update mission file with weather data
-		miz.Update(data)
+		if err := miz.Update(data); err != nil {
+			log.Printf("Error updating mission: %v\n", err)
+		}
 	} else {
 		log.Println("Incorrect weather data. No real weather applied to mission file.")
 	}
 
 	// repack mission file contents and form realweather.miz output
-	miz.Zip()
+	if err := miz.Zip(); err != nil {
+		log.Fatalf("Error repacking mission file: %v\n", err)
+	}
 
 	// remove unpacked contents from directory
 	miz.Clean()

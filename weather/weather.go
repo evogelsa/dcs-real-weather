@@ -3,7 +3,7 @@ package weather
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"time"
@@ -12,6 +12,7 @@ import (
 )
 
 var SelectedPreset string
+var SelectedBase int
 
 func GetWeather() (WeatherData, error) {
 	// create http client to fetch weather data, timeout after 5 sec
@@ -20,7 +21,7 @@ func GetWeather() (WeatherData, error) {
 
 	request, err := http.NewRequest(
 		"GET",
-		"https://api.checkwx.com/metar/"+util.Config.ICAO+"/decoded",
+		"https://api.checkwx.com/metar/"+util.Config.METAR.ICAO+"/decoded",
 		nil,
 	)
 	if err != nil {
@@ -44,7 +45,7 @@ func GetWeather() (WeatherData, error) {
 	defer resp.Body.Close()
 
 	// parse response byte array
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return WeatherData{}, fmt.Errorf(
 			"Error parsing CheckWX response: %v",
@@ -74,7 +75,7 @@ func LogMETAR(wx WeatherData) error {
 	metar += "METAR: " + data.ICAO + " "
 
 	// get observed time, no need to translate time zone since it's in Zulu
-	t, err := time.Parse("2006-01-02T15:04Z", data.Observed)
+	t, err := time.Parse("2006-01-02T15:04:05", data.Observed)
 	if err != nil {
 		return fmt.Errorf("Error parsing METAR time: %v", err)
 	}
@@ -101,15 +102,15 @@ func LogMETAR(wx WeatherData) error {
 		metar += "CLR "
 	} else {
 		clouds := decodePreset[SelectedPreset]
-		res := ""
 		for i, cld := range clouds {
 			if i == 0 {
-				res += fmt.Sprintf("%s%d ", cld.Name, int(data.Ceiling.Feet/100))
+				// convert base to hundreds of feet
+				base := int(float64(SelectedBase)*3.28+50) / 100
+				metar += fmt.Sprintf("%s%03d ", cld.Name, base)
 			} else {
-				res += fmt.Sprintf("%s%s ", cld.Name, cld.Base)
+				metar += fmt.Sprintf("%s%s ", cld.Name, cld.Base)
 			}
 		}
-		metar += res
 	}
 
 	// temperature
@@ -133,9 +134,7 @@ func LogMETAR(wx WeatherData) error {
 	metar += "NOSIG "
 
 	// rmks
-	if util.Config.Remarks != "" {
-		metar += util.Config.Remarks
-	}
+	metar += util.Config.METAR.Remarks
 
 	log.Println(metar)
 
