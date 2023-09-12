@@ -138,7 +138,7 @@ func updateWeather(data weather.WeatherData, l *lua.LState) error {
 		if err := l.DoString(
 			// assume fog thickness 100 since not reported in metar
 			fmt.Sprintf(
-				"mission.weather.enable_fog = true"+
+				"mission.weather.enable_fog = true\n"+
 					"mission.weather.fog.thickness = %d\n"+
 					"mission.weather.fog.visibility = %d\n",
 				fogThick, fogVis,
