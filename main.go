@@ -10,6 +10,9 @@ import (
 )
 
 func main() {
+	// log version
+	log.Println("Using Real Weather v1.9.0")
+
 	// get METAR report
 	var err error
 	var data weather.WeatherData
