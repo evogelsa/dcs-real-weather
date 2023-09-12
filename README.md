@@ -34,6 +34,11 @@ can use a script to automate the process. Some examples are provided in
 [examples](/examples).
 10) Enjoy automatic weather updates to your mission!
 
+Alternatively if you prefer a more feature-full and comprehensive DCS server
+experience, check out [DCS Server
+Bot](https://github.com/Special-K-s-Flightsim-Bots/DCSServerBot)! Real Weather
+is a supported extension and can be integrated directly with the tool.
+
 ## Notes
 
 * It is recommended that you keep a master copy of your input mission file, and
