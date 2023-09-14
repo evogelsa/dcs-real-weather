@@ -11,3 +11,4 @@ linux:
 	-rm resource.syso
 	env GOOS=linux GOARCH=amd64 go build -o bin/linux/realweather
 	cp examples/config.json bin/linux/config.json
+	tar czf bin/linux/realweather_linux.tar.gz bin/linux/realweather bin/linux/config.json
