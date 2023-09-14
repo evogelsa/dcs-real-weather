@@ -28,8 +28,8 @@ func main() {
 		log.Fatalf("Error unzipping mission file: %v\n", err)
 	}
 
-	// sanity check data before updating mission
-	if data.WeatherDatas > 0 && data.Data[0].Barometer.Hg > 0 {
+	// confirm there is data before updating
+	if data.NumResults > 0 {
 		// update mission file with weather data
 		if err := miz.Update(data); err != nil {
 			log.Printf("Error updating mission: %v\n", err)
@@ -46,7 +46,7 @@ func main() {
 	// remove unpacked contents from directory
 	miz.Clean()
 
-	if data.WeatherDatas > 0 {
+	if data.NumResults > 0 {
 		weather.LogMETAR(data)
 	}
 }

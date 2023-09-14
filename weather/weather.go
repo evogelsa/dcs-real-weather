@@ -62,7 +62,30 @@ func GetWeather() (WeatherData, error) {
 		return WeatherData{}, err
 	}
 
+	if err := checkWeather(&res); err != nil {
+		return res, err
+	}
+
 	return res, nil
+}
+
+// checkWeather takes in weather data from the API and checks the first results
+// for reasonable results that can be applied to DCS weather. In the case of
+// bad or missing data, it modifies the value in data to a reasonable default
+func checkWeather(data *WeatherData) error {
+	if data.NumResults < 1 {
+		return fmt.Errorf("no data to check")
+	}
+
+	if data.Data[0].Barometer.Hg == 0 {
+		log.Println("No barometer data from CheckWX, defaulting to 760 mmHg")
+		data.Data[0].Barometer.Hg = 29.92
+		data.Data[0].Barometer.HPa = 1013.2
+		data.Data[0].Barometer.KPa = 101.32
+		data.Data[0].Barometer.MB = 1013.2
+	}
+
+	return nil
 }
 
 // LogMETAR generates a metar based on the weather settings added to the DCS miz
@@ -142,8 +165,8 @@ func LogMETAR(wx WeatherData) error {
 }
 
 type WeatherData struct {
-	Data         []Data `json:"data"`
-	WeatherDatas int    `json:"results"`
+	Data       []Data `json:"data"`
+	NumResults int    `json:"results"`
 }
 
 type Data struct {
@@ -356,5 +379,5 @@ var DefaultWeather WeatherData = WeatherData{
 			Observed: time.Now().Format("2006/01/02"),
 		},
 	},
-	WeatherDatas: 1,
+	NumResults: 1,
 }
