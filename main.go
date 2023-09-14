@@ -11,7 +11,7 @@ import (
 
 func main() {
 	// log version
-	log.Println("Using Real Weather v1.9.0")
+	log.Println("Using Real Weather v1.10.0-beta")
 
 	// get METAR report
 	var err error
