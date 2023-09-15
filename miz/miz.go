@@ -592,7 +592,7 @@ func addFiles(w *zip.Writer, basePath, baseInZip string) error {
 	}
 
 	for _, file := range files {
-		log.Println(basePath + file.Name())
+		log.Println("zipped " + basePath + file.Name())
 		if !file.IsDir() {
 			dat, err := os.ReadFile(basePath + file.Name())
 			if err != nil {
@@ -619,12 +619,7 @@ func addFiles(w *zip.Writer, basePath, baseInZip string) error {
 			}
 
 		} else if file.IsDir() {
-
-			// Recurse
 			newBase := basePath + file.Name() + "/"
-			log.Println("Recursing and Adding SubDir: " + file.Name())
-			log.Println("Recursing and Adding SubDir: " + newBase)
-
 			err := addFiles(w, newBase, baseInZip+file.Name()+"/")
 			if err != nil {
 				return fmt.Errorf("Error adding files from %v: %v", baseInZip+file.Name()+"/", err)
