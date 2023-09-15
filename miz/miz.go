@@ -233,7 +233,7 @@ func updateTime(data weather.WeatherData, l *lua.LState) error {
 		return fmt.Errorf("Error parsing date: %v", err)
 	}
 
-	t := parseTime()
+	sec := parseTime()
 
 	if err := l.DoString(
 		fmt.Sprintf(
@@ -241,7 +241,7 @@ func updateTime(data weather.WeatherData, l *lua.LState) error {
 				"mission.date.Month = %d\n"+
 				"mission.date.Day = %d\n"+
 				"mission.start_time = %d\n",
-			year, month, day, t,
+			year, month, day, sec,
 		),
 	); err != nil {
 		return fmt.Errorf("Error updating time: %v", err)
@@ -252,8 +252,8 @@ func updateTime(data weather.WeatherData, l *lua.LState) error {
 			"\tYear: %d\n"+
 			"\tMonth: %d\n"+
 			"\tDay: %d\n"+
-			"\tStart Time: %d\n",
-		year, month, day, t,
+			"\tStart time: %d (%02d:%02d:%02d)\n",
+		year, month, day, sec, sec/3600, (sec%3600)/60, sec%60,
 	)
 
 	return nil
