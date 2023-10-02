@@ -6,12 +6,29 @@ import (
 	"log"
 
 	"github.com/evogelsa/DCS-real-weather/miz"
+	"github.com/evogelsa/DCS-real-weather/versioninfo"
 	"github.com/evogelsa/DCS-real-weather/weather"
 )
 
 func main() {
 	// log version
-	log.Println("Using Real Weather v1.10.0-beta")
+	if versioninfo.Commit == "" {
+		log.Printf(
+			"Using Real Weather v%s.%s.%s\n",
+			versioninfo.Major,
+			versioninfo.Minor,
+			versioninfo.Patch,
+		)
+	} else {
+		log.Printf(
+			"Using Real Weather v%s.%s.%s+%s-%s\n",
+			versioninfo.Major,
+			versioninfo.Minor,
+			versioninfo.Patch,
+			versioninfo.Build,
+			versioninfo.Commit,
+		)
+	}
 
 	// get METAR report
 	var err error

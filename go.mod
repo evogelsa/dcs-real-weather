@@ -1,5 +1,5 @@
 module github.com/evogelsa/DCS-real-weather
 
-go 1.14
+go 1.21
 
-require github.com/yuin/gopher-lua v1.1.0 // indirect
+require github.com/yuin/gopher-lua v1.1.0
