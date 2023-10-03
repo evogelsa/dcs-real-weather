@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"strconv"
 )
 
 //go:generate sh -c "printf %s $(git describe --tags) > git.txt"
@@ -14,28 +15,28 @@ var gitInfo string
 const versionInfo = `{
 	"FixedFileInfo": {
 	  "FileVersion": {
-		"Major": %s,
-		"Minor": %s,
-		"Patch": %s,
-		"Build": %s
+		"Major": %d,
+		"Minor": %d,
+		"Patch": %d,
+		"Build": %d
 	  },
 	  "ProductVersion": {
-		"Major": %s,
-		"Minor": %s,
-		"Patch": %s,
-		"Build": %s
+		"Major": %d,
+		"Minor": %d,
+		"Patch": %d,
+		"Build": %d
 	  }
 	},
 	"StringFileInfo": {
 		"Comments": "",
 		"CompanyName": "github.com/evogelsa",
 		"FileDescription": "DCS Real Weather Updater",
-		"FileVersion": "%s.%s.%s",
+		"FileVersion": "%d.%d.%d",
 		"InternalName": "DCS Real Weather",
 		"LegalCopyright": "Copyright 2020 evogelsa",
 		"OriginalFilename": "realweather.exe",
 		"ProductName": "DCS Real Weather",
-		"ProductVersion": "%s.%s.%s.%s"
+		"ProductVersion": "%d.%d.%d.%d"
 	},
 	"VarFileInfo": {
 	  "Translation": {
@@ -48,14 +49,15 @@ const versionInfo = `{
 }
 `
 
-var re = regexp.MustCompile(`v(?P<Major>\d+)\.(?P<Minor>\d+)\.(?P<Patch>\d+)-?(?P<CommitNum>\d*)(?:-g)?(?P<Commit>\w*)`)
+var re = regexp.MustCompile(`v(?P<Major>\d+)\.(?P<Minor>\d+)\.(?P<Patch>\d+)-?(?P<Pre>(?:alpha)|(?:beta)|(?:rc\d*))?-?(?P<CommitNum>\d*)(?:-g)?(?P<Commit>\w*)`)
 
 var (
-	Major  string
-	Minor  string
-	Patch  string
-	Build  string
-	Commit string
+	Major     int
+	Minor     int
+	Patch     int
+	Pre       string
+	CommitNum int
+	Commit    string
 )
 
 func init() {
@@ -68,10 +70,11 @@ func init() {
 		}
 	}
 
-	Major = v["Major"]
-	Minor = v["Minor"]
-	Patch = v["Patch"]
-	Build = v["CommitNum"]
+	Major, _ = strconv.Atoi(v["Major"])
+	Minor, _ = strconv.Atoi(v["Minor"])
+	Patch, _ = strconv.Atoi(v["Patch"])
+	Pre = v["Pre"]
+	CommitNum, _ = strconv.Atoi(v["CommitNum"])
 	Commit = v["Commit"]
 
 	os.WriteFile(
@@ -81,18 +84,18 @@ func init() {
 			Major,
 			Minor,
 			Patch,
-			Build,
+			CommitNum,
 			Major,
 			Minor,
 			Patch,
-			Build,
+			CommitNum,
 			Major,
 			Minor,
 			Patch,
 			Major,
 			Minor,
 			Patch,
-			Build,
+			CommitNum,
 		)),
 		os.ModePerm,
 	)

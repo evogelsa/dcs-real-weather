@@ -3,6 +3,7 @@ package main
 //go:generate goversioninfo versioninfo/versioninfo.json
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/evogelsa/DCS-real-weather/miz"
@@ -12,23 +13,17 @@ import (
 
 func main() {
 	// log version
-	if versioninfo.Commit == "" {
-		log.Printf(
-			"Using Real Weather v%s.%s.%s\n",
-			versioninfo.Major,
-			versioninfo.Minor,
-			versioninfo.Patch,
-		)
-	} else {
-		log.Printf(
-			"Using Real Weather v%s.%s.%s+%s-%s\n",
-			versioninfo.Major,
-			versioninfo.Minor,
-			versioninfo.Patch,
-			versioninfo.Build,
-			versioninfo.Commit,
-		)
+	var ver string
+
+	ver += fmt.Sprintf("v%d.%d.%d", versioninfo.Major, versioninfo.Minor, versioninfo.Patch)
+	if versioninfo.Pre != "" {
+		ver += "-" + versioninfo.Pre
 	}
+	if versioninfo.Commit != "" {
+		ver += "+" + versioninfo.Commit
+	}
+
+	log.Println("Using Real Weather " + ver)
 
 	// get METAR report
 	var err error
