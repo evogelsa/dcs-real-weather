@@ -19,7 +19,11 @@
       "stability": 0.143
     },
     "clouds": {
-      "disallowed-presets": []
+      "disallowed-presets": [
+        "RainyPreset1",
+        "RainyPreset2",
+        "RainyPreset3"
+      ]
     },
     "fog": {
       "enabled": true,
