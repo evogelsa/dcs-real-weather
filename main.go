@@ -17,7 +17,7 @@ func main() {
 
 	ver += fmt.Sprintf("v%d.%d.%d", versioninfo.Major, versioninfo.Minor, versioninfo.Patch)
 	if versioninfo.Pre != "" {
-		ver += "-" + versioninfo.Pre
+		ver += fmt.Sprintf("-%s%d", versioninfo.Pre, versioninfo.CommitNum)
 	}
 	if versioninfo.Commit != "" {
 		ver += "+" + versioninfo.Commit
