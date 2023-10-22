@@ -59,6 +59,8 @@ func main() {
 	miz.Clean()
 
 	if data.NumResults > 0 {
-		weather.LogMETAR(data)
+		if err := weather.LogMETAR(data); err != nil {
+			log.Printf("Could not create DCS METAR: %v", err)
+		}
 	}
 }
