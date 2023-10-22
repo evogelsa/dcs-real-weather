@@ -276,7 +276,12 @@ func updateTime(data weather.WeatherData, l *lua.LState) error {
 // targHeight should be provided in meters MSL
 func windSpeed(targHeight float64, data weather.WeatherData) float64 {
 	// default to 9 meters for reference height if elevation is below that
-	refHeight := math.Max(9, data.Data[0].Elevation.Meters)
+	var refHeight float64
+	if util.Config.Options.Wind.FixedReference {
+		refHeight = 1
+	} else {
+		refHeight = math.Max(1, data.Data[0].Elevation.Meters)
+	}
 
 	refSpeed := data.Data[0].Wind.SpeedMPS
 
