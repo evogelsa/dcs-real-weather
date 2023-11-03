@@ -49,6 +49,18 @@ func Update(data weather.WeatherData) error {
 		return fmt.Errorf("Error writing mission file: %v", err)
 	}
 
+	b, err := os.ReadFile("mission_unpacked/mission")
+	if err != nil {
+		return fmt.Errorf("Error reading unpacked mission: %v", err)
+	}
+	s := string(b)
+	s = strings.ReplaceAll(s, `\\\`, "")
+
+	err = os.WriteFile("mission_unpacked/mission", []byte(s), os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("Error writing mission file: %v", err)
+	}
+
 	return nil
 }
 
@@ -233,7 +245,7 @@ func updateTime(data weather.WeatherData, l *lua.LState) error {
 		return fmt.Errorf("Error parsing date: %v", err)
 	}
 
-	t := parseTime()
+	sec := parseTime()
 
 	if err := l.DoString(
 		fmt.Sprintf(
@@ -241,7 +253,7 @@ func updateTime(data weather.WeatherData, l *lua.LState) error {
 				"mission.date.Month = %d\n"+
 				"mission.date.Day = %d\n"+
 				"mission.start_time = %d\n",
-			year, month, day, t,
+			year, month, day, sec,
 		),
 	); err != nil {
 		return fmt.Errorf("Error updating time: %v", err)
@@ -252,8 +264,8 @@ func updateTime(data weather.WeatherData, l *lua.LState) error {
 			"\tYear: %d\n"+
 			"\tMonth: %d\n"+
 			"\tDay: %d\n"+
-			"\tStart Time: %d\n",
-		year, month, day, t,
+			"\tStart time: %d (%02d:%02d:%02d)\n",
+		year, month, day, sec, sec/3600, (sec%3600)/60, sec%60,
 	)
 
 	return nil
@@ -264,7 +276,12 @@ func updateTime(data weather.WeatherData, l *lua.LState) error {
 // targHeight should be provided in meters MSL
 func windSpeed(targHeight float64, data weather.WeatherData) float64 {
 	// default to 9 meters for reference height if elevation is below that
-	refHeight := math.Max(9, data.Data[0].Elevation.Meters)
+	var refHeight float64
+	if util.Config.Options.Wind.FixedReference {
+		refHeight = 1
+	} else {
+		refHeight = math.Max(1, data.Data[0].Elevation.Meters)
+	}
 
 	refSpeed := data.Data[0].Wind.SpeedMPS
 
@@ -592,7 +609,7 @@ func addFiles(w *zip.Writer, basePath, baseInZip string) error {
 	}
 
 	for _, file := range files {
-		log.Println(basePath + file.Name())
+		log.Println("zipped " + basePath + file.Name())
 		if !file.IsDir() {
 			dat, err := os.ReadFile(basePath + file.Name())
 			if err != nil {
@@ -619,12 +636,7 @@ func addFiles(w *zip.Writer, basePath, baseInZip string) error {
 			}
 
 		} else if file.IsDir() {
-
-			// Recurse
 			newBase := basePath + file.Name() + "/"
-			log.Println("Recursing and Adding SubDir: " + file.Name())
-			log.Println("Recursing and Adding SubDir: " + newBase)
-
 			err := addFiles(w, newBase, baseInZip+file.Name()+"/")
 			if err != nil {
 				return fmt.Errorf("Error adding files from %v: %v", baseInZip+file.Name()+"/", err)

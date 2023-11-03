@@ -3,15 +3,27 @@ package main
 //go:generate goversioninfo versioninfo/versioninfo.json
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/evogelsa/DCS-real-weather/miz"
+	"github.com/evogelsa/DCS-real-weather/versioninfo"
 	"github.com/evogelsa/DCS-real-weather/weather"
 )
 
 func main() {
 	// log version
-	log.Println("Using Real Weather v1.9.0")
+	var ver string
+
+	ver += fmt.Sprintf("v%d.%d.%d", versioninfo.Major, versioninfo.Minor, versioninfo.Patch)
+	if versioninfo.Pre != "" {
+		ver += fmt.Sprintf("-%s%d", versioninfo.Pre, versioninfo.CommitNum)
+	}
+	if versioninfo.Commit != "" {
+		ver += "+" + versioninfo.Commit
+	}
+
+	log.Println("Using Real Weather " + ver)
 
 	// get METAR report
 	var err error
@@ -28,8 +40,8 @@ func main() {
 		log.Fatalf("Error unzipping mission file: %v\n", err)
 	}
 
-	// sanity check data before updating mission
-	if data.WeatherDatas > 0 && data.Data[0].Barometer.Hg > 0 {
+	// confirm there is data before updating
+	if data.NumResults > 0 {
 		// update mission file with weather data
 		if err := miz.Update(data); err != nil {
 			log.Printf("Error updating mission: %v\n", err)
@@ -46,7 +58,9 @@ func main() {
 	// remove unpacked contents from directory
 	miz.Clean()
 
-	if data.WeatherDatas > 0 {
-		weather.LogMETAR(data)
+	if data.NumResults > 0 {
+		if err := weather.LogMETAR(data); err != nil {
+			log.Printf("Could not create DCS METAR: %v", err)
+		}
 	}
 }

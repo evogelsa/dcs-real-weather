@@ -32,9 +32,10 @@ type Configuration struct {
 		UpdateWeather bool   `json:"update-weather"`
 		TimeOffset    string `json:"time-offset"`
 		Wind          struct {
-			Minimum   float64 `json:"minimum"`
-			Maximum   float64 `json:"maximum"`
-			Stability float64 `json:"stability"`
+			Minimum        float64 `json:"minimum"`
+			Maximum        float64 `json:"maximum"`
+			Stability      float64 `json:"stability"`
+			FixedReference bool    `json:"fixed-reference"`
 		} `json:"wind"`
 		Clouds struct {
 			DisallowedPresets []string `json:"disallowed-presets"`

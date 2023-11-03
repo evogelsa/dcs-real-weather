@@ -78,6 +78,7 @@ The config file looks like the following:
       "minimum": -1,     // maximum allowed wind speed in m/s, negative disables
       "maximum": -1,     // minimum allowed wind speed in m/s, negative disables
       "stability": 0.143 // atmospheric stability used in wind profile power law
+      "fixed-reference": false // use a fixed ref height for wind calculations
     },
     "clouds": {
       "disallowed-presets": [
