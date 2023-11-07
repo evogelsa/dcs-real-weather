@@ -100,7 +100,10 @@ func LogMETAR(wx WeatherData) error {
 	// get observed time, no need to translate time zone since it's in Zulu
 	t, err := time.Parse("2006-01-02T15:04:05Z", data.Observed)
 	if err != nil {
-		return fmt.Errorf("Error parsing METAR time: %v", err)
+		t, err = time.Parse("2006-01-02T15:04:05", data.Observed)
+		if err != nil {
+			return fmt.Errorf("Error parsing METAR time: %v", err)
+		}
 	}
 	// want format DDHHMMZ
 	metar += fmt.Sprintf("%02d%02d%02dZ ", t.Day(), t.Hour(), t.Minute())
