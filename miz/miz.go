@@ -54,7 +54,6 @@ func Update(data weather.WeatherData) error {
 		return fmt.Errorf("Error reading unpacked mission: %v", err)
 	}
 	s := string(b)
-	s = strings.ReplaceAll(s, `\\\`, "")
 
 	err = os.WriteFile("mission_unpacked/mission", []byte(s), os.ModePerm)
 	if err != nil {
