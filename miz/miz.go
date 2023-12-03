@@ -49,16 +49,6 @@ func Update(data weather.WeatherData) error {
 		return fmt.Errorf("Error writing mission file: %v", err)
 	}
 
-	b, err := os.ReadFile("mission_unpacked/mission")
-	if err != nil {
-		return fmt.Errorf("Error reading unpacked mission: %v", err)
-	}
-
-	err = os.WriteFile("mission_unpacked/mission", b, os.ModePerm)
-	if err != nil {
-		return fmt.Errorf("Error writing mission file: %v", err)
-	}
-
 	return nil
 }
 
