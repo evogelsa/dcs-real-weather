@@ -379,7 +379,7 @@ var DefaultWeather WeatherData = WeatherData{
 					Code: "CLR",
 				},
 			},
-			Observed: time.Now().Format("2006/01/02"),
+			Observed: time.Now().Format("2006-01-02T15:04:05"),
 		},
 	},
 	NumResults: 1,
