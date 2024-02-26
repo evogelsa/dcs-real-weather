@@ -12,6 +12,12 @@ import (
 )
 
 func main() {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("Unexpected error encountered: %v\n", r)
+		}
+	}()
+
 	// log version
 	var ver string
 
