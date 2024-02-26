@@ -1,4 +1,9 @@
+all: windows linux-amd64 linux-arm
+
 windows:
+	@echo "------------------------------"
+	@echo "Building for Windows (amd64)"
+	@echo "------------------------------"
 	mkdir -p bin/windows
 	go generate ./...
 	env GOOS=windows GOARCH=amd64 go build -o bin/windows/realweather.exe -trimpath
@@ -7,6 +12,9 @@ windows:
 	mv windows.zip bin/windows/.
 
 linux-amd64:
+	@echo "------------------------------"
+	@echo "Building for Linux (amd64)"
+	@echo "------------------------------"
 	mkdir -p bin/linux
 	go generate ./...
 	-rm resource.syso
@@ -15,6 +23,9 @@ linux-amd64:
 	tar czf bin/linux/realweather_linux_amd64.tar.gz bin/linux/realweather bin/linux/config.json
 
 linux-arm:
+	@echo "------------------------------"
+	@echo "Building for Linux (arm)"
+	@echo "------------------------------"
 	mkdir -p bin/linux
 	go generate ./...
 	-rm resource.syso
