@@ -62,7 +62,7 @@ func main() {
 	}
 
 	// remove unpacked contents from directory
-	miz.Clean()
+	// miz.Clean()
 
 	if data.NumResults > 0 {
 		if err := weather.LogMETAR(data); err != nil {

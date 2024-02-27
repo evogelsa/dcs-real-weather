@@ -73,6 +73,7 @@ The config file looks like the following:
   "options": {
     "update-time": true,     // set to false to disable time being updated
     "update-weather": true,  // set to false to disable weather being updated
+    "fallback-to-no-preset": true, // use custom wx if no suitable preset found
     "time-offset": "-5h30m", // time offset from system time
     "wind": {
       "minimum": -1,     // maximum allowed wind speed in m/s, negative disables
