@@ -138,10 +138,10 @@ func updateClouds(data weather.WeatherData, l *lua.LState) error {
 
 func handleCustomClouds(data weather.WeatherData, l *lua.LState, preset string, base int) error {
 	// only one kind possible when using custom
-	var thickness int = rand.Intn(1801) + 200 // 200 - 2000
-	var density int                           // 0 - 10
-	// base 300 - 5000
-	var precip int // 0 - 2
+	var thickness int = rand.Intn(1801) + 200        // 200 - 2000
+	var density int                                  //   0 - 10
+	var precip int                                   //   0 - 2
+	base = int(util.Clamp(float64(base), 300, 5000)) // 300 - 5000
 
 	//  0 - clear
 	//  1 - few
@@ -155,19 +155,20 @@ func handleCustomClouds(data weather.WeatherData, l *lua.LState, preset string, 
 	//  9 - bkn
 	// 10 - ovc
 
+	precip = checkPrecip(data)
+	var precipStr string
+	if precip == 2 {
+		// make thunderstorm clouds thicc
+		thickness = rand.Intn(501) + 1500 // can be up to 2000
+		precipStr = "TS"
+	} else if precip == 1 {
+		thickness = rand.Intn(1801) + 200 // 200 - 2000
+		precipStr = "RA"
+	} else {
+		precipStr = "None"
+	}
+
 	switch preset[7:] {
-	case "OVC+RA":
-		// note: OVC+RA doesnt actually mean OVC in this case, its just a
-		// denoation of rainy conditions
-		precip = checkPrecip(data)
-		if precip == 2 {
-			// make thunderstorm clouds thicc
-			thickness = rand.Intn(501) + 1500 // can be up to 2000
-			density = rand.Intn(2) + 9        // at least 9 - 10
-		} else {
-			thickness = rand.Intn(1801) + 200 // 200 - 2000
-			density = rand.Intn(6) + 4        // at least - 10
-		}
 	case "OVC":
 		density = 10
 	case "BKN":
@@ -194,15 +195,6 @@ func handleCustomClouds(data weather.WeatherData, l *lua.LState, preset string, 
 		),
 	); err != nil {
 		return fmt.Errorf("Error updating clouds: %v", err)
-	}
-
-	var precipStr string
-	if precip == 2 {
-		precipStr = "TS"
-	} else if precip == 1 {
-		precipStr = "RA"
-	} else {
-		precipStr = "None"
 	}
 
 	log.Printf(
@@ -541,7 +533,7 @@ func selectPreset(kind string, base int) (string, int) {
 	// no valid preset found, is use nonpreset weather enabled?
 	if util.Config.Options.FallbackToNoPreset {
 		log.Printf("Fallback to no preset is enabled, using custom weather")
-		return "CUSTOM " + kind, base
+		return "CUSTOM " + kind[:3], base
 	}
 
 	log.Printf("Fallback to no preset is disabled. Expanding search to only %s\n", kind)
