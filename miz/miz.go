@@ -169,6 +169,8 @@ func handleCustomClouds(data weather.WeatherData, l *lua.LState, preset string, 
 	}
 
 	switch preset[7:] {
+	case "OVX":
+		fallthrough
 	case "OVC":
 		density = 10
 	case "BKN":
