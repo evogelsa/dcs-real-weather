@@ -4,13 +4,13 @@
 		"Major": 1,
 		"Minor": 11,
 		"Patch": 0,
-		"Build": 8
+		"Build": 9
 	  },
 	  "ProductVersion": {
 		"Major": 1,
 		"Minor": 11,
 		"Patch": 0,
-		"Build": 8
+		"Build": 9
 	  }
 	},
 	"StringFileInfo": {
@@ -22,7 +22,7 @@
 		"LegalCopyright": "Copyright 2020 evogelsa",
 		"OriginalFilename": "realweather.exe",
 		"ProductName": "DCS Real Weather",
-		"ProductVersion": "1.11.0.8"
+		"ProductVersion": "1.11.0.9"
 	},
 	"VarFileInfo": {
 	  "Translation": {
