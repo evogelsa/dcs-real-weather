@@ -2,6 +2,7 @@ package miz
 
 import (
 	"archive/zip"
+	_ "embed"
 	"fmt"
 	"io"
 	"log"
@@ -19,8 +20,16 @@ import (
 	lua "github.com/yuin/gopher-lua"
 )
 
+//go:embed datadumper.lua
+var dataDumper string
+
 func Update(data weather.WeatherData) error {
-	l := lua.NewState()
+	l := lua.NewState(lua.Options{
+		RegistrySize:     1024,
+		RegistryMaxSize:  1024 * 1024,
+		RegistryGrowStep: 1024,
+	})
+
 	if err := l.DoFile("mission_unpacked/mission"); err != nil {
 		return fmt.Errorf("Error parsing mission file: %v", err)
 	}
@@ -37,16 +46,23 @@ func Update(data weather.WeatherData) error {
 		}
 	}
 
-	if err := l.DoString(writemission); err != nil {
-		return fmt.Errorf("Error loading write mission file: %v", err)
+	if err := l.DoString(dataDumper); err != nil {
+		return fmt.Errorf("Error loading data dumper: %v", err)
 	}
 
 	if err := os.Remove("mission_unpacked/mission"); err != nil {
 		return fmt.Errorf("Error removing mission: %v", err)
 	}
 
-	if err := l.DoString(`writeMission(mission, "mission_unpacked/mission")`); err != nil {
-		return fmt.Errorf("Error writing mission file: %v", err)
+	if err := l.DoString(`rw_miz = DataDumper(mission, "mission", false, 0)`); err != nil {
+		return fmt.Errorf("Error serializing lua state: %v", err)
+	}
+
+	lv := l.GetGlobal("rw_miz")
+	if s, ok := lv.(lua.LString); ok {
+		os.WriteFile("mission_unpacked/mission", []byte(string(s)), os.ModePerm)
+	} else {
+		return fmt.Errorf("Error dumping serialized state")
 	}
 
 	return nil
@@ -797,50 +813,3 @@ func Clean() {
 	os.RemoveAll(directory)
 	log.Println("Removed mission_unpacked")
 }
-
-// lua function to write table to file
-const writemission = `
-do
-	function writeMission(t, f)
-
-		local function writeMissionHelper(obj, cnt)
-
-			local cnt = cnt or 0
-
-			if type(obj) == "table" then
-
-				io.write("\n", string.rep("\t", cnt), "{\n")
-				cnt = cnt + 1
-
-				for k,v in pairs(obj) do
-
-					if type(k) == "string" then
-						io.write(string.rep("\t",cnt), '["'..k..'"]', ' = ')
-					end
-
-					if type(k) == "number" then
-						io.write(string.rep("\t",cnt), "["..k.."]", " = ")
-					end
-
-					writeMissionHelper(v, cnt)
-					io.write(",\n")
-				end
-
-				cnt = cnt-1
-				io.write(string.rep("\t", cnt), "}")
-
-			elseif type(obj) == "string" then
-				io.write(string.format("%q", obj))
-
-			else
-				io.write(tostring(obj))
-			end
-		end
-
-		io.output(f)
-		io.write("mission =")
-		writeMissionHelper(t)
-		io.output(io.stdout)
-	end
-end
-`
