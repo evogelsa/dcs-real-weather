@@ -49,7 +49,7 @@ const versionInfo = `{
 }
 `
 
-var re = regexp.MustCompile(`v(?P<Major>\d+)\.(?P<Minor>\d+)\.(?P<Patch>\d+)-?(?P<Pre>(?:alpha)|(?:beta)|(?:rc\d*))?-?(?P<CommitNum>\d*)(?:-g)?(?P<Commit>\w*)`)
+var re = regexp.MustCompile(`v(?P<Major>\d+)\.(?P<Minor>\d+)\.(?P<Patch>\d+)-?(?P<Pre>(?:alpha)|(?:beta)|(?:rc\d*))?-?(?P<CommitNum>\d*)?.*(?:-g(?P<Commit>\w*))?`)
 
 var (
 	Major     int
