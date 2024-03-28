@@ -85,7 +85,8 @@ The config file looks like the following:
           "RainyPreset1",
           "RainyPreset2",
           "RainyPreset3"
-          ] // List of weather presets you do not want to be chosen
+          ], // List of weather presets you do not want to be chosen
+      "runwayAGL": 200 // Optional AGL of the runway mentioned in the icao field.
     },
     "fog": {
       "enabled": true,           // set to false to disable fog

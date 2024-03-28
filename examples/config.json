@@ -23,7 +23,8 @@
         "RainyPreset1",
         "RainyPreset2",
         "RainyPreset3"
-      ]
+      ],
+      "runwayAGL": 8000
     },
     "fog": {
       "enabled": true,

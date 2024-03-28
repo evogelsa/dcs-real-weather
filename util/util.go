@@ -39,6 +39,7 @@ type Configuration struct {
 		} `json:"wind"`
 		Clouds struct {
 			DisallowedPresets []string `json:"disallowed-presets"`
+			RunwayAGL         int      `json:"runwayAGL"` // Added RunwayAGL so that updateClouds in miz.go can utilize it.
 		}
 		Fog struct {
 			Enabled           bool `json:"enabled"`

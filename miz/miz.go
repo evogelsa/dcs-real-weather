@@ -186,6 +186,11 @@ func updateWeather(data weather.WeatherData, l *lua.LState) error {
 	)
 
 	preset, base := checkClouds(data)
+
+	//Declare and initialize runwayAGL from the updated Config struct
+	runwayAGL := util.Config.Options.Clouds.RunwayAGL
+	base += runwayAGL
+
 	weather.SelectedPreset = preset
 	weather.SelectedBase = base
 
