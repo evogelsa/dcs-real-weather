@@ -88,8 +88,9 @@ func checkWeather(data *WeatherData) error {
 	return nil
 }
 
-// LogMETAR generates a metar based on the weather settings added to the DCS miz
-func LogMETAR(wx WeatherData) error {
+// GenerateMETAR generates a metar based on the weather settings added to the
+// DCS miz
+func GenerateMETAR(wx WeatherData) (string, error) {
 	data := wx.Data[0]
 
 	var metar string
@@ -102,7 +103,7 @@ func LogMETAR(wx WeatherData) error {
 	if err != nil {
 		t, err = time.Parse("2006-01-02T15:04:05", data.Observed)
 		if err != nil {
-			return fmt.Errorf("Error parsing METAR time: %v", err)
+			return "", fmt.Errorf("Error parsing METAR time: %v", err)
 		}
 	}
 	// want format DDHHMMZ
@@ -156,15 +157,13 @@ func LogMETAR(wx WeatherData) error {
 	// altimeter
 	metar += fmt.Sprintf("A%4d ", int(data.Barometer.Hg*100))
 
-	// nosig because usually not updated until 4 hours
-	metar += "NOSIG "
+	// nosig because usually not updated until 4 hours (whenever rw gets run)
+	metar += "NOSIG"
 
 	// rmks
-	metar += util.Config.METAR.Remarks
+	metar += " " + util.Config.METAR.Remarks
 
-	log.Println(metar)
-
-	return nil
+	return metar, nil
 }
 
 type WeatherData struct {

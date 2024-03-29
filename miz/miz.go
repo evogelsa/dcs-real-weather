@@ -23,13 +23,21 @@ import (
 //go:embed datadumper.lua
 var dataDumper string
 
-func Update(data weather.WeatherData) error {
-	l := lua.NewState(lua.Options{
+var l *lua.LState
+
+func init() {
+	l = lua.NewState(lua.Options{
 		RegistrySize:     1024,
 		RegistryMaxSize:  1024 * 1024,
 		RegistryGrowStep: 1024,
 	})
 
+	if err := l.DoString(dataDumper); err != nil {
+		log.Fatalf("Error loading data dumper: %v", err)
+	}
+}
+
+func Update(data weather.WeatherData) error {
 	if err := l.DoFile("mission_unpacked/mission"); err != nil {
 		return fmt.Errorf("Error parsing mission file: %v", err)
 	}
@@ -46,10 +54,6 @@ func Update(data weather.WeatherData) error {
 		}
 	}
 
-	if err := l.DoString(dataDumper); err != nil {
-		return fmt.Errorf("Error loading data dumper: %v", err)
-	}
-
 	if err := os.Remove("mission_unpacked/mission"); err != nil {
 		return fmt.Errorf("Error removing mission: %v", err)
 	}
@@ -60,10 +64,42 @@ func Update(data weather.WeatherData) error {
 
 	lv := l.GetGlobal("rw_miz")
 	if s, ok := lv.(lua.LString); ok {
-		os.WriteFile("mission_unpacked/mission", []byte(string(s)), os.ModePerm)
+		os.WriteFile("mission_unpacked/mission", []byte(string(s)), 0666)
 	} else {
 		return fmt.Errorf("Error dumping serialized state")
 	}
+
+	return nil
+}
+
+func UpdateBrief(metar string) error {
+	if err := l.DoFile("mission_unpacked/l10n/DEFAULT/dictionary"); err != nil {
+		return fmt.Errorf("Error loading mission dictionary: %v", err)
+	}
+
+	if err := l.DoString(
+		"dictionary.DictKey_descriptionText_1 = " +
+			"dictionary.DictKey_descriptionText_1 .. " + `"` + metar + `"`,
+	); err != nil {
+		return fmt.Errorf("Error updating mission brief: %v", err)
+	}
+
+	if err := os.Remove("mission_unpacked/l10n/DEFAULT/dictionary"); err != nil {
+		return fmt.Errorf("Error removing mission dictionary: %v", err)
+	}
+
+	if err := l.DoString(`rw_dict = DataDumper(dictionary, "dictionary", false, 0)`); err != nil {
+		return fmt.Errorf("Error serializing lua state: %v", err)
+	}
+
+	lv := l.GetGlobal("rw_dict")
+	if s, ok := lv.(lua.LString); ok {
+		os.WriteFile("mission_unpacked/l10n/DEFAULT/dictionary", []byte(string(s)), 0666)
+	} else {
+		return fmt.Errorf("Error dumping serialized state")
+	}
+
+	log.Println("METAR added to mission brief")
 
 	return nil
 }

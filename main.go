@@ -7,6 +7,7 @@ import (
 	"log"
 
 	"github.com/evogelsa/DCS-real-weather/miz"
+	"github.com/evogelsa/DCS-real-weather/util"
 	"github.com/evogelsa/DCS-real-weather/versioninfo"
 	"github.com/evogelsa/DCS-real-weather/weather"
 )
@@ -49,24 +50,36 @@ func main() {
 	// confirm there is data before updating
 	if data.NumResults > 0 {
 		// update mission file with weather data
-		if err := miz.Update(data); err != nil {
+		if err = miz.Update(data); err != nil {
 			log.Printf("Error updating mission: %v\n", err)
 		}
+
+		// generate the METAR text
+		var metar string
+		if metar, err = weather.GenerateMETAR(data); err == nil {
+			// make metar last thing to be print
+			defer log.Println(metar)
+		} else {
+			log.Printf("Error creating DCS METAR: %v", err)
+		}
+
+		// add METAR to mission brief if enabled
+		if util.Config.METAR.AddToBrief {
+			if err = miz.UpdateBrief(metar); err != nil {
+				log.Printf("Error adding METAR to brief: %v", err)
+			}
+		}
+
 	} else {
-		log.Println("Incorrect weather data. No real weather applied to mission file.")
+		log.Println("Incorrect weather data. No weather applied to mission file.")
 	}
 
 	// repack mission file contents and form realweather.miz output
 	if err := miz.Zip(); err != nil {
-		log.Fatalf("Error repacking mission file: %v\n", err)
+		log.Fatalf("Error repacking mission file: %v", err)
 	}
 
 	// remove unpacked contents from directory
 	miz.Clean()
 
-	if data.NumResults > 0 {
-		if err := weather.LogMETAR(data); err != nil {
-			log.Printf("Could not create DCS METAR: %v", err)
-		}
-	}
 }

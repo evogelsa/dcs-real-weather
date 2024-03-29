@@ -69,17 +69,18 @@ The config file looks like the following:
   },
   "metar": {
     "icao": "KDLH", // ICAO of the aiport to fetch METAR from
-    "remarks": ""   // addtional remarks to add to METAR, for logging only
+    "remarks": "",  // addtional remarks to add to METAR, for customization only
+    "add-to-brief": true // add METAR text to bottom of mission brief
   },
   "options": {
-    "update-time": true,     // set to false to disable time being updated
-    "update-weather": true,  // set to false to disable weather being updated
+    "update-time": true,    // set to false to disable time being updated
+    "update-weather": true, // set to false to disable weather being updated
     "fallback-to-no-preset": true, // use custom wx if no suitable preset found
     "time-offset": "-5h30m", // time offset from system time
     "wind": {
-      "minimum": -1,     // maximum allowed wind speed in m/s, negative disables
-      "maximum": -1,     // minimum allowed wind speed in m/s, negative disables
-      "stability": 0.143 // atmospheric stability used in wind profile power law
+      "minimum": -1,      // max allowed wind speed in m/s, negative disables
+      "maximum": -1,      // min allowed wind speed in m/s, negative disables
+      "stability": 0.143, // atmospheric stability for wind profile power law
       "fixed-reference": false // use a fixed ref height for wind calculations
     },
     "clouds": {
