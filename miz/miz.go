@@ -93,7 +93,7 @@ func UpdateBrief(metar string) error {
 	log.Println("Adding METAR to mission brief...")
 
 	// add whitespace to beginning of metar so its separate from brief
-	metar = "\n\n" + metar
+	metar = `\n\n` + metar
 
 	// add metar to bottom of brief
 	if err := l.DoString(
