@@ -15,6 +15,8 @@ var SelectedPreset string
 var SelectedBase int
 
 func GetWeather() (WeatherData, error) {
+	log.Println("Getting weather from CheckWX...")
+
 	// create http client to fetch weather data, timeout after 5 sec
 	timeout := time.Duration(5 * time.Second)
 	client := http.Client{Timeout: timeout}
@@ -53,7 +55,8 @@ func GetWeather() (WeatherData, error) {
 		)
 	}
 
-	log.Println("Received data:", string(body))
+	log.Println("Got weather data:", string(body))
+	log.Println("Parsing weather...")
 
 	// format json resposne into weatherdata struct
 	var res WeatherData
@@ -65,6 +68,8 @@ func GetWeather() (WeatherData, error) {
 	if err := checkWeather(&res); err != nil {
 		return res, err
 	}
+
+	log.Println("Parsed weather")
 
 	return res, nil
 }

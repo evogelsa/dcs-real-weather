@@ -38,9 +38,14 @@ func init() {
 }
 
 func Update(data weather.WeatherData) error {
+	log.Println("Loading mission into Lua VM...")
+
 	if err := l.DoFile("mission_unpacked/mission"); err != nil {
 		return fmt.Errorf("Error parsing mission file: %v", err)
 	}
+
+	log.Println("Loaded mission into Lua VM")
+	log.Println("Updating mission...")
 
 	if util.Config.Options.UpdateWeather {
 		if err := updateWeather(data, l); err != nil {
@@ -53,6 +58,9 @@ func Update(data weather.WeatherData) error {
 			return fmt.Errorf("Error updating time: %v", err)
 		}
 	}
+
+	log.Println("Updated mission")
+	log.Println("Writing new mission file...")
 
 	if err := os.Remove("mission_unpacked/mission"); err != nil {
 		return fmt.Errorf("Error removing mission: %v", err)
@@ -69,13 +77,20 @@ func Update(data weather.WeatherData) error {
 		return fmt.Errorf("Error dumping serialized state")
 	}
 
+	log.Println("Wrote new mission file")
+
 	return nil
 }
 
 func UpdateBrief(metar string) error {
+	log.Println("Loading mission brief into Lua VM...")
+
 	if err := l.DoFile("mission_unpacked/l10n/DEFAULT/dictionary"); err != nil {
 		return fmt.Errorf("Error loading mission dictionary: %v", err)
 	}
+
+	log.Println("Loaded mission brief into Lua VM")
+	log.Println("Adding METAR to mission brief...")
 
 	if err := l.DoString(
 		"dictionary.DictKey_descriptionText_1 = " +
@@ -99,7 +114,7 @@ func UpdateBrief(metar string) error {
 		return fmt.Errorf("Error dumping serialized state")
 	}
 
-	log.Println("METAR added to mission brief")
+	log.Println("Added METAR to mission brief")
 
 	return nil
 }
@@ -702,6 +717,8 @@ func checkDust(data weather.WeatherData) (visibility int) {
 // Unzip will decompress a zip archive, moving all files and folders
 // within the zip file to dest, taken from https://golangcode.com/unzip-files-in-go/
 func Unzip() ([]string, error) {
+	log.Println("Unpacking mission file...")
+
 	src := util.Config.Files.InputMission
 	log.Println("Source file:", src)
 	dest := "mission_unpacked"
@@ -767,7 +784,9 @@ func Unzip() ([]string, error) {
 			return filenames, err
 		}
 	}
-	log.Println("unzipped:\n\t" + strings.Join(filenames, "\n\t"))
+
+	log.Println("Unpacked mission file")
+	// log.Println("unzipped:\n\t" + strings.Join(filenames, "\n\t"))
 
 	return filenames, nil
 }
@@ -775,6 +794,8 @@ func Unzip() ([]string, error) {
 // Zip takes the unpacked mission and recreates the mission file
 // taken from https://golangcode.com/create-zip-files-in-go/
 func Zip() error {
+	log.Println("Repacking mission file...")
+
 	baseFolder := "mission_unpacked/"
 
 	dest := util.Config.Files.OutputMission
@@ -793,6 +814,8 @@ func Zip() error {
 		return fmt.Errorf("Error closing output file: %v", err)
 	}
 
+	log.Println("Repacked mission file")
+
 	return nil
 }
 
@@ -805,7 +828,7 @@ func addFiles(w *zip.Writer, basePath, baseInZip string) error {
 	}
 
 	for _, file := range files {
-		log.Println("zipped " + basePath + file.Name())
+		// log.Println("zipped " + basePath + file.Name())
 		if !file.IsDir() {
 			dat, err := os.ReadFile(basePath + file.Name())
 			if err != nil {
@@ -847,5 +870,5 @@ func addFiles(w *zip.Writer, basePath, baseInZip string) error {
 func Clean() {
 	directory := "mission_unpacked/"
 	os.RemoveAll(directory)
-	log.Println("Removed mission_unpacked")
+	log.Println("Removed unpacked mission")
 }
