@@ -92,6 +92,10 @@ func UpdateBrief(metar string) error {
 	log.Println("Loaded mission brief into Lua VM")
 	log.Println("Adding METAR to mission brief...")
 
+	// add whitespace to beginning of metar so its separate from brief
+	metar = "\n\n" + metar
+
+	// add metar to bottom of brief
 	if err := l.DoString(
 		"dictionary.DictKey_descriptionText_1 = " +
 			"dictionary.DictKey_descriptionText_1 .. " + `"` + metar + `"`,
