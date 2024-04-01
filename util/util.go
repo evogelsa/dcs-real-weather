@@ -28,10 +28,11 @@ type Configuration struct {
 		Remarks string `json:"remarks"`
 	} `json:"metar"`
 	Options struct {
-		UpdateTime    bool   `json:"update-time"`
-		UpdateWeather bool   `json:"update-weather"`
-		TimeOffset    string `json:"time-offset"`
-		Wind          struct {
+		UpdateTime         bool   `json:"update-time"`
+		UpdateWeather      bool   `json:"update-weather"`
+		FallbackToNoPreset bool   `json:"fallback-to-no-preset"`
+		TimeOffset         string `json:"time-offset"`
+		Wind               struct {
 			Minimum        float64 `json:"minimum"`
 			Maximum        float64 `json:"maximum"`
 			Stability      float64 `json:"stability"`
@@ -39,6 +40,7 @@ type Configuration struct {
 		} `json:"wind"`
 		Clouds struct {
 			DisallowedPresets []string `json:"disallowed-presets"`
+			RunwayAGL         int      `json:"runwayAGL"` // Added RunwayAGL so that updateClouds in miz.go can utilize it.
 		}
 		Fog struct {
 			Enabled           bool `json:"enabled"`

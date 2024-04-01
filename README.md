@@ -3,6 +3,7 @@
 [![Downloads](https://img.shields.io/github/downloads/evogelsa/DCS-real-weather/total?logo=GitHub)](https://github.com/evogelsa/DCS-real-weather/releases/latest)
 [![Latest Release](https://img.shields.io/github/v/release/evogelsa/DCS-real-weather?logo=GitHub)](https://github.com/evogelsa/DCS-real-weather/releases/latest)
 [![Discord](https://img.shields.io/discord/1148739727990722751?logo=Discord)](https://discord.com/invite/mjr2SpFuqq)
+[![Go Report Card](https://goreportcard.com/badge/github.com/evogelsa/DCS-real-weather)](https://goreportcard.com/report/github.com/evogelsa/DCS-real-weather)
 
 ## About
 
@@ -73,6 +74,7 @@ The config file looks like the following:
   "options": {
     "update-time": true,     // set to false to disable time being updated
     "update-weather": true,  // set to false to disable weather being updated
+    "fallback-to-no-preset": true, // use custom wx if no suitable preset found
     "time-offset": "-5h30m", // time offset from system time
     "wind": {
       "minimum": -1,     // maximum allowed wind speed in m/s, negative disables
@@ -85,7 +87,8 @@ The config file looks like the following:
           "RainyPreset1",
           "RainyPreset2",
           "RainyPreset3"
-          ] // List of weather presets you do not want to be chosen
+          ], // List of weather presets you do not want to be chosen
+      "runwayAGL": 200 // Optional AGL of the runway mentioned in the icao field.
     },
     "fog": {
       "enabled": true,           // set to false to disable fog

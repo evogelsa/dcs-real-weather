@@ -53,6 +53,262 @@ func Update(data weather.WeatherData) error {
 }
 
 func updateWeather(data weather.WeatherData, l *lua.LState) error {
+	if err := updateWind(data, l); err != nil {
+		return fmt.Errorf("Error updating weather: %v", err)
+	}
+
+	if err := updateTemperature(data, l); err != nil {
+		return fmt.Errorf("Error updating weather: %v", err)
+	}
+
+	if err := updatePressure(data, l); err != nil {
+		return fmt.Errorf("Error updating weather: %v", err)
+	}
+
+	if err := updateFog(data, l); err != nil {
+		return fmt.Errorf("Error updating weather: %v", err)
+	}
+
+	if err := updateDust(data, l); err != nil {
+		return fmt.Errorf("Error updating weather: %v", err)
+	}
+
+	if err := updateClouds(data, l); err != nil {
+		return fmt.Errorf("Error updating weather: %v", err)
+	}
+
+	return nil
+}
+
+func updateClouds(data weather.WeatherData, l *lua.LState) error {
+	preset, base := checkClouds(data)
+
+	//Declare and initialize runwayAGL from the updated Config struct
+	runwayAGL := util.Config.Options.Clouds.RunwayAGL
+	base += runwayAGL
+
+	// check clouds returns custom, use data to construct custom weather
+	if strings.Contains(preset, "CUSTOM") {
+		err := handleCustomClouds(data, l, preset, base)
+		if err != nil {
+			return fmt.Errorf("Error making custom clouds: %v", err)
+		}
+
+		weather.SelectedPreset = preset // "CUSTOM + <kind>"
+		weather.SelectedBase = base
+		return nil
+	}
+
+	weather.SelectedPreset = preset
+	weather.SelectedBase = base
+
+	if preset != "" {
+		if err := l.DoString(
+			fmt.Sprintf(
+				"mission.weather.clouds.thickness = 200\n"+
+					"mission.weather.clouds.density = 0\n"+
+					"mission.weather.clouds.preset = %s\n"+
+					"mission.weather.clouds.base = %d\n"+
+					"mission.weather.clouds.iprecptns = 0\n",
+				preset, base,
+			),
+		); err != nil {
+			return fmt.Errorf("Error updating clouds: %v", err)
+		}
+	} else {
+		if err := l.DoString(
+			fmt.Sprintf(
+				"mission.weather.clouds.thickness = 200\n"+
+					"mission.weather.clouds.density = 0\n"+
+					"mission.weather.clouds.preset = nil\n"+
+					"mission.weather.clouds.base = %d\n"+
+					"mission.weather.clouds.iprecptns = 0\n",
+				base,
+			),
+		); err != nil {
+			return fmt.Errorf("Error updating clouds: %v", err)
+		}
+	}
+
+	log.Printf(
+		"Clouds:\n"+
+			"\tPreset: %s\n"+
+			"\tBase meters: %d\n",
+		preset, base,
+	)
+
+	return nil
+}
+
+func handleCustomClouds(data weather.WeatherData, l *lua.LState, preset string, base int) error {
+	// only one kind possible when using custom
+	var thickness int = rand.Intn(1801) + 200        // 200 - 2000
+	var density int                                  //   0 - 10
+	var precip int                                   //   0 - 2
+	base = int(util.Clamp(float64(base), 300, 5000)) // 300 - 5000
+
+	//  0 - clear
+	//  1 - few
+	//  2 - few
+	//  3 - few
+	//  4 - sct
+	//  5 - sct
+	//  6 - sct
+	//  7 - bkn
+	//  8 - bkn
+	//  9 - bkn
+	// 10 - ovc
+
+	precip = checkPrecip(data)
+	var precipStr string
+	if precip == 2 {
+		// make thunderstorm clouds thicc
+		thickness = rand.Intn(501) + 1500 // can be up to 2000
+		precipStr = "TS"
+	} else if precip == 1 {
+		thickness = rand.Intn(1801) + 200 // 200 - 2000
+		precipStr = "RA"
+	} else {
+		precipStr = "None"
+	}
+
+	switch preset[7:] {
+	case "OVX":
+		fallthrough
+	case "OVC":
+		density = 10
+	case "BKN":
+		density = rand.Intn(3) + 7
+	case "SCT":
+		density = rand.Intn(3) + 4
+	case "FEW":
+		density = rand.Intn(3) + 1
+	default:
+		density = 0
+	}
+
+	if err := l.DoString(
+		fmt.Sprintf(
+			"mission.weather.clouds.thickness = %d\n"+
+				"mission.weather.clouds.density = %d\n"+
+				"mission.weather.clouds.preset = nil\n"+
+				"mission.weather.clouds.base = %d\n"+
+				"mission.weather.clouds.iprecptns = %d\n",
+			thickness,
+			density,
+			base,
+			precip,
+		),
+	); err != nil {
+		return fmt.Errorf("Error updating clouds: %v", err)
+	}
+
+	log.Printf(
+		"Clouds:\n"+
+			"\tPreset: %s\n"+
+			"\tBase meters: %d\n"+
+			"\tThickness meters: %d\n"+
+			"\tPrecipitation: %s\n",
+		preset,
+		base,
+		thickness,
+		precipStr,
+	)
+
+	return nil
+}
+
+func updateDust(data weather.WeatherData, l *lua.LState) error {
+	dust := checkDust(data)
+
+	if dust > 0 {
+		if err := l.DoString(
+			fmt.Sprintf(
+				"mission.weather.dust_density = %d\n"+
+					"mission.weather.enable_dust = true\n",
+				dust,
+			),
+		); err != nil {
+			return fmt.Errorf("Error updating dust: %v", err)
+		}
+	} else {
+		if err := l.DoString("mission.weather.enable_dust = false"); err != nil {
+			return fmt.Errorf("Error updating dust: %v", err)
+		}
+	}
+
+	log.Printf(
+		"Dust:\n"+
+			"\tVisibility meters: %d\n"+
+			"\tEnabled: %t\n",
+		dust, dust > 0,
+	)
+
+	return nil
+}
+
+func updateFog(data weather.WeatherData, l *lua.LState) error {
+	fogVis, fogThick := checkFog(data)
+
+	if fogVis > 0 {
+		if err := l.DoString(
+			// assume fog thickness 100 since not reported in metar
+			fmt.Sprintf(
+				"mission.weather.enable_fog = true\n"+
+					"mission.weather.fog.thickness = %d\n"+
+					"mission.weather.fog.visibility = %d\n",
+				fogThick, fogVis,
+			),
+		); err != nil {
+			return fmt.Errorf("Error updating fog: %v", err)
+		}
+	} else {
+		if err := l.DoString("mission.weather.enable_fog = false"); err != nil {
+			return fmt.Errorf("Error updating fog: %v", err)
+		}
+	}
+
+	log.Printf(
+		"Fog:\n"+
+			"\tThickness meters: %d\n"+
+			"\tVisibility meters: %d\n"+
+			"\tEnabled: %t\n",
+		fogThick, fogVis, fogVis > 0,
+	)
+
+	return nil
+}
+
+func updatePressure(data weather.WeatherData, l *lua.LState) error {
+	// qnh is in mmHg = inHg * 25.4
+	qnh := int(data.Data[0].Barometer.Hg*25.4 + 0.5)
+
+	if err := l.DoString(
+		fmt.Sprintf("mission.weather.qnh = %d\n", qnh),
+	); err != nil {
+		return fmt.Errorf("Error updating QNH: %v", err)
+	}
+
+	log.Printf("QNH mmHg: %d\n", qnh)
+
+	return nil
+}
+
+func updateTemperature(data weather.WeatherData, l *lua.LState) error {
+	temp := data.Data[0].Temperature.Celsius
+
+	if err := l.DoString(
+		fmt.Sprintf("mission.weather.season.temperature = %0.3f\n", temp),
+	); err != nil {
+		return fmt.Errorf("Error updating temperature: %v", err)
+	}
+
+	log.Printf("Temperature Celsius: %0.3f\n", temp)
+
+	return nil
+}
+
+func updateWind(data weather.WeatherData, l *lua.LState) error {
 	speedGround := windSpeed(1, data)
 	speed2000 := windSpeed(2000, data)
 	speed8000 := windSpeed(8000, data)
@@ -110,119 +366,6 @@ func updateWeather(data weather.WeatherData, l *lua.LState) error {
 	}
 
 	log.Printf("Gusts m/s: %0.3f\n", gust)
-
-	temp := data.Data[0].Temperature.Celsius
-
-	if err := l.DoString(
-		fmt.Sprintf("mission.weather.season.temperature = %0.3f\n", temp),
-	); err != nil {
-		return fmt.Errorf("Error updating temperature: %v", err)
-	}
-
-	log.Printf("Temperature Celsius: %0.3f\n", temp)
-
-	// qnh is in mmHg = inHg * 25.4
-	qnh := int(data.Data[0].Barometer.Hg*25.4 + 0.5)
-
-	if err := l.DoString(
-		fmt.Sprintf("mission.weather.qnh = %d\n", qnh),
-	); err != nil {
-		return fmt.Errorf("Error updating QNH: %v", err)
-	}
-
-	log.Printf("QNH mmHg: %d\n", qnh)
-
-	fogVis, fogThick := checkFog(data)
-
-	if fogVis > 0 {
-		if err := l.DoString(
-			// assume fog thickness 100 since not reported in metar
-			fmt.Sprintf(
-				"mission.weather.enable_fog = true\n"+
-					"mission.weather.fog.thickness = %d\n"+
-					"mission.weather.fog.visibility = %d\n",
-				fogThick, fogVis,
-			),
-		); err != nil {
-			return fmt.Errorf("Error updating fog: %v", err)
-		}
-	} else {
-		if err := l.DoString("mission.weather.enable_fog = false"); err != nil {
-			return fmt.Errorf("Error updating fog: %v", err)
-		}
-	}
-
-	log.Printf(
-		"Fog:\n"+
-			"\tThickness meters: %d\n"+
-			"\tVisibility meters: %d\n"+
-			"\tEnabled: %t\n",
-		fogThick, fogVis, fogVis > 0,
-	)
-
-	dust := checkDust(data)
-
-	if dust > 0 {
-		if err := l.DoString(
-			fmt.Sprintf(
-				"mission.weather.dust_density = %d\n"+
-					"mission.weather.enable_dust = true\n",
-				dust,
-			),
-		); err != nil {
-			return fmt.Errorf("Error updating dust: %v", err)
-		}
-	} else {
-		if err := l.DoString("mission.weather.enable_dust = false"); err != nil {
-			return fmt.Errorf("Error updating dust: %v", err)
-		}
-	}
-
-	log.Printf(
-		"Dust:\n"+
-			"\tVisibility meters: %d\n"+
-			"\tEnabled: %t\n",
-		dust, dust > 0,
-	)
-
-	preset, base := checkClouds(data)
-	weather.SelectedPreset = preset
-	weather.SelectedBase = base
-
-	if preset != "" {
-		if err := l.DoString(
-			fmt.Sprintf(
-				"mission.weather.clouds.thickness = 200\n"+
-					"mission.weather.clouds.density = 0\n"+
-					"mission.weather.clouds.preset = %s\n"+
-					"mission.weather.clouds.base = %d\n"+
-					"mission.weather.clouds.iprecptns = 0\n",
-				preset, base,
-			),
-		); err != nil {
-			return fmt.Errorf("Error updating clouds: %v", err)
-		}
-	} else {
-		if err := l.DoString(
-			fmt.Sprintf(
-				"mission.weather.clouds.thickness = 200\n"+
-					"mission.weather.clouds.density = 0\n"+
-					"mission.weather.clouds.preset = nil\n"+
-					"mission.weather.clouds.base = %d\n"+
-					"mission.weather.clouds.iprecptns = 0\n",
-				base,
-			),
-		); err != nil {
-			return fmt.Errorf("Error updating clouds: %v", err)
-		}
-	}
-
-	log.Printf(
-		"Clouds:\n"+
-			"\tPreset: %s\n"+
-			"\tBase meters: %d\n",
-		preset, base,
-	)
 
 	return nil
 }
@@ -324,7 +467,15 @@ func parseDate(data weather.WeatherData) (int, int, int, error) {
 // checkPrecip returns 0 for clear, 1 for rain, and 2 for thunderstorms
 func checkPrecip(data weather.WeatherData) int {
 	for _, condition := range data.Data[0].Conditions {
-		if condition.Code == "RA" || condition.Code == "SN" {
+		if condition.Code == "RA" || // rain
+			condition.Code == "SN" || // snow
+			condition.Code == "DZ" || // drizzle
+			condition.Code == "SG" || // snow grains
+			condition.Code == "GS" || // snow pellets or small hail
+			condition.Code == "GR" || // hail
+			condition.Code == "PL" || // ice pellets
+			condition.Code == "IC" || // ice crystals
+			condition.Code == "UP" { // unknown precip
 			return 1
 		} else if condition.Code == "TS" {
 			return 2
@@ -340,18 +491,19 @@ func checkClouds(data weather.WeatherData) (string, int) {
 	var preset string
 	var base int
 
-	for _, cloud := range data.Data[0].Clouds {
-		if cloud.Code == "BKN" || cloud.Code == "OVC" {
-			ceiling = true
-		}
-	}
-
 	precip := checkPrecip(data)
 	if precip > 0 {
 		preset, base = selectPreset("OVC+RA", base)
 		return preset, base
 	}
 
+	for _, cloud := range data.Data[0].Clouds {
+		if cloud.Code == "BKN" || cloud.Code == "OVC" {
+			ceiling = true
+		}
+	}
+
+	// prioritizes selecting a present based on ceiling rather than base
 	for _, cloud := range data.Data[0].Clouds {
 		if (cloud.Code == "FEW" || cloud.Code == "SCT") && ceiling {
 			continue
@@ -382,7 +534,15 @@ func selectPreset(kind string, base int) (string, int) {
 		return preset.Name, base
 	}
 
-	log.Printf("No weather presets with code=%s and base=%d. Expanding search to only %s\n", kind, base, kind)
+	log.Printf("No suitable weather preset for code=%s and base=%d", kind, base)
+
+	// no valid preset found, is use nonpreset weather enabled?
+	if util.Config.Options.FallbackToNoPreset {
+		log.Printf("Fallback to no preset is enabled, using custom weather")
+		return "CUSTOM " + kind[:3], base
+	}
+
+	log.Printf("Fallback to no preset is disabled. Expanding search to only %s\n", kind)
 
 	for _, preset := range weather.CloudPresets[kind] {
 		if presetAllowed(preset.Name) {
