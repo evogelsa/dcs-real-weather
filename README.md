@@ -79,7 +79,6 @@ each parameter.
   "options": {
     "update-time": true,    // set to false to disable time being updated
     "update-weather": true, // set to false to disable weather being updated
-    "fallback-to-no-preset": true, // use custom wx if no suitable preset found
     "time-offset": "-5h30m", // time offset from system time
     "wind": {
       "minimum": -1,      // max allowed wind speed in m/s, negative disables
@@ -93,6 +92,7 @@ each parameter.
           "RainyPreset2",
           "RainyPreset3"
           ], // List of weather presets you do not want to be chosen
+      "fallback-to-no-preset": true, // use custom wx if no suitable preset found
       "default-preset": "Preset7" // default preset to use when no match found
     },
     "fog": {
