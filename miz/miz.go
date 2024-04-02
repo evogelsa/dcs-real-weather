@@ -544,7 +544,7 @@ func checkPrecip(data weather.WeatherData) int {
 			condition.Code == "IC" || // ice crystals
 			condition.Code == "UP" { // unknown precip
 			return 1
-		} else if condition.Code == "TS" {
+		} else if condition.Code[:2] == "TS" {
 			return 2
 		}
 	}
@@ -561,35 +561,79 @@ func checkClouds(data weather.WeatherData) (string, int) {
 	base = util.Config.METAR.RunwayElevation
 
 	precip := checkPrecip(data)
-	if precip > 0 {
-		preset, base = selectPreset("OVC+RA", base) // TODO fix in #24
-		return preset, base
-	}
 
+	// determine if there is a ceiling
 	for _, cloud := range data.Data[0].Clouds {
 		if cloud.Code == "BKN" || cloud.Code == "OVC" {
 			ceiling = true
 		}
 	}
 
-	// prioritizes selecting a present based on ceiling rather than base
-	for _, cloud := range data.Data[0].Clouds {
-		if (cloud.Code == "FEW" || cloud.Code == "SCT") && ceiling {
-			continue
-		}
-		preset, base = selectPreset(cloud.Code, int(cloud.Meters)+base)
-		break
+	// tracks coverage of fullest layer
+	fullestLayer := 0
+
+	// tracks index of layer being used as base
+	baseLayer := 0
+
+	// table to convert cloud code to integer
+	var codeToVal = map[string]int{
+		"OVC": 4,
+		"BKN": 3,
+		"SCT": 2,
+		"FEW": 1,
 	}
+
+	// find first layer to be used as base. Prioritizes fullest layer if there
+	// is precip, otherwise picks first ceiling if there is ceiling, otherwise
+	// picks first layer
+	for i, cloud := range data.Data[0].Clouds {
+		if precip > 0 {
+			if codeToVal[cloud.Code] > fullestLayer {
+				fullestLayer = codeToVal[cloud.Code]
+				baseLayer = i
+			}
+		} else if ceiling {
+			if cloud.Code == "FEW" || cloud.Code == "SCT" {
+				continue
+			}
+			baseLayer = i
+			break
+		} else {
+			baseLayer = i
+			break
+		}
+	}
+
+	base += int(data.Data[0].Clouds[baseLayer].Meters)
+	code := data.Data[0].Clouds[baseLayer].Code
+
+	// updates base with selected in case of fallback to legacy
+	preset, base = selectPreset(code, base, precip > 0)
 
 	return preset, base
 }
 
-func selectPreset(kind string, base int) (string, int) {
+func selectPreset(kind string, base int, precip bool) (string, int) {
 	var validPresets []weather.CloudPreset
 
 	if kind == "CAVOK" || kind == "CLR" || kind == "SKC" || kind == "NSC" ||
 		kind == "NCD" {
 		return "", 0
+	}
+
+	// if precip and overcast, then use OVC+RA preset
+	// if precip and not ovc but using legacy wx, use legacy wx
+	// if precip and not ovc but not using legacy wx, ignore precip
+
+	if precip && kind == "OVC" {
+		kind = "OVC+RA"
+	} else if precip && util.Config.Options.FallbackToNoPreset {
+		log.Printf("No suitable weather preset for code=%s and base=%d", kind, base)
+		log.Printf("Fallback to no preset is enabled, using custom weather")
+		return "CUSTOM " + kind[:3], base
+	} else if precip {
+		log.Printf("No suitable preset for %s clouds with precip", kind)
+		log.Printf("Fallback to no preset is disabled, so precip will be ignored")
 	}
 
 	for _, preset := range weather.CloudPresets[kind] {

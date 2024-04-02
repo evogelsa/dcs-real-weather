@@ -132,8 +132,7 @@ func GenerateMETAR(wx WeatherData) (string, error) {
 	// clouds
 	if SelectedPreset == "" {
 		metar += "CLR "
-	} else {
-		clouds := decodePreset[SelectedPreset]
+	} else if clouds, ok := decodePreset[SelectedPreset]; ok {
 		for i, cld := range clouds {
 			if i == 0 {
 				// convert base to hundreds of feet
@@ -143,6 +142,12 @@ func GenerateMETAR(wx WeatherData) (string, error) {
 				metar += fmt.Sprintf("%s%s ", cld.Name, cld.Base)
 			}
 		}
+	} else {
+		// using legacy/custom wx
+		cloudKind := SelectedPreset[7:10]
+		// convert base to hundreds of feet
+		base := int(float64(SelectedBase)*3.28+50) / 100
+		metar += fmt.Sprintf("%s%03d ", cloudKind, base)
 	}
 
 	// temperature
