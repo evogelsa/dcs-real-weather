@@ -558,9 +558,11 @@ func checkClouds(data weather.WeatherData) (string, int) {
 	var preset string
 	var base int
 
+	base = util.Config.METAR.RunwayElevation
+
 	precip := checkPrecip(data)
 	if precip > 0 {
-		preset, base = selectPreset("OVC+RA", base)
+		preset, base = selectPreset("OVC+RA", base) // TODO fix in #24
 		return preset, base
 	}
 
@@ -575,7 +577,7 @@ func checkClouds(data weather.WeatherData) (string, int) {
 		if (cloud.Code == "FEW" || cloud.Code == "SCT") && ceiling {
 			continue
 		}
-		preset, base = selectPreset(cloud.Code, int(cloud.Meters))
+		preset, base = selectPreset(cloud.Code, int(cloud.Meters)+base)
 		break
 	}
 

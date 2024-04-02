@@ -69,6 +69,7 @@ The config file looks like the following:
   },
   "metar": {
     "icao": "KDLH", // ICAO of the aiport to fetch METAR from
+    "runway-elevation": 0, // elevation of runway in meters MSL
     "remarks": "",  // addtional remarks to add to METAR, for customization only
     "add-to-brief": true // add METAR text to bottom of mission brief
   },
