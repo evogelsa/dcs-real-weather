@@ -83,10 +83,6 @@ func updateWeather(data weather.WeatherData, l *lua.LState) error {
 func updateClouds(data weather.WeatherData, l *lua.LState) error {
 	preset, base := checkClouds(data)
 
-	//Declare and initialize runwayAGL from the updated Config struct
-	runwayAGL := util.Config.Options.Clouds.RunwayAGL
-	base += runwayAGL
-
 	// check clouds returns custom, use data to construct custom weather
 	if strings.Contains(preset, "CUSTOM") {
 		err := handleCustomClouds(data, l, preset, base)
@@ -491,9 +487,11 @@ func checkClouds(data weather.WeatherData) (string, int) {
 	var preset string
 	var base int
 
+	base = util.Config.METAR.RunwayElevation
+
 	precip := checkPrecip(data)
 	if precip > 0 {
-		preset, base = selectPreset("OVC+RA", base)
+		preset, base = selectPreset("OVC+RA", base) // TODO fix in #24
 		return preset, base
 	}
 
@@ -508,7 +506,7 @@ func checkClouds(data weather.WeatherData) (string, int) {
 		if (cloud.Code == "FEW" || cloud.Code == "SCT") && ceiling {
 			continue
 		}
-		preset, base = selectPreset(cloud.Code, int(cloud.Meters))
+		preset, base = selectPreset(cloud.Code, int(cloud.Meters)+base)
 		break
 	}
 

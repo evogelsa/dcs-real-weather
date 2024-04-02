@@ -24,8 +24,9 @@ type Configuration struct {
 		Log           string `json:"log"`
 	} `json:"files"`
 	METAR struct {
-		ICAO    string `json:"icao"`
-		Remarks string `json:"remarks"`
+		ICAO            string `json:"icao"`
+		RunwayElevation int    `json:"runway-elevation"`
+		Remarks         string `json:"remarks"`
 	} `json:"metar"`
 	Options struct {
 		UpdateTime         bool   `json:"update-time"`
@@ -40,7 +41,6 @@ type Configuration struct {
 		} `json:"wind"`
 		Clouds struct {
 			DisallowedPresets []string `json:"disallowed-presets"`
-			RunwayAGL         int      `json:"runwayAGL"` // Added RunwayAGL so that updateClouds in miz.go can utilize it.
 		}
 		Fog struct {
 			Enabled           bool `json:"enabled"`

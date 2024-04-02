@@ -69,6 +69,7 @@ The config file looks like the following:
   },
   "metar": {
     "icao": "KDLH", // ICAO of the aiport to fetch METAR from
+    "runway-elevation": 0, // elevation of runway in meters MSL
     "remarks": ""   // addtional remarks to add to METAR, for logging only
   },
   "options": {
@@ -87,8 +88,7 @@ The config file looks like the following:
           "RainyPreset1",
           "RainyPreset2",
           "RainyPreset3"
-          ], // List of weather presets you do not want to be chosen
-      "runwayAGL": 200 // Optional AGL of the runway mentioned in the icao field.
+          ] // List of weather presets you do not want to be chosen
     },
     "fog": {
       "enabled": true,           // set to false to disable fog
