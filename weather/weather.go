@@ -14,6 +14,15 @@ import (
 var SelectedPreset string
 var SelectedBase int
 
+const (
+	MPSToKT      = 1.944
+	MetersToFeet = 3.281
+)
+
+func CelsiusToFahrenheit(c float64) float64 {
+	return (c * 1.8) + 32
+}
+
 func GetWeather() (WeatherData, error) {
 	log.Println("Getting weather from CheckWX...")
 

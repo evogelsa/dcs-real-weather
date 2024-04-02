@@ -200,8 +200,8 @@ func updateClouds(data weather.WeatherData, l *lua.LState) error {
 	log.Printf(
 		"Clouds:\n"+
 			"\tPreset: %s\n"+
-			"\tBase meters: %d\n",
-		preset, base,
+			"\tBase: %d meters (%d feet)\n",
+		preset, base, int(float64(base)*weather.MetersToFeet),
 	)
 
 	return nil
@@ -273,12 +273,12 @@ func handleCustomClouds(data weather.WeatherData, l *lua.LState, preset string, 
 	log.Printf(
 		"Clouds:\n"+
 			"\tPreset: %s\n"+
-			"\tBase meters: %d\n"+
-			"\tThickness meters: %d\n"+
+			"\tBase:      %4d meters (%5d feet)\n"+
+			"\tThickness: %4d meters (%5d feet)\n"+
 			"\tPrecipitation: %s\n",
 		preset,
-		base,
-		thickness,
+		base, int(float64(base)*weather.MetersToFeet),
+		thickness, int(float64(thickness)*weather.MetersToFeet),
 		precipStr,
 	)
 
@@ -306,9 +306,9 @@ func updateDust(data weather.WeatherData, l *lua.LState) error {
 
 	log.Printf(
 		"Dust:\n"+
-			"\tVisibility meters: %d\n"+
+			"\tVisibility: %d meters (%d feet)\n"+
 			"\tEnabled: %t\n",
-		dust, dust > 0,
+		dust, int(float64(dust)*weather.MetersToFeet), dust > 0,
 	)
 
 	return nil
@@ -337,10 +337,12 @@ func updateFog(data weather.WeatherData, l *lua.LState) error {
 
 	log.Printf(
 		"Fog:\n"+
-			"\tThickness meters: %d\n"+
-			"\tVisibility meters: %d\n"+
+			"\tThickness:  %d meters (%d feet)\n"+
+			"\tVisibility: %d meters (%d feet)\n"+
 			"\tEnabled: %t\n",
-		fogThick, fogVis, fogVis > 0,
+		fogThick, int(float64(fogThick)*weather.MetersToFeet),
+		fogVis, int(float64(fogThick)*weather.MetersToFeet),
+		fogVis > 0,
 	)
 
 	return nil
@@ -356,7 +358,7 @@ func updatePressure(data weather.WeatherData, l *lua.LState) error {
 		return fmt.Errorf("Error updating QNH: %v", err)
 	}
 
-	log.Printf("QNH mmHg: %d\n", qnh)
+	log.Printf("QNH: %d mmHg (%0.2f inHg)\n", qnh, data.Data[0].Barometer.Hg)
 
 	return nil
 }
@@ -370,7 +372,7 @@ func updateTemperature(data weather.WeatherData, l *lua.LState) error {
 		return fmt.Errorf("Error updating temperature: %v", err)
 	}
 
-	log.Printf("Temperature Celsius: %0.3f\n", temp)
+	log.Printf("Temperature: %0.1f C (%0.1f F)\n", temp, weather.CelsiusToFahrenheit(temp))
 
 	return nil
 }
@@ -412,16 +414,21 @@ func updateWind(data weather.WeatherData, l *lua.LState) error {
 
 	log.Printf(
 		"Winds:\n"+
-			"\tAt 8000 meters:\n"+
-			"\t\tSpeed m/s: %0.3f\n"+
-			"\t\tDirection: %d\n"+
-			"\tAt 2000 meters:\n"+
-			"\t\tSpeed m/s: %0.3f\n"+
-			"\t\tDirection: %d\n"+
-			"\tAt 1 meters:\n"+
-			"\t\tSpeed m/s: %0.3f\n"+
-			"\t\tDirection: %d\n",
-		speed8000, dir8000, speed2000, dir2000, speedGround, dirGround,
+			"\tAt 8000 meters (26000 ft):\n"+
+			"\t\tSpeed: %0.3f m/s (%d kt)\n"+
+			"\t\tDirection: %03d\n"+
+			"\tAt 2000 meters (6500 ft):\n"+
+			"\t\tSpeed: %0.3f m/s (%d kt)\n"+
+			"\t\tDirection: %03d\n"+
+			"\tAt ground:\n"+
+			"\t\tSpeed: %0.3f m/s (%d kt)\n"+
+			"\t\tDirection: %03d\n",
+		speed8000, int(speed8000*weather.MPSToKT),
+		dir8000,
+		speed2000, int(speed2000*weather.MPSToKT),
+		dir2000,
+		speedGround, int(speedGround*weather.MPSToKT),
+		dirGround,
 	)
 
 	gust := data.Data[0].Wind.GustMPS
@@ -432,7 +439,7 @@ func updateWind(data weather.WeatherData, l *lua.LState) error {
 		return fmt.Errorf("Error updating turbulence: %v", err)
 	}
 
-	log.Printf("Gusts m/s: %0.3f\n", gust)
+	log.Printf("Gusts: %0.3f m/s (%d kt)\n", gust, int(gust*weather.MPSToKT))
 
 	return nil
 }
