@@ -478,7 +478,7 @@ func windSpeed(targHeight float64, data weather.WeatherData) float64 {
 	if util.Config.Options.Wind.FixedReference {
 		refHeight = 1
 	} else {
-		refHeight = math.Max(1, data.Data[0].Elevation.Meters)
+		refHeight = math.Max(1, float64(util.Config.METAR.RunwayElevation))
 	}
 
 	refSpeed := data.Data[0].Wind.SpeedMPS
