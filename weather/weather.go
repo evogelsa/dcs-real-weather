@@ -141,7 +141,7 @@ func GenerateMETAR(wx WeatherData) (string, error) {
 	// clouds
 	if SelectedPreset == "" {
 		metar += "CLR "
-	} else if clouds, ok := decodePreset[SelectedPreset]; ok {
+	} else if clouds, ok := DecodePreset[SelectedPreset]; ok {
 		for i, cld := range clouds {
 			if i == 0 {
 				// convert base to hundreds of feet
@@ -338,13 +338,13 @@ var CloudPresets map[string][]CloudPreset = map[string][]CloudPreset{
 	},
 }
 
-type cloud struct {
+type Cloud struct {
 	Name string
 	Base string
 }
 
 var (
-	decodePreset = map[string][]cloud{
+	DecodePreset = map[string][]Cloud{
 		`"Preset1"`:      {{"FEW", "070"}},
 		`"Preset2"`:      {{"FEW", "080"}, {"SCT", "230"}},
 		`"Preset3"`:      {{"SCT", "080"}, {"FEW", "210"}},

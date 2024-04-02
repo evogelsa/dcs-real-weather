@@ -653,6 +653,10 @@ func checkClouds(data weather.WeatherData) (string, int) {
 	return preset, base
 }
 
+// selectPreset uses the given weather data to best select a preset that is
+// suitable. If no suitable preset is found and fallback to no preset is enabled
+// then custom weather will be used. If fallback is not enabled but a default
+// preset is configured, use that. Otherwise the the preset defaults to clear.
 func selectPreset(kind string, base int, precip bool) (string, int) {
 	var validPresets []weather.CloudPreset
 
@@ -667,7 +671,7 @@ func selectPreset(kind string, base int, precip bool) (string, int) {
 
 	if precip && kind == "OVC" {
 		kind = "OVC+RA"
-	} else if precip && util.Config.Options.FallbackToNoPreset {
+	} else if precip && util.Config.Options.Clouds.FallbackToNoPreset {
 		log.Printf("No suitable weather preset for code=%s and base=%d", kind, base)
 		log.Printf("Fallback to no preset is enabled, using custom weather")
 		return "CUSTOM " + kind[:3], base
@@ -676,12 +680,14 @@ func selectPreset(kind string, base int, precip bool) (string, int) {
 		log.Printf("Fallback to no preset is disabled, so precip will be ignored")
 	}
 
+	// make a list of possible presets that can be used to match weather
 	for _, preset := range weather.CloudPresets[kind] {
 		if presetAllowed(preset.Name) && preset.MinBase <= base && base <= preset.MaxBase {
 			validPresets = append(validPresets, preset)
 		}
 	}
 
+	// randomly select a valid preset
 	if len(validPresets) > 0 {
 		preset := validPresets[rand.Intn(len(validPresets))]
 		return preset.Name, base
@@ -690,24 +696,59 @@ func selectPreset(kind string, base int, precip bool) (string, int) {
 	log.Printf("No suitable weather preset for code=%s and base=%d", kind, base)
 
 	// no valid preset found, is use nonpreset weather enabled?
-	if util.Config.Options.FallbackToNoPreset {
+	if util.Config.Options.Clouds.FallbackToNoPreset {
 		log.Printf("Fallback to no preset is enabled, using custom weather")
 		return "CUSTOM " + kind[:3], base
 	}
 
 	log.Printf("Fallback to no preset is disabled. Expanding search to only %s\n", kind)
 
+	// since fallback disabled and no preset available, find any preset that
+	// matches the desired cloud type and ignore desired base
 	for _, preset := range weather.CloudPresets[kind] {
 		if presetAllowed(preset.Name) {
 			validPresets = append(validPresets, preset)
 		}
 	}
 
-	if len(validPresets) == 0 {
+	// still no valid presets? use the configured default preset if there is
+	// one, otherwise default to clear
+	if len(validPresets) == 0 && util.Config.Options.Clouds.DefaultPreset != "" {
+		defaultPreset := util.Config.Options.Clouds.DefaultPreset
+		defaultPreset = `"` + defaultPreset + `"`
+
+		// validate chosen default preset
+		var presetFound bool
+		for preset := range weather.DecodePreset {
+			if preset == defaultPreset {
+				presetFound = true
+				break
+			}
+		}
+
+		if !presetFound {
+			log.Printf(
+				"Default preset %s is not a valid preset. Using clear instead",
+				defaultPreset,
+			)
+			return "", 0
+		}
+
+		log.Printf(
+			"No allowed presets for %s. Defaulting to %s.",
+			kind,
+			defaultPreset,
+		)
+
+		base, _ := strconv.Atoi(weather.DecodePreset[defaultPreset][0].Base)
+
+		return defaultPreset, base
+	} else if len(validPresets) == 0 {
 		log.Printf("No allowed presets for %s. Defaulting to CLR.", kind)
 		return "", 0
 	}
 
+	// random select a valid preset from the expanded list
 	preset := validPresets[rand.Intn(len(validPresets))]
 	return preset.Name, rand.Intn(preset.MaxBase-preset.MinBase) + preset.MinBase
 }

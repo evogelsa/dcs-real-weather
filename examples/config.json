@@ -14,7 +14,6 @@
   "options": {
     "update-time": true,
     "update-weather": true,
-    "fallback-to-no-preset": true,
     "time-offset": "-2h30m",
     "wind": {
       "minimum": -1,
@@ -27,7 +26,9 @@
         "RainyPreset1",
         "RainyPreset2",
         "RainyPreset3"
-      ]
+      ],
+      "fallback-to-no-preset": true,
+      "default-preset": "Preset7"
     },
     "fog": {
       "enabled": true,

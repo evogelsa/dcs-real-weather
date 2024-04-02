@@ -25,7 +25,7 @@ offset if desired.
 5) Open the provided `config.json` with a text editor of choice.
 6) Add your API key between the quotes and configure the other settings to your
 liking. A description of each of the settings is provided
-[below](#config-file-parameters).
+[below](#config-file).
 7) Save your changes and ensure the config file remains inside the same
 directory that the realweather.exe file is located.
 8) Create or configure the mission file you want to be updated with the real
@@ -92,7 +92,8 @@ each parameter.
           "RainyPreset1",
           "RainyPreset2",
           "RainyPreset3"
-          ] // List of weather presets you do not want to be chosen
+          ], // List of weather presets you do not want to be chosen
+      "default-preset": "Preset7" // default preset to use when no match found
     },
     "fog": {
       "enabled": true,           // set to false to disable fog
@@ -145,9 +146,6 @@ each parameter.
     * Disable/enable Real Weather modifying your mission time.
   * `update-weather`: boolean
     * Disable/enable Real Weather modifying your mission weather.
-  * `fallback-to-no-preset`: boolean
-    * If this is true, Real Weather will use the legacy weather (no preset)
-      when a suitable weather preset is not found.
   * `time-offset`: string
     * This is the offset from *system time* used when updating the mission time.
       This value should be a string such as "1.5h" or "-2h45m". Supported units
@@ -182,6 +180,13 @@ each parameter.
       * This is a list of all the presets you do not want to be chosen. This
         can be an empty list [] if you do not want to disable any presets.
         Available preset options can be seen in the additional notes below.
+    * `fallback-to-no-preset`: boolean
+      * If this is true, Real Weather will use the legacy weather (no preset)
+        when a suitable weather preset is not found.
+    * `default-preset`: string
+      * This is the default preset that will be used if `fallback-to-no-preset`
+        is false and no suitable preset can be found in the allowed presets.
+        Leave this as "" to disable and use clear skies as the default.
   * `fog`
     * `enabled`: boolean
       * Disable/enable fog when apply weather to your mission.
