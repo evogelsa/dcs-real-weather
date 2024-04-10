@@ -22,7 +22,7 @@ linux-amd64:
 	-rm resource.syso
 	env GOOS=linux GOARCH=amd64 go build -o bin/linux/realweather -trimpath
 	cp examples/config.json bin/linux/config.json
-	tar czf bin/linux/realweather_linux_amd64_$(VERSION).tar.gz bin/linux/realweather bin/linux/config.json
+	tar czf bin/linux/realweather_linux_amd64_$(VERSION).tar.gz -C bin/linux/ realweather config.json
 
 linux-arm:
 	@echo "------------------------------"
@@ -32,4 +32,4 @@ linux-arm:
 	-rm resource.syso
 	env GOOS=linux GOARCH=arm go build -o bin/linux/realweather -trimpath
 	cp examples/config.json bin/linux/config.json
-	tar czf bin/linux/realweather_linux_arm_$(VERSION).tar.gz bin/linux/realweather bin/linux/config.json
+	tar czf bin/linux/realweather_linux_arm_$(VERSION).tar.gz -C bin/linux/ realweather config.json
