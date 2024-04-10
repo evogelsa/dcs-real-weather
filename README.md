@@ -3,6 +3,7 @@
 [![Downloads](https://img.shields.io/github/downloads/evogelsa/DCS-real-weather/total?logo=GitHub)](https://github.com/evogelsa/DCS-real-weather/releases/latest)
 [![Latest Release](https://img.shields.io/github/v/release/evogelsa/DCS-real-weather?logo=GitHub)](https://github.com/evogelsa/DCS-real-weather/releases/latest)
 [![Discord](https://img.shields.io/discord/1148739727990722751?logo=Discord)](https://discord.com/invite/mjr2SpFuqq)
+[![Go Report Card](https://goreportcard.com/badge/github.com/evogelsa/DCS-real-weather)](https://goreportcard.com/report/github.com/evogelsa/DCS-real-weather)
 
 ## About
 
@@ -24,7 +25,7 @@ offset if desired.
 5) Open the provided `config.json` with a text editor of choice.
 6) Add your API key between the quotes and configure the other settings to your
 liking. A description of each of the settings is provided
-[below](#config-file-parameters).
+[below](#config-file).
 7) Save your changes and ensure the config file remains inside the same
 directory that the realweather.exe file is located.
 8) Create or configure the mission file you want to be updated with the real
@@ -54,9 +55,12 @@ is a supported extension and can be integrated directly with the tool.
     mission into the realweather directory as part of your server start/restart
     script.
 
-## Config file parameters
+## Config file
 
-The config file looks like the following:
+An example configuration file can be found below along with an explanation of
+each parameter.
+
+### Example config file
 
 ```json
 {
@@ -68,16 +72,18 @@ The config file looks like the following:
   },
   "metar": {
     "icao": "KDLH", // ICAO of the aiport to fetch METAR from
-    "remarks": ""   // addtional remarks to add to METAR, for logging only
+    "runway-elevation": 0, // elevation of runway in meters MSL
+    "remarks": "",  // addtional remarks to add to METAR, for customization only
+    "add-to-brief": true // add METAR text to bottom of mission brief
   },
   "options": {
-    "update-time": true,     // set to false to disable time being updated
-    "update-weather": true,  // set to false to disable weather being updated
+    "update-time": true,    // set to false to disable time being updated
+    "update-weather": true, // set to false to disable weather being updated
     "time-offset": "-5h30m", // time offset from system time
     "wind": {
-      "minimum": -1,     // maximum allowed wind speed in m/s, negative disables
-      "maximum": -1,     // minimum allowed wind speed in m/s, negative disables
-      "stability": 0.143 // atmospheric stability used in wind profile power law
+      "minimum": -1,      // max allowed wind speed in m/s, negative disables
+      "maximum": -1,      // min allowed wind speed in m/s, negative disables
+      "stability": 0.143, // atmospheric stability for wind profile power law
       "fixed-reference": false // use a fixed ref height for wind calculations
     },
     "clouds": {
@@ -85,7 +91,9 @@ The config file looks like the following:
           "RainyPreset1",
           "RainyPreset2",
           "RainyPreset3"
-          ] // List of weather presets you do not want to be chosen
+          ], // List of weather presets you do not want to be chosen
+      "fallback-to-no-preset": true, // use custom wx if no suitable preset found
+      "default-preset": "Preset7" // default preset to use when no match found
     },
     "fog": {
       "enabled": true,           // set to false to disable fog
@@ -103,12 +111,116 @@ The config file looks like the following:
 }
 ```
 
+### Config Parameters
+
+* `api-key`: string
+  * Your API key from checkwx, should be a mix of letters and numbers.
+* `files`: string
+  * `input-mission`: string
+    * This is the path of the mission file that you want to apply real weather
+      to. This is typically a relative path from the Real Weather executable,
+      but it can be an absolute path too.
+  * `output-mission`: string
+    * This is the path that you want the modified mission to be output to. This
+      should generally be different from your input file.
+  * `log`: string
+    * This is the path that you want Real Weather to create its log at. If you
+      do not want logging, you can disable with "".
+* `metar`
+  * `icao`: string
+    * This is the ICAO of the airport you would like weather to be pulled from.
+  * `runway-elevation`: integer
+    * The runway/airport elevation of the ICAO configured. This is used when
+      calculating cloud heights. METARs report cloud in hundreds of feet AGL.
+      This can be set to 0 to retain legacy behavior (clouds in MSL altitudes).
+      This is also the elevation used as the reference height in wind
+      calculation if `fixed-reference` is false.
+  * `remarks`: string
+    * This adds a RMK section in the METAR string. There is not functional
+      impact of this setting. It's used for customization only.
+  * `add-to-brief`: boolean
+    * If true, Real Weather will add the generated METAR to the bottom of your
+      mission brief.
+* `options`
+  * `update-time`: boolean
+    * Disable/enable Real Weather modifying your mission time.
+  * `update-weather`: boolean
+    * Disable/enable Real Weather modifying your mission weather.
+  * `time-offset`: string
+    * This is the offset from *system time* used when updating the mission time.
+      This value should be a string such as "1.5h" or "-2h45m". Supported units
+      are nanoseconds "ns", microseconds "us", milliseconds "ms", seconds "s",
+      minutes "m", and hours "h".
+  * `wind`
+    * `minimum`: integer
+      * This is the minimum wind speed in meters per second that Real Weather
+        will apply to your mission. You can set this to -1 to disable minimum
+        wind speeds.
+    * `maximum`: integer
+      * This is the maximum wind speed in meters per second that Real Weather
+        will apply to your mission. You can set this to -1 to disable maximum
+        wind speeds.
+    * `stability`: float
+      * This is the atmospheric stability number used in the wind profile power
+         law. This is used when calculating wind speeds at altitudes other than
+         the airport elevation. 0.143 is generally a good setting for this, but
+         it can be configured to your liking. Larger values generally equate to
+         less stable atmosphere with bigger difference between ground winds and
+         winds aloft, and smaller values generally equate to more stable
+         atmospheres with ground winds being closer to winds aloft. See the
+         additional notes below for more information.
+    * `fixed-reference`: boolean
+      * Disable/enable using a fixed reference point when calculating winds
+        aloft. If false, Real Weather will use the `runway-elevation` as the
+        wind reference point for calculting winds aloft. If true, Real Weather
+        will use 1 meter MSL as as the reference height for wind calculations.
+        Generally this should be set to false.
+  * `clouds`
+    * `disallowed-presets`: string array
+      * This is a list of all the presets you do not want to be chosen. This
+        can be an empty list [] if you do not want to disable any presets.
+        Available preset options can be seen in the additional notes below.
+    * `fallback-to-no-preset`: boolean
+      * If this is true, Real Weather will use the legacy weather (no preset)
+        when a suitable weather preset is not found.
+    * `default-preset`: string
+      * This is the default preset that will be used if `fallback-to-no-preset`
+        is false and no suitable preset can be found in the allowed presets.
+        Leave this as "" to disable and use clear skies as the default.
+  * `fog`
+    * `enabled`: boolean
+      * Disable/enable fog when apply weather to your mission.
+    * `thickness-minimum`: integer
+      * This is the minimum fog thickness in meters that will be used when
+        applying fog to your mission. This must be at least 0 and less than
+        `thickness-maximum`.
+    * `thickness-maximum`: integer
+      * This is the maximum fog thickness in meters that will be used when
+        applying fog to your mission. This must be at most 1000 and greater than
+        `thickness-minimum`.
+    * `visibility-minimum`: integer
+      * This is the minimum visibility in meters that will be used when
+        applying fog to your mission. This must be at least 0 and less than
+        `visibility-maximum`.
+    * `visibility-maximum`: integer
+      * This is the maximum visibility in meters that will be used when
+        applying fog to your mission. This must be at most 6000 and greater than
+        `visibility-minimum`.
+  * `dust`
+    * `enabled`: boolean
+      * Disable/enable dust when applying weather to your mission.
+    * `visibility-minimum`: integer
+      * This is the minimum visibility in meters that will be used when
+        applying dust to your mission. This must be at least 300 and less than
+        `visibility-maximum`.
+    * `visibility-maximum`: integer
+      * This is the maximum visibility in meters that will be used when
+        applying dust to your mission. This must be at most 3000 and greater
+        than `visibility-minimum`.
+
 Additional notes:
 
 * For more info on stability, see the following [1][1], [2][2], [3][3].
-* Min and max wind speeds can be disabled by setting to a negative number
-* Time offset takes a string that can consist of hours, minutes, and seconds.
-These are specified by "h", "m", and "s".
 * Fog thickness is not reported by a METAR, so the thickness in DCS will be a
 randomly chosen value between your configured min and max.
 * Presets you can disallow are presented in the following table. Please note

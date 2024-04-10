@@ -24,8 +24,10 @@ type Configuration struct {
 		Log           string `json:"log"`
 	} `json:"files"`
 	METAR struct {
-		ICAO    string `json:"icao"`
-		Remarks string `json:"remarks"`
+		ICAO            string `json:"icao"`
+		RunwayElevation int    `json:"runway-elevation"`
+		Remarks         string `json:"remarks"`
+		AddToBrief      bool   `json:"add-to-brief"`
 	} `json:"metar"`
 	Options struct {
 		UpdateTime    bool   `json:"update-time"`
@@ -38,7 +40,9 @@ type Configuration struct {
 			FixedReference bool    `json:"fixed-reference"`
 		} `json:"wind"`
 		Clouds struct {
-			DisallowedPresets []string `json:"disallowed-presets"`
+			DisallowedPresets  []string `json:"disallowed-presets"`
+			FallbackToNoPreset bool     `json:"fallback-to-no-preset"`
+			DefaultPreset      string   `json:"default-preset"`
 		}
 		Fog struct {
 			Enabled           bool `json:"enabled"`

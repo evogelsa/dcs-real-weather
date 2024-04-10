@@ -14,7 +14,18 @@ import (
 var SelectedPreset string
 var SelectedBase int
 
+const (
+	MPSToKT      = 1.944
+	MetersToFeet = 3.281
+)
+
+func CelsiusToFahrenheit(c float64) float64 {
+	return (c * 1.8) + 32
+}
+
 func GetWeather() (WeatherData, error) {
+	log.Println("Getting weather from CheckWX...")
+
 	// create http client to fetch weather data, timeout after 5 sec
 	timeout := time.Duration(5 * time.Second)
 	client := http.Client{Timeout: timeout}
@@ -53,7 +64,8 @@ func GetWeather() (WeatherData, error) {
 		)
 	}
 
-	log.Println("Received data:", string(body))
+	log.Println("Got weather data:", string(body))
+	log.Println("Parsing weather...")
 
 	// format json resposne into weatherdata struct
 	var res WeatherData
@@ -65,6 +77,8 @@ func GetWeather() (WeatherData, error) {
 	if err := checkWeather(&res); err != nil {
 		return res, err
 	}
+
+	log.Println("Parsed weather")
 
 	return res, nil
 }
@@ -88,8 +102,9 @@ func checkWeather(data *WeatherData) error {
 	return nil
 }
 
-// LogMETAR generates a metar based on the weather settings added to the DCS miz
-func LogMETAR(wx WeatherData) error {
+// GenerateMETAR generates a metar based on the weather settings added to the
+// DCS miz
+func GenerateMETAR(wx WeatherData) (string, error) {
 	data := wx.Data[0]
 
 	var metar string
@@ -102,7 +117,7 @@ func LogMETAR(wx WeatherData) error {
 	if err != nil {
 		t, err = time.Parse("2006-01-02T15:04:05", data.Observed)
 		if err != nil {
-			return fmt.Errorf("Error parsing METAR time: %v", err)
+			return "", fmt.Errorf("Error parsing METAR time: %v", err)
 		}
 	}
 	// want format DDHHMMZ
@@ -126,8 +141,7 @@ func LogMETAR(wx WeatherData) error {
 	// clouds
 	if SelectedPreset == "" {
 		metar += "CLR "
-	} else {
-		clouds := decodePreset[SelectedPreset]
+	} else if clouds, ok := DecodePreset[SelectedPreset]; ok {
 		for i, cld := range clouds {
 			if i == 0 {
 				// convert base to hundreds of feet
@@ -137,6 +151,12 @@ func LogMETAR(wx WeatherData) error {
 				metar += fmt.Sprintf("%s%s ", cld.Name, cld.Base)
 			}
 		}
+	} else {
+		// using legacy/custom wx
+		cloudKind := SelectedPreset[7:10]
+		// convert base to hundreds of feet
+		base := int(float64(SelectedBase)*3.28+50) / 100
+		metar += fmt.Sprintf("%s%03d ", cloudKind, base)
 	}
 
 	// temperature
@@ -156,15 +176,13 @@ func LogMETAR(wx WeatherData) error {
 	// altimeter
 	metar += fmt.Sprintf("A%4d ", int(data.Barometer.Hg*100))
 
-	// nosig because usually not updated until 4 hours
-	metar += "NOSIG "
+	// nosig because usually not updated until 4 hours (whenever rw gets run)
+	metar += "NOSIG"
 
 	// rmks
-	metar += util.Config.METAR.Remarks
+	metar += " " + util.Config.METAR.Remarks
 
-	log.Println(metar)
-
-	return nil
+	return metar, nil
 }
 
 type WeatherData struct {
@@ -320,13 +338,13 @@ var CloudPresets map[string][]CloudPreset = map[string][]CloudPreset{
 	},
 }
 
-type cloud struct {
+type Cloud struct {
 	Name string
 	Base string
 }
 
 var (
-	decodePreset = map[string][]cloud{
+	DecodePreset = map[string][]Cloud{
 		`"Preset1"`:      {{"FEW", "070"}},
 		`"Preset2"`:      {{"FEW", "080"}, {"SCT", "230"}},
 		`"Preset3"`:      {{"SCT", "080"}, {"FEW", "210"}},
@@ -379,7 +397,7 @@ var DefaultWeather WeatherData = WeatherData{
 					Code: "CLR",
 				},
 			},
-			Observed: time.Now().Format("2006/01/02"),
+			Observed: time.Now().Format("2006-01-02T15:04:05"),
 		},
 	},
 	NumResults: 1,
