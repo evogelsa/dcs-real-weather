@@ -130,11 +130,12 @@ each parameter.
   * `icao`: string
     * This is the ICAO of the airport you would like weather to be pulled from.
   * `runway-elevation`: integer
-    * The runway/airport elevation of the ICAO configured. This is used when
-      calculating cloud heights. METARs report cloud in hundreds of feet AGL.
-      This can be set to 0 to retain legacy behavior (clouds in MSL altitudes).
-      This is also the elevation used as the reference height in wind
-      calculation if `fixed-reference` is false.
+    * The runway/airport elevation of the ICAO configured in meters. This is
+      used to convert cloud heights between MSL and AGL values for METAR
+      accuracy. Using this value the METAR will report the clouds in hundreds of
+      feet AGL. This can be set to 0 to retain the legacy behavior of reporting
+      clouds in MSL altitudes. This value will also be used for the reference
+      height in wind calculation if `fixed-reference` is false.
   * `remarks`: string
     * This adds a RMK section in the METAR string. There is not functional
       impact of this setting. It's used for customization only.
