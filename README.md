@@ -71,29 +71,29 @@ each parameter.
     "log": "logfile.log"                 // path of log file, "" disables
   },
   "metar": {
-    "icao": "KDLH", // ICAO of the aiport to fetch METAR from
+    "icao": "KDLH",        // ICAO of the aiport to fetch METAR from
     "runway-elevation": 0, // elevation of runway in meters MSL
-    "remarks": "",  // addtional remarks to add to METAR, for customization only
-    "add-to-brief": true // add METAR text to bottom of mission brief
+    "remarks": "",         // addtional remarks for METAR, customization only
+    "add-to-brief": true   // add METAR text to bottom of mission brief
   },
   "options": {
-    "update-time": true,    // set to false to disable time being updated
-    "update-weather": true, // set to false to disable weather being updated
+    "update-time": true,     // set to false to disable time being updated
+    "update-weather": true,  // set to false to disable weather being updated
     "time-offset": "-5h30m", // time offset from system time
     "wind": {
-      "minimum": -1,      // max allowed wind speed in m/s, negative disables
-      "maximum": -1,      // min allowed wind speed in m/s, negative disables
-      "stability": 0.143, // atmospheric stability for wind profile power law
-      "fixed-reference": false // use a fixed ref height for wind calculations
+      "minimum": 0,            // max allowed wind speed in m/s, at least 0
+      "maximum": 50,           // min allowed wind speed in m/s, at most 50
+      "stability": 0.143,      // atmospheric stability for wind calculations
+      "fixed-reference": false // use a fixed reference for wind calculations
     },
     "clouds": {
-      "disallowed-presets": [
+      "disallowed-presets": [        // list of presets you do not want selected
           "RainyPreset1",
           "RainyPreset2",
           "RainyPreset3"
-          ], // List of weather presets you do not want to be chosen
-      "fallback-to-no-preset": true, // use custom wx if no suitable preset found
-      "default-preset": "Preset7" // default preset to use when no match found
+          ],
+      "fallback-to-no-preset": true, // use custom wx if no preset match found
+      "default-preset": "Preset7"    // default preset to use if no match found
     },
     "fog": {
       "enabled": true,           // set to false to disable fog
@@ -155,12 +155,10 @@ each parameter.
   * `wind`
     * `minimum`: integer
       * This is the minimum wind speed in meters per second that Real Weather
-        will apply to your mission. You can set this to -1 to disable minimum
-        wind speeds.
+        will apply to your mission. This value must be at least 0.
     * `maximum`: integer
       * This is the maximum wind speed in meters per second that Real Weather
-        will apply to your mission. You can set this to -1 to disable maximum
-        wind speeds.
+        will apply to your mission. This value must be at most 50.
     * `stability`: float
       * This is the atmospheric stability number used in the wind profile power
          law. This is used when calculating wind speeds at altitudes other than
