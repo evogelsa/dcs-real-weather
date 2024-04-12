@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/evogelsa/DCS-real-weather/config"
 	"github.com/evogelsa/DCS-real-weather/util"
 	"github.com/evogelsa/DCS-real-weather/weather"
 
@@ -51,14 +52,14 @@ func Update(data weather.WeatherData) error {
 	log.Println("Updating mission...")
 
 	// update weather if enabled
-	if util.Config.Options.UpdateWeather {
+	if config.Get().Options.UpdateWeather {
 		if err := updateWeather(data, l); err != nil {
 			return fmt.Errorf("Error updating weather: %v", err)
 		}
 	}
 
 	// update time if enabled
-	if util.Config.Options.UpdateTime {
+	if config.Get().Options.UpdateTime {
 		if err := updateTime(data, l); err != nil {
 			return fmt.Errorf("Error updating time: %v", err)
 		}
@@ -227,10 +228,10 @@ func updateClouds(data weather.WeatherData, l *lua.LState) error {
 // the desired weather
 func handleCustomClouds(data weather.WeatherData, l *lua.LState, preset string, base int) error {
 	// only one kind possible when using custom
-	var thickness int = rand.Intn(1801) + 200        // 200 - 2000
-	var density int                                  //   0 - 10
-	var precip int                                   //   0 - 2
-	base = int(util.Clamp(float64(base), 300, 5000)) // 300 - 5000
+	var thickness int = rand.Intn(1801) + 200 // 200 - 2000
+	var density int                           //   0 - 10
+	var precip int                            //   0 - 2
+	base = util.Clamp(base, 300, 5000)        // 300 - 5000
 
 	//  0 - clear
 	//  1 - few
@@ -410,17 +411,17 @@ func updateWind(data weather.WeatherData, l *lua.LState) error {
 	speed8000 := windSpeed(8000, data)
 
 	// cap wind speeds to configured maximum
-	if util.Config.Options.Wind.Maximum >= 0 {
-		speedGround = math.Min(speedGround, util.Config.Options.Wind.Maximum)
-		speed2000 = math.Min(speed2000, util.Config.Options.Wind.Maximum)
-		speed8000 = math.Min(speed8000, util.Config.Options.Wind.Maximum)
+	if config.Get().Options.Wind.Maximum >= 0 {
+		speedGround = math.Min(speedGround, config.Get().Options.Wind.Maximum)
+		speed2000 = math.Min(speed2000, config.Get().Options.Wind.Maximum)
+		speed8000 = math.Min(speed8000, config.Get().Options.Wind.Maximum)
 	}
 
 	//  cap wind speeds to configured minimum
-	if util.Config.Options.Wind.Minimum >= 0 {
-		speedGround = math.Max(speedGround, util.Config.Options.Wind.Minimum)
-		speed2000 = math.Max(speed2000, util.Config.Options.Wind.Minimum)
-		speed8000 = math.Max(speed8000, util.Config.Options.Wind.Minimum)
+	if config.Get().Options.Wind.Minimum >= 0 {
+		speedGround = math.Max(speedGround, config.Get().Options.Wind.Minimum)
+		speed2000 = math.Max(speed2000, config.Get().Options.Wind.Minimum)
+		speed8000 = math.Max(speed8000, config.Get().Options.Wind.Minimum)
 	}
 
 	// apply wind shift to winds aloft layers
@@ -516,10 +517,10 @@ func updateTime(data weather.WeatherData, l *lua.LState) error {
 func windSpeed(targHeight float64, data weather.WeatherData) float64 {
 	// default to 9 meters for reference height if elevation is below that
 	var refHeight float64
-	if util.Config.Options.Wind.FixedReference {
+	if config.Get().Options.Wind.FixedReference {
 		refHeight = 1
 	} else {
-		refHeight = math.Max(1, float64(util.Config.METAR.RunwayElevation))
+		refHeight = math.Max(1, float64(config.Get().METAR.RunwayElevation))
 	}
 
 	refSpeed := data.Data[0].Wind.SpeedMPS
@@ -529,7 +530,7 @@ func windSpeed(targHeight float64, data weather.WeatherData) float64 {
 
 	return refSpeed * math.Pow(
 		targHeight/refHeight,
-		util.Config.Options.Wind.Stability,
+		config.Get().Options.Wind.Stability,
 	)
 }
 
@@ -538,12 +539,12 @@ func parseTime() int {
 	// get system time in second
 	t := time.Now()
 
-	offset, err := time.ParseDuration(util.Config.Options.TimeOffset)
+	offset, err := time.ParseDuration(config.Get().Options.TimeOffset)
 	if err != nil {
 		offset = 0
 		log.Printf(
 			"Could not parse time-offset of %s: %v. Program will default to 0 offset",
-			util.Config.Options.TimeOffset,
+			config.Get().Options.TimeOffset,
 			err,
 		)
 	}
@@ -599,7 +600,7 @@ func checkClouds(data weather.WeatherData) (string, int) {
 	var preset string
 	var base int
 
-	base = util.Config.METAR.RunwayElevation
+	base = config.Get().METAR.RunwayElevation
 
 	precip := checkPrecip(data)
 
@@ -671,7 +672,7 @@ func selectPreset(kind string, base int, precip bool) (string, int) {
 	if precip {
 		if kind == "OVC" {
 			kind = "OVC+RA"
-		} else if util.Config.Options.Clouds.FallbackToNoPreset {
+		} else if config.Get().Options.Clouds.FallbackToNoPreset {
 			log.Printf("No suitable weather preset for code=%s and base=%d", kind, base)
 			log.Printf("Fallback to no preset is enabled, using custom weather")
 			return "CUSTOM " + kind[:3], base
@@ -703,7 +704,7 @@ func selectPreset(kind string, base int, precip bool) (string, int) {
 	log.Printf("No suitable weather preset for code=%s and base=%d", kind, base)
 
 	// no valid preset found, is use nonpreset weather enabled?
-	if util.Config.Options.Clouds.FallbackToNoPreset {
+	if config.Get().Options.Clouds.FallbackToNoPreset {
 		log.Printf("Fallback to no preset is enabled, using custom weather")
 		return "CUSTOM " + kind[:3], base
 	}
@@ -717,8 +718,8 @@ func selectPreset(kind string, base int, precip bool) (string, int) {
 	// still no valid presets? use the configured default preset if there is
 	// one, otherwise default to clear
 	if len(validPresets) == 0 {
-		if util.Config.Options.Clouds.DefaultPreset != "" {
-			defaultPreset := util.Config.Options.Clouds.DefaultPreset
+		if config.Get().Options.Clouds.DefaultPreset != "" {
+			defaultPreset := config.Get().Options.Clouds.DefaultPreset
 			defaultPreset = `"` + defaultPreset + `"`
 
 			log.Printf(
@@ -744,7 +745,7 @@ func selectPreset(kind string, base int, precip bool) (string, int) {
 // presetAllowed checks if a preset is in the disallowed presets inside the
 // config file. If the preset is disallowed the func returns false
 func presetAllowed(preset string) bool {
-	for _, disallowed := range util.Config.Options.Clouds.DisallowedPresets {
+	for _, disallowed := range config.Get().Options.Clouds.DisallowedPresets {
 		if preset == `"`+disallowed+`"` {
 			return false
 		}
@@ -756,42 +757,22 @@ func presetAllowed(preset string) bool {
 // checkFog looks for either misty or foggy conditions and returns and integer
 // representing dcs visiblity scale
 func checkFog(data weather.WeatherData) (visibility, thickness int) {
-	if !util.Config.Options.Fog.Enabled {
+	if !config.Get().Options.Fog.Enabled {
 		return
 	}
 
 	for _, condition := range data.Data[0].Conditions {
 		if condition.Code == "FG" || condition.Code == "BR" {
 
-			if util.Config.Options.Fog.ThicknessMaximum > 1000 {
-				log.Println("Fog maximum thickness is set above max of 1000; defaulting to 1000")
-				util.Config.Options.Fog.ThicknessMaximum = 1000
-			}
-
-			if util.Config.Options.Fog.ThicknessMinimum < 0 {
-				log.Println("Fog minimum thickness is set below min of 0; defaulting to 0")
-				util.Config.Options.Fog.ThicknessMinimum = 0
-			}
-
 			thickness = rand.Intn(
-				util.Config.Options.Fog.ThicknessMaximum-
-					util.Config.Options.Fog.ThicknessMinimum,
-			) + util.Config.Options.Fog.ThicknessMinimum
-
-			if util.Config.Options.Fog.VisibilityMaximum > 6000 {
-				log.Println("Fog maximum visibility is set above max of 6000; defaulting to 6000")
-				util.Config.Options.Fog.VisibilityMaximum = 6000
-			}
-
-			if util.Config.Options.Fog.VisibilityMinimum < 0 {
-				log.Println("Fog minimum visibility is set below min of 0; defaulting to 0")
-				util.Config.Options.Fog.VisibilityMinimum = 0
-			}
+				config.Get().Options.Fog.ThicknessMaximum-
+					config.Get().Options.Fog.ThicknessMinimum,
+			) + config.Get().Options.Fog.ThicknessMinimum
 
 			visibility = int(util.Clamp(
 				data.Data[0].Visibility.MetersFloat,
-				float64(util.Config.Options.Fog.VisibilityMinimum),
-				float64(util.Config.Options.Fog.VisibilityMaximum),
+				config.Get().Options.Fog.VisibilityMinimum,
+				config.Get().Options.Fog.VisibilityMaximum,
 			))
 
 			return
@@ -804,7 +785,7 @@ func checkFog(data weather.WeatherData) (visibility, thickness int) {
 // checkDust looks for dust conditions and returns a number representing
 // visibility in meters
 func checkDust(data weather.WeatherData) (visibility int) {
-	if !util.Config.Options.Dust.Enabled {
+	if !config.Get().Options.Dust.Enabled {
 		return
 	}
 
@@ -813,20 +794,10 @@ func checkDust(data weather.WeatherData) (visibility int) {
 			condition.Code == "SA" || condition.Code == "PO" ||
 			condition.Code == "DS" || condition.Code == "SS" {
 
-			if util.Config.Options.Dust.VisibilityMinimum < 300 {
-				log.Println("Dust visibility minimum is set below min of 300; defaulting to 300")
-				util.Config.Options.Dust.VisibilityMinimum = 300
-			}
-
-			if util.Config.Options.Dust.VisibilityMaximum > 3000 {
-				log.Println("Dust visibility maximum is set above max of 3000; defaulting to 3000")
-				util.Config.Options.Dust.VisibilityMaximum = 3000
-			}
-
 			return int(util.Clamp(
 				data.Data[0].Visibility.MetersFloat,
-				float64(util.Config.Options.Dust.VisibilityMinimum),
-				float64(util.Config.Options.Dust.VisibilityMaximum),
+				config.Get().Options.Dust.VisibilityMinimum,
+				config.Get().Options.Dust.VisibilityMaximum,
 			))
 		}
 	}
@@ -838,7 +809,7 @@ func checkDust(data weather.WeatherData) (visibility int) {
 func Unzip() ([]string, error) {
 	log.Println("Unpacking mission file...")
 
-	src := util.Config.Files.InputMission
+	src := config.Get().Files.InputMission
 	log.Println("Source file:", src)
 	dest := "mission_unpacked"
 
@@ -917,7 +888,7 @@ func Zip() error {
 
 	baseFolder := "mission_unpacked/"
 
-	dest := util.Config.Files.OutputMission
+	dest := config.Get().Files.OutputMission
 	outFile, err := os.Create(dest)
 	if err != nil {
 		return fmt.Errorf("Error creating output file: %v", err)
