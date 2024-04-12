@@ -19,6 +19,10 @@ const (
 	MetersToFeet = 3.281
 )
 
+func ClearCodes() []string {
+	return []string{"CAVOK", "CLR", "SKC", "NSC", "NCD"}
+}
+
 func CelsiusToFahrenheit(c float64) float64 {
 	return (c * 1.8) + 32
 }

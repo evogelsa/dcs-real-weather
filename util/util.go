@@ -6,13 +6,22 @@ import (
 	"log"
 	"math"
 	"os"
+
+	"golang.org/x/exp/constraints"
+
+	"github.com/evogelsa/DCS-real-weather/weather"
 )
 
 // Clamp returns a value that does not exceed the specified range [min, max]
-func Clamp(v, min, max float64) float64 {
-	v = math.Max(v, min)
-	v = math.Min(v, max)
+func Clamp[T1, T2, T3 constraints.Float | constraints.Integer](v T1, min T2, max T3) T1 {
+	v = T1(math.Max(float64(v), float64(min)))
+	v = T1(math.Min(float64(v), float64(max)))
 	return v
+}
+
+// Between returns if a value is between the specified range [min, max]
+func Between[T1, T2, T3 constraints.Float | constraints.Integer](v T1, min T2, max T3) bool {
+	return float64(min) <= float64(v) && float64(v) <= float64(max)
 }
 
 // Configuration is the structure of config.json to be parsed
@@ -85,6 +94,23 @@ func init() {
 		)
 		log.Println("Stability will default to neutral stability of 0.143.")
 		config.Options.Wind.Stability = 0.143
+	}
+
+	// default preset must exist in list of presets
+	var presetFound bool
+	for preset := range weather.DecodePreset {
+		if preset == Config.Options.Clouds.DefaultPreset {
+			presetFound = true
+			break
+		}
+	}
+
+	if !presetFound {
+		log.Printf(
+			"Default preset %s is not a valid preset. Using clear instead",
+			Config.Options.Clouds.DefaultPreset,
+		)
+		Config.Options.Clouds.DefaultPreset = ""
 	}
 
 	if config.Files.Log != "" {
