@@ -40,20 +40,9 @@ experience, check out [DCS Server
 Bot](https://github.com/Special-K-s-Flightsim-Bots/DCSServerBot). Real Weather
 is a supported extension and can be integrated directly with the tool.
 
-## Notes
-
-* It is recommended that you keep a master copy of your input mission file, and
-    then use this mission for each weather update rather than updating the
-    realweather mission. This way your main mission stays safe in the rare
-    event of some malfunction leading to corruption. You can accomplish this
-    through your normal restarting script, but an example is provided in
-    [examples](/examples) if you do not already have something like this set
-    up.
-* If your input mission file is not in the same directory as realweather.exe,
-    make sure that you have an absolute path to the file in your config.
-    However, it's recommended that you use a relative path and copy the input
-    mission into the realweather directory as part of your server start/restart
-    script.
+> [!NOTE]
+> Generally your input file should be different from your output file. This will
+> leave your main mission template untouched.
 
 ## Config file
 
@@ -217,14 +206,22 @@ each parameter.
         applying dust to your mission. This must be at most 3000 and greater
         than `visibility-minimum`.
 
-Additional notes:
+> [!TIP]
+> For more info on stability, see these links: [1][1], [2][2], [3][3].
 
-* For more info on stability, see the following [1][1], [2][2], [3][3].
-* Fog thickness is not reported by a METAR, so the thickness in DCS will be a
-randomly chosen value between your configured min and max.
-* Presets you can disallow are presented in the following table. Please note
-the lowest cloud layer's altitude may vary since Real Weather will try to
-match it to the METAR as best as possible.
+> [!NOTE]
+> Fog thickness is not reported by a METAR, so the thickness in DCS will be a
+> randomly chosen value between your configured min and max.
+
+### Preset table
+
+The DCS presets are shown in following table. These preset names are the same
+names that can be added to the `disallowed-presets` and `default-preset` config
+parameters.
+
+> [!NOTE]
+> The lowest cloud layer's altitude may vary since Real Weather will try to
+> match it to the METAR as best as possible.
 
 | Preset Name    | Cloud Layers         |
 |----------------|----------------------|
