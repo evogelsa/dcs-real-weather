@@ -410,19 +410,12 @@ func updateWind(data weather.WeatherData, l *lua.LState) error {
 	speed2000 := windSpeed(2000, data)
 	speed8000 := windSpeed(8000, data)
 
-	// cap wind speeds to configured maximum
-	if config.Get().Options.Wind.Maximum >= 0 {
-		speedGround = math.Min(speedGround, config.Get().Options.Wind.Maximum)
-		speed2000 = math.Min(speed2000, config.Get().Options.Wind.Maximum)
-		speed8000 = math.Min(speed8000, config.Get().Options.Wind.Maximum)
-	}
-
-	//  cap wind speeds to configured minimum
-	if config.Get().Options.Wind.Minimum >= 0 {
-		speedGround = math.Max(speedGround, config.Get().Options.Wind.Minimum)
-		speed2000 = math.Max(speed2000, config.Get().Options.Wind.Minimum)
-		speed8000 = math.Max(speed8000, config.Get().Options.Wind.Minimum)
-	}
+	// cap wind speeds to configured values
+	minWind := config.Get().Options.Wind.Minimum
+	maxWind := config.Get().Options.Wind.Maximum
+	speedGround = util.Clamp(speedGround, minWind, maxWind)
+	speed2000 = util.Clamp(speed2000, minWind, maxWind)
+	speed8000 = util.Clamp(speed8000, minWind, maxWind)
 
 	// apply wind shift to winds aloft layers
 	// this is not really realistic but it adds variety to wind calculation
