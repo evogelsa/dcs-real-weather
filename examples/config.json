@@ -39,7 +39,7 @@
     },
     "dust": {
       "enabled": true,
-      "visiblity-minimum": 300,
+      "visibility-minimum": 300,
       "visibility-maximum": 3000
     }
   }

@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/evogelsa/DCS-real-weather/config"
 	"github.com/evogelsa/DCS-real-weather/miz"
-	"github.com/evogelsa/DCS-real-weather/util"
 	"github.com/evogelsa/DCS-real-weather/versioninfo"
 	"github.com/evogelsa/DCS-real-weather/weather"
 )
@@ -35,7 +35,7 @@ func main() {
 	// get METAR report
 	var err error
 	var data weather.WeatherData
-	data, err = weather.GetWeather()
+	data, err = weather.GetWeather(config.Get().METAR.ICAO, config.Get().APIKey)
 	if err != nil {
 		log.Printf("Error getting weather, using default: %v\n", err)
 		data = weather.DefaultWeather
@@ -56,7 +56,7 @@ func main() {
 
 		// generate the METAR text
 		var metar string
-		if metar, err = weather.GenerateMETAR(data); err == nil {
+		if metar, err = weather.GenerateMETAR(data, config.Get().METAR.Remarks); err == nil {
 			// make metar last thing to be print
 			defer log.Println(metar)
 		} else {
@@ -64,7 +64,7 @@ func main() {
 		}
 
 		// add METAR to mission brief if enabled
-		if util.Config.METAR.AddToBrief {
+		if config.Get().METAR.AddToBrief {
 			if err = miz.UpdateBrief(metar); err != nil {
 				log.Printf("Error adding METAR to brief: %v", err)
 			}
