@@ -7,8 +7,6 @@ import (
 	"log"
 	"net/http"
 	"time"
-
-	"github.com/evogelsa/DCS-real-weather/util"
 )
 
 var SelectedPreset string
@@ -27,7 +25,7 @@ func CelsiusToFahrenheit(c float64) float64 {
 	return (c * 1.8) + 32
 }
 
-func GetWeather() (WeatherData, error) {
+func GetWeather(icao, apiKey string) (WeatherData, error) {
 	log.Println("Getting weather from CheckWX...")
 
 	// create http client to fetch weather data, timeout after 5 sec
@@ -36,13 +34,13 @@ func GetWeather() (WeatherData, error) {
 
 	request, err := http.NewRequest(
 		"GET",
-		"https://api.checkwx.com/metar/"+util.Config.METAR.ICAO+"/decoded",
+		"https://api.checkwx.com/metar/"+icao+"/decoded",
 		nil,
 	)
 	if err != nil {
 		return WeatherData{}, err
 	}
-	request.Header.Set("X-API-Key", util.Config.APIKey)
+	request.Header.Set("X-API-Key", apiKey)
 
 	// make api request
 	resp, err := client.Do(request)
@@ -108,7 +106,7 @@ func checkWeather(data *WeatherData) error {
 
 // GenerateMETAR generates a metar based on the weather settings added to the
 // DCS miz
-func GenerateMETAR(wx WeatherData) (string, error) {
+func GenerateMETAR(wx WeatherData, rmk string) (string, error) {
 	data := wx.Data[0]
 
 	var metar string
@@ -184,7 +182,9 @@ func GenerateMETAR(wx WeatherData) (string, error) {
 	metar += "NOSIG"
 
 	// rmks
-	metar += " " + util.Config.METAR.Remarks
+	if rmk != "" {
+		metar += " " + rmk
+	}
 
 	return metar, nil
 }
