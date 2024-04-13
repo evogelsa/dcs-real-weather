@@ -72,6 +72,7 @@ each parameter.
     "wind": {
       "minimum": 0,            // max allowed wind speed in m/s, at least 0
       "maximum": 50,           // min allowed wind speed in m/s, at most 50
+      "open-meteo": true,      // use Open Meteo API for winds aloft
       "stability": 0.143,      // atmospheric stability for wind calculations
       "fixed-reference": false // use a fixed reference for wind calculations
     },
@@ -124,7 +125,8 @@ each parameter.
       accuracy. Using this value the METAR will report the clouds in hundreds of
       feet AGL. This can be set to 0 to retain the legacy behavior of reporting
       clouds in MSL altitudes. This value will also be used for the reference
-      height in wind calculation if `fixed-reference` is false.
+      height in wind calculation if `open-meteo` and `fixed-reference` are
+      false.
   * `remarks`: string
     * This adds a RMK section in the METAR string. There is not functional
       impact of this setting. It's used for customization only.
@@ -148,21 +150,27 @@ each parameter.
     * `maximum`: integer
       * This is the maximum wind speed in meters per second that Real Weather
         will apply to your mission. This value must be at most 50.
+    * `open-meteo`: boolean
+      * If true, Real Weather will use the Open Meteo API to get winds aloft
+        data. If false, Real Weather will use the wind profile power law to
+        estimate winds aloft.
     * `stability`: float
       * This is the atmospheric stability number used in the wind profile power
-         law. This is used when calculating wind speeds at altitudes other than
-         the airport elevation. 0.143 is generally a good setting for this, but
-         it can be configured to your liking. Larger values generally equate to
-         less stable atmosphere with bigger difference between ground winds and
-         winds aloft, and smaller values generally equate to more stable
-         atmospheres with ground winds being closer to winds aloft. See the
-         additional notes below for more information.
+        law. This is used when calculating wind speeds at altitudes other than
+        the airport elevation. 0.143 is generally a good setting for this, but
+        it can be configured to your liking. Larger values generally equate to
+        less stable atmosphere with bigger difference between ground winds and
+        winds aloft, and smaller values generally equate to more stable
+        atmospheres with ground winds being closer to winds aloft. See the
+        additional notes below for more information. This parameters only does
+        something if `open-meteo` is false.
     * `fixed-reference`: boolean
       * Disable/enable using a fixed reference point when calculating winds
         aloft. If false, Real Weather will use the `runway-elevation` as the
         wind reference point for calculting winds aloft. If true, Real Weather
         will use 1 meter MSL as as the reference height for wind calculations.
-        Generally this should be set to false.
+        Generally this should be set to false. This parameter only does
+        something if `open-meteo` is false.
   * `clouds`
     * `disallowed-presets`: string array
       * This is a list of all the presets you do not want to be chosen. This
