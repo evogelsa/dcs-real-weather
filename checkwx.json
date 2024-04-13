@@ -1,0 +1,79 @@
+{
+  "results": 1,
+  "data": [
+    {
+      "icao": "UGKO",
+      "barometer": {
+        "hg": 30.15,
+        "hpa": 1021,
+        "kpa": 102.1,
+        "mb": 1021
+      },
+      "ceiling": {
+        "feet": 4500,
+        "meters": 1372
+      },
+      "clouds": [
+        {
+          "base_feet_agl": 1800,
+          "base_meters_agl": 549,
+          "code": "OVC",
+          "text": "Overcast",
+          "feet": 1800,
+          "meters": 549
+        },
+        {
+          "base_feet_agl": 4500,
+          "base_meters_agl": 1372,
+          "code": "BKN",
+          "text": "Broken",
+          "feet": 4500,
+          "meters": 1372
+        }
+      ],
+      "dewpoint": {
+        "celsius": 11,
+        "fahrenheit": 52
+      },
+      "elevation": {
+        "feet": 144,
+        "meters": 44
+      },
+      "flight_category": "MVFR",
+      "humidity": {
+        "percent": 94
+      },
+      "observed": "2024-04-13T01:00:00",
+      "station": {
+        "geometry": {
+          "coordinates": [
+            42.482393,
+            42.176768
+          ],
+          "type": "Point"
+        },
+        "location": "Kopitnari, Imereti, Georgia",
+        "name": "David the Builder Kutaisi International Airport",
+        "type": "Airport"
+      },
+      "temperature": {
+        "celsius": 12,
+        "fahrenheit": 54
+      },
+      "raw_text": "UGKO 130100Z 22003KT 8000 SCT018 BKN045 12/11 Q1021 NOSIG",
+      "visibility": {
+        "miles": "4.97",
+        "miles_float": 4.97,
+        "meters": "8,000",
+        "meters_float": 8000
+      },
+      "wind": {
+        "degrees": 220,
+        "speed_kph": 6,
+        "speed_kts": 3,
+        "speed_mph": 3,
+        "speed_mps": 2
+      }
+    }
+  ]
+}
