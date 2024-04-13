@@ -3,8 +3,11 @@ package main
 //go:generate goversioninfo versioninfo/versioninfo.json
 
 import (
+	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/evogelsa/DCS-real-weather/config"
 	"github.com/evogelsa/DCS-real-weather/miz"
@@ -12,13 +15,18 @@ import (
 	"github.com/evogelsa/DCS-real-weather/weather"
 )
 
-func main() {
-	defer func() {
-		if r := recover(); r != nil {
-			log.Printf("Unexpected error encountered: %v\n", r)
-		}
-	}()
+// flag vars
+var (
+	debugCheckWx bool
+)
 
+func init() {
+	flag.BoolVar(&debugCheckWx, "debug-checkwx", false, "load checkwx data from checkwx.json")
+
+	flag.Parse()
+}
+
+func init() {
 	// log version
 	var ver string
 
@@ -26,20 +34,24 @@ func main() {
 	if versioninfo.Pre != "" {
 		ver += fmt.Sprintf("-%s-%d", versioninfo.Pre, versioninfo.CommitNum)
 	}
+
 	if versioninfo.Commit != "" {
 		ver += "+" + versioninfo.Commit
 	}
 
 	log.Println("Using Real Weather " + ver)
+}
 
-	// get METAR report
+func main() {
 	var err error
-	var data weather.WeatherData
-	data, err = weather.GetWeather(config.Get().METAR.ICAO, config.Get().APIKey)
-	if err != nil {
-		log.Printf("Error getting weather, using default: %v\n", err)
-		data = weather.DefaultWeather
-	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("Unexpected error encountered: %v", r)
+		}
+	}()
+
+	data := getWx()
 
 	// confirm there is data before updating
 	if data.NumResults <= 0 {
@@ -89,4 +101,31 @@ func main() {
 	// remove unpacked contents from directory
 	miz.Clean()
 
+}
+
+func getWx() weather.WeatherData {
+	// get METAR report
+	var err error
+	var data weather.WeatherData
+
+	if debugCheckWx {
+		log.Println("Debugging CheckWx. Reading data from file...")
+		b, err := os.ReadFile("checkwx.json")
+		if err != nil {
+			log.Fatalf("Could not read checkwx.json: %v", err)
+		}
+		err = json.Unmarshal(b, &data)
+		if err != nil {
+			log.Fatalf("Could not parse checkwx.json: %v", err)
+		}
+		log.Println("Parsed weather data")
+	} else {
+		data, err = weather.GetWeather(config.Get().METAR.ICAO, config.Get().APIKey)
+		if err != nil {
+			log.Printf("Error getting weather, using default: %v\n", err)
+			data = weather.DefaultWeather
+		}
+	}
+
+	return data
 }
