@@ -25,6 +25,84 @@ func CelsiusToFahrenheit(c float64) float64 {
 	return (c * 1.8) + 32
 }
 
+func GetWindsAloft(location []float64) (WindsAloft, error) {
+	log.Println("Getting winds aloft data from Open Meteo...")
+
+	// create http client to fetch weather data, timeout after 5 sec
+	timeout := time.Duration(5 * time.Second)
+	client := http.Client{Timeout: timeout}
+
+	request, err := http.NewRequest(
+		"GET",
+		"https://api.open-meteo.com/v1/forecast",
+		nil,
+	)
+	if err != nil {
+		return WindsAloft{}, err
+	}
+
+	// add query parameters
+	q := request.URL.Query()
+	q.Add("latitude", fmt.Sprintf("%.6f", location[1]))
+	q.Add("longitude", fmt.Sprintf("%.6f", location[0]))
+	q.Add("hourly", "windspeed_800hPa,windspeed_400hPa,winddirection_800hPa,winddirection_400hPa")
+	q.Add("wind_speed_unit", "ms")
+
+	request.URL.RawQuery = q.Encode()
+
+	// make request
+	resp, err := client.Do(request)
+	if err != nil {
+		return WindsAloft{}, err
+	}
+
+	// verify response
+	if resp.StatusCode != http.StatusOK {
+		return WindsAloft{}, fmt.Errorf("Open Meteo bad status: %v", resp.Status)
+	}
+
+	// parse response
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return WindsAloft{}, fmt.Errorf("Error parsing Open Meteo response: %v", err)
+	}
+
+	log.Println("Got winds aloft data")
+	log.Println("Parsing winds aloft data...")
+
+	// format response into winds aloft struct
+	var res OpenMeteoData
+	err = json.Unmarshal(body, &res)
+	if err != nil {
+		return WindsAloft{}, err
+	}
+
+	// get current time
+	t := time.Now().UTC().Format("2006-01-02T15") + ":00"
+
+	// find index of current timestamp
+	var i int
+	var ts string
+	for i, ts = range res.Hourly.Time {
+		if t == ts {
+			break
+		}
+	}
+
+	// create return windspeed and winddir arrays
+	data := WindsAloft{
+		WindSpeed1900:     res.Hourly.WindSpeed1900[i],
+		WindSpeed7200:     res.Hourly.WindSpeed7200[i],
+		WindDirection1900: res.Hourly.WindDirection1900[i],
+		WindDirection7200: res.Hourly.WindDirection7200[i],
+	}
+
+	log.Printf("Parsed winds aloft data: %v", data)
+
+	return data, nil
+
+}
+
 func GetWeather(icao, apiKey string) (WeatherData, error) {
 	log.Println("Getting weather from CheckWX...")
 
@@ -266,7 +344,13 @@ type Location struct {
 }
 
 type Station struct {
-	Name string `json:"name"`
+	Name     string   `json:"name"`
+	Geometry Geometry `json:"geometry"`
+}
+
+type Geometry struct {
+	Coordinates []float64 `json:"coordinates"`
+	Type        string    `json:"type"`
 }
 
 type Temperature struct {
@@ -405,4 +489,28 @@ var DefaultWeather WeatherData = WeatherData{
 		},
 	},
 	NumResults: 1,
+}
+
+type OpenMeteoData struct {
+	Latitude         float64 `json:"latitude"`
+	Longitude        float64 `json:"longitude"`
+	Elevation        float64 `json:"elevation"`
+	GenerationTime   float64 `json:"generationtime_ms"`
+	UTCOffsetSeconds int     `json:"utc_offset_seconds"`
+	Timezone         string  `json:"timezone"`
+	TimezoneAbbr     string  `json:"timezone_abbreviation"`
+	Hourly           struct {
+		Time              []string  `json:"time"`
+		WindSpeed1900     []float64 `json:"windspeed_800hPa"`
+		WindSpeed7200     []float64 `json:"windspeed_400hPa"`
+		WindDirection1900 []int     `json:"winddirection_800hPa"`
+		WindDirection7200 []int     `json:"winddirection_400hPa"`
+	} `json:"hourly"`
+}
+
+type WindsAloft struct {
+	WindSpeed1900     float64
+	WindSpeed7200     float64
+	WindDirection1900 int
+	WindDirection7200 int
 }

@@ -41,37 +41,44 @@ func main() {
 		data = weather.DefaultWeather
 	}
 
+	// confirm there is data before updating
+	if data.NumResults <= 0 {
+		log.Fatalf("Incorrect weather data. No weather applied to mission file.")
+	}
+
+	// get winds aloft
+	var windsAloft weather.WindsAloft
+	windsAloft, err = weather.GetWindsAloft(data.Data[0].Station.Geometry.Coordinates)
+	if err != nil {
+		log.Printf("Error getting winds aloft, using legacy winds aloft: %v", err)
+		config.Set("open-meteo", false)
+	}
+
 	// unzip mission file
 	_, err = miz.Unzip()
 	if err != nil {
 		log.Fatalf("Error unzipping mission file: %v\n", err)
 	}
 
-	// confirm there is data before updating
-	if data.NumResults > 0 {
-		// update mission file with weather data
-		if err = miz.Update(data); err != nil {
-			log.Printf("Error updating mission: %v\n", err)
-		}
+	// update mission file with weather data
+	if err = miz.Update(data, windsAloft); err != nil {
+		log.Printf("Error updating mission: %v\n", err)
+	}
 
-		// generate the METAR text
-		var metar string
-		if metar, err = weather.GenerateMETAR(data, config.Get().METAR.Remarks); err == nil {
-			// make metar last thing to be print
-			defer log.Println(metar)
-		} else {
-			log.Printf("Error creating DCS METAR: %v", err)
-		}
-
-		// add METAR to mission brief if enabled
-		if config.Get().METAR.AddToBrief {
-			if err = miz.UpdateBrief(metar); err != nil {
-				log.Printf("Error adding METAR to brief: %v", err)
-			}
-		}
-
+	// generate the METAR text
+	var metar string
+	if metar, err = weather.GenerateMETAR(data, config.Get().METAR.Remarks); err == nil {
+		// make metar last thing to be print
+		defer log.Println(metar)
 	} else {
-		log.Println("Incorrect weather data. No weather applied to mission file.")
+		log.Printf("Error creating DCS METAR: %v", err)
+	}
+
+	// add METAR to mission brief if enabled
+	if config.Get().METAR.AddToBrief {
+		if err = miz.UpdateBrief(metar); err != nil {
+			log.Printf("Error adding METAR to brief: %v", err)
+		}
 	}
 
 	// repack mission file contents and form realweather.miz output
