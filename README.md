@@ -163,14 +163,16 @@ each parameter.
         winds aloft, and smaller values generally equate to more stable
         atmospheres with ground winds being closer to winds aloft. See the
         additional notes below for more information. This parameters only does
-        something if `open-meteo` is false.
+        something if `open-meteo` is false or if the Open Meteo API is
+        unavailable.
     * `fixed-reference`: boolean
       * Disable/enable using a fixed reference point when calculating winds
         aloft. If false, Real Weather will use the `runway-elevation` as the
         wind reference point for calculting winds aloft. If true, Real Weather
         will use 1 meter MSL as as the reference height for wind calculations.
         Generally this should be set to false. This parameter only does
-        something if `open-meteo` is false.
+        something if `open-meteo` is false or if the Open Meteo API is
+        unavailable.
   * `clouds`
     * `disallowed-presets`: string array
       * This is a list of all the presets you do not want to be chosen. This
@@ -227,10 +229,6 @@ The DCS presets are shown in following table. These preset names are the same
 names that can be added to the `disallowed-presets` and `default-preset` config
 parameters.
 
-> [!NOTE]
-> The lowest cloud layer's altitude may vary since Real Weather will try to
-> match it to the METAR as best as possible.
-
 | Preset Name    | Cloud Layers         |
 |----------------|----------------------|
 | "Preset1"      | FEW070               |
@@ -263,6 +261,10 @@ parameters.
 | "RainyPreset1" | OVC030 OVC280 FEW400 |
 | "RainyPreset2" | OVC030 SCT180 FEW400 |
 | "RainyPreset3" | OVC060 OVC190 SCT340 |
+
+> [!NOTE]
+> The lowest cloud layer's altitude may vary since Real Weather will try to
+> match it to the METAR as best as possible.
 
 ## Contributing
 
