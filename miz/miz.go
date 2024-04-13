@@ -40,7 +40,7 @@ func init() {
 }
 
 // Update applies weather and time updates to the unpacked mission file
-func Update(data weather.WeatherData) error {
+func Update(data weather.WeatherData, windsAloft weather.WindsAloft) error {
 	log.Println("Loading mission into Lua VM...")
 
 	// load mission file into lua vm
@@ -53,7 +53,7 @@ func Update(data weather.WeatherData) error {
 
 	// update weather if enabled
 	if config.Get().Options.UpdateWeather {
-		if err := updateWeather(data, l); err != nil {
+		if err := updateWeather(data, windsAloft, l); err != nil {
 			return fmt.Errorf("Error updating weather: %v", err)
 		}
 	}
@@ -136,29 +136,35 @@ func UpdateBrief(metar string) error {
 }
 
 // updateWeather applies new weather to the given lua state using data
-func updateWeather(data weather.WeatherData, l *lua.LState) error {
-	if err := updateWind(data, l); err != nil {
-		return fmt.Errorf("Error updating weather: %v", err)
+func updateWeather(data weather.WeatherData, windsAloft weather.WindsAloft, l *lua.LState) error {
+	if config.Get().Options.Wind.OpenMeteo {
+		if err := updateWind(data, windsAloft, l); err != nil {
+			return fmt.Errorf("Error updating wind: %v", err)
+		}
+	} else {
+		if err := updateWindLegacy(data, l); err != nil {
+			return fmt.Errorf("Error updating wind: %v", err)
+		}
 	}
 
 	if err := updateTemperature(data, l); err != nil {
-		return fmt.Errorf("Error updating weather: %v", err)
+		return fmt.Errorf("Error updating temperature: %v", err)
 	}
 
 	if err := updatePressure(data, l); err != nil {
-		return fmt.Errorf("Error updating weather: %v", err)
+		return fmt.Errorf("Error updating pressure: %v", err)
 	}
 
 	if err := updateFog(data, l); err != nil {
-		return fmt.Errorf("Error updating weather: %v", err)
+		return fmt.Errorf("Error updating fog: %v", err)
 	}
 
 	if err := updateDust(data, l); err != nil {
-		return fmt.Errorf("Error updating weather: %v", err)
+		return fmt.Errorf("Error updating dust: %v", err)
 	}
 
 	if err := updateClouds(data, l); err != nil {
-		return fmt.Errorf("Error updating weather: %v", err)
+		return fmt.Errorf("Error updating clouds: %v", err)
 	}
 
 	return nil
@@ -402,10 +408,77 @@ func updateTemperature(data weather.WeatherData, l *lua.LState) error {
 	return nil
 }
 
-// updateWind applies reported wind to mission state and also calculates
+// updateWind uses open meteo data to get winds aloft data then applies this to
+// the mission state
+func updateWind(data weather.WeatherData, windsAloft weather.WindsAloft, l *lua.LState) error {
+	speedGround := windSpeed(1, data)
+
+	// cap wind speeds to configured values
+	minWind := config.Get().Options.Wind.Minimum
+	maxWind := config.Get().Options.Wind.Maximum
+	speedGround = util.Clamp(speedGround, minWind, maxWind)
+	speed2000 := util.Clamp(windsAloft.WindSpeed1900, minWind, maxWind)
+	speed8000 := util.Clamp(windsAloft.WindSpeed7200, minWind, maxWind)
+
+	// note DCS expects winds TO direction, but standard everywhere else is
+	// winds from direction, hence to +180 % 360
+	dirGround := int(data.Data[0].Wind.Degrees+180) % 360
+	dir2000 := (windsAloft.WindDirection1900 + 180) % 360
+	dir8000 := (windsAloft.WindDirection7200 + 180) % 360
+
+	// apply to mission state
+	if err := l.DoString(
+		fmt.Sprintf(
+			"mission.weather.wind.at8000.speed = %0.3f\n"+
+				"mission.weather.wind.at8000.dir = %d\n"+
+				"mission.weather.wind.at2000.speed = %0.3f\n"+
+				"mission.weather.wind.at2000.dir = %d\n"+
+				"mission.weather.wind.atGround.speed = %0.3f\n"+
+				"mission.weather.wind.atGround.dir = %d\n",
+			speed8000, dir8000, speed2000, dir2000, speedGround, dirGround,
+		),
+	); err != nil {
+		return fmt.Errorf("Error updating winds: %v", err)
+	}
+
+	log.Printf(
+		"Winds:\n"+
+			"\tAt 8000 meters (26000 ft):\n"+
+			"\t\tSpeed: %0.3f m/s (%d kt)\n"+
+			"\t\tFrom: %03d\n"+
+			"\tAt 2000 meters (6500 ft):\n"+
+			"\t\tSpeed: %0.3f m/s (%d kt)\n"+
+			"\t\tFrom: %03d\n"+
+			"\tAt ground:\n"+
+			"\t\tSpeed: %0.3f m/s (%d kt)\n"+
+			"\t\tFrom: %03d\n",
+		speed8000, int(speed8000*weather.MPSToKT+0.5),
+		(dir8000+180)%360,
+		speed2000, int(speed2000*weather.MPSToKT+0.5),
+		(dir2000+180)%360,
+		speedGround, int(speedGround*weather.MPSToKT+0.5),
+		(dirGround+180)%360,
+	)
+
+	// apply gustiness/turbulence to mission
+	gust := data.Data[0].Wind.GustMPS
+
+	if err := l.DoString(
+		fmt.Sprintf("mission.weather.groundTurbulence = %0.4f\n", gust),
+	); err != nil {
+		return fmt.Errorf("Error updating turbulence: %v", err)
+	}
+
+	log.Printf("Gusts: %0.3f m/s (%d kt)\n", gust, int(gust*weather.MPSToKT))
+
+	return nil
+
+}
+
+// updateWindLegacy applies reported wind to mission state and also calculates
 // and applies winds aloft using wind profile power law. This function also
 // applies turbulence/gust data to the mission
-func updateWind(data weather.WeatherData, l *lua.LState) error {
+func updateWindLegacy(data weather.WeatherData, l *lua.LState) error {
 	speedGround := windSpeed(1, data)
 	speed2000 := windSpeed(2000, data)
 	speed8000 := windSpeed(8000, data)
@@ -419,6 +492,8 @@ func updateWind(data weather.WeatherData, l *lua.LState) error {
 
 	// apply wind shift to winds aloft layers
 	// this is not really realistic but it adds variety to wind calculation
+	// note DCS expects winds TO direction, but standard everywhere else is
+	// winds from direction, hence to +180 % 360
 	dirGround := int(data.Data[0].Wind.Degrees+180) % 360
 	dir2000 := (rand.Intn(45) + dirGround) % 360
 	dir8000 := (rand.Intn(45) + dir2000) % 360
@@ -442,19 +517,19 @@ func updateWind(data weather.WeatherData, l *lua.LState) error {
 		"Winds:\n"+
 			"\tAt 8000 meters (26000 ft):\n"+
 			"\t\tSpeed: %0.3f m/s (%d kt)\n"+
-			"\t\tDirection: %03d\n"+
+			"\t\tFrom: %03d\n"+
 			"\tAt 2000 meters (6500 ft):\n"+
 			"\t\tSpeed: %0.3f m/s (%d kt)\n"+
-			"\t\tDirection: %03d\n"+
+			"\t\tFrom: %03d\n"+
 			"\tAt ground:\n"+
 			"\t\tSpeed: %0.3f m/s (%d kt)\n"+
-			"\t\tDirection: %03d\n",
-		speed8000, int(speed8000*weather.MPSToKT),
-		dir8000,
-		speed2000, int(speed2000*weather.MPSToKT),
-		dir2000,
-		speedGround, int(speedGround*weather.MPSToKT),
-		dirGround,
+			"\t\tFrom: %03d\n",
+		speed8000, int(speed8000*weather.MPSToKT+0.5),
+		(dir8000+180)%360,
+		speed2000, int(speed2000*weather.MPSToKT+0.5),
+		(dir2000+180)%360,
+		speedGround, int(speedGround*weather.MPSToKT+0.5),
+		(dirGround+180)%360,
 	)
 
 	// apply gustiness/turbulence to mission

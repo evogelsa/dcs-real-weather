@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"io/fs"
 	"log"
@@ -39,6 +40,7 @@ type Configuration struct {
 		Wind          struct {
 			Minimum        float64 `json:"minimum"`
 			Maximum        float64 `json:"maximum"`
+			OpenMeteo      bool    `json:"open-meteo"`
 			Stability      float64 `json:"stability"`
 			FixedReference bool    `json:"fixed-reference"`
 		} `json:"wind"`
@@ -206,4 +208,15 @@ func checkWind() {
 
 func Get() Configuration {
 	return config
+}
+
+func Set(param string, value interface{}) error {
+	switch param {
+	case "open-meteo":
+		v := value.(bool)
+		config.Options.Wind.OpenMeteo = v
+	default:
+		return fmt.Errorf("Unsupported parameter")
+	}
+	return nil
 }
