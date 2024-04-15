@@ -32,6 +32,7 @@ type Configuration struct {
 		RunwayElevation int    `json:"runway-elevation"`
 		Remarks         string `json:"remarks"`
 		AddToBrief      bool   `json:"add-to-brief"`
+		UseCustomData   bool   `json:"use-custom-data"`
 	} `json:"metar"`
 	Options struct {
 		UpdateTime    bool   `json:"update-time"`

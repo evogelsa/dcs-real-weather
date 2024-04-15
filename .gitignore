@@ -9,6 +9,7 @@ resource.syso
 
 # testing files
 config.json
+checkwx.json
 mission.miz
 realweather.miz
 tmp/

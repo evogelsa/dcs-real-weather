@@ -60,10 +60,11 @@ each parameter.
     "log": "logfile.log"                 // path of log file, "" disables
   },
   "metar": {
-    "icao": "KDLH",        // ICAO of the aiport to fetch METAR from
-    "runway-elevation": 0, // elevation of runway in meters MSL
-    "remarks": "",         // addtional remarks for METAR, customization only
-    "add-to-brief": true   // add METAR text to bottom of mission brief
+    "icao": "KDLH",          // ICAO of the aiport to fetch METAR from
+    "runway-elevation": 0,   // elevation of runway in meters MSL
+    "remarks": "",           // addtional remarks for METAR, customization only
+    "add-to-brief": true,    // add METAR text to bottom of mission brief
+    "use-custom-data": false // use custom data from checkwx.json file
   },
   "options": {
     "update-time": true,     // set to false to disable time being updated
@@ -133,6 +134,13 @@ each parameter.
   * `add-to-brief`: boolean
     * If true, Real Weather will add the generated METAR to the bottom of your
       mission brief.
+  * `use-custom-data`: boolean
+    * If true, Real Weather will load METAR data from a checkwx.json file
+      instead of accessing the CheckWX API. This data must be in the same format
+      CheckWX would provide. See [examples/checkwx.json](examples/checkwx.json)
+      and [checkwxapi.com](https://www.checkwxapi.com/documentation/metar) for
+      more info. Only the parameters shown in the example are currently
+      supported.
 * `options`
   * `update-time`: boolean
     * Disable/enable Real Weather modifying your mission time.
