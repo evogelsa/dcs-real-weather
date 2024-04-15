@@ -3,6 +3,7 @@ package main
 //go:generate goversioninfo versioninfo/versioninfo.json
 
 import (
+	"bytes"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -108,17 +109,32 @@ func getWx() weather.WeatherData {
 	var err error
 	var data weather.WeatherData
 
+	// use value from config if exists. CLI argument will override a false
+	// parameter in the config
+	if config.Get().METAR.UseCustomData {
+		debugCheckWx = true
+	}
+
 	if debugCheckWx {
-		log.Println("Debugging CheckWx. Reading data from file...")
+		log.Println("Using custom weather data from file...")
 		b, err := os.ReadFile("checkwx.json")
 		if err != nil {
 			log.Fatalf("Could not read checkwx.json: %v", err)
 		}
+
+		var minify bytes.Buffer
+		if err := json.Compact(&minify, b); err == nil {
+			log.Println("Read weather data: ", minify.String())
+		} else {
+			log.Println("Couldn't minify custom weather data:", err)
+		}
+
 		err = json.Unmarshal(b, &data)
 		if err != nil {
 			log.Fatalf("Could not parse checkwx.json: %v", err)
 		}
-		log.Println("Parsed weather data")
+		log.Println("Parsed weather data: ")
+
 	} else {
 		data, err = weather.GetWeather(config.Get().METAR.ICAO, config.Get().APIKey)
 		if err != nil {

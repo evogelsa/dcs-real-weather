@@ -1,0 +1,44 @@
+{
+  "results": 1,
+  "data": [
+    {
+      "icao": "UGKO",
+      "barometer": {
+        "hg": 30.15
+      },
+      "clouds": [
+        {
+          "code": "OVC",
+          "meters": 549
+        },
+        {
+          "code": "BKN",
+          "meters": 1372
+        }
+      ],
+      "dewpoint": {
+        "celsius": 11
+      },
+      "observed": "2024-04-13T01:00:00",
+      "station": {
+        "geometry": {
+          "coordinates": [
+            42.482393,
+            42.176768
+          ]
+        }
+      },
+      "temperature": {
+        "celsius": 12
+      },
+      "visibility": {
+        "meters_float": 8000
+      },
+      "wind": {
+        "degrees": 220,
+        "speed_mps": 2,
+        "gust_mps": 0
+      }
+    }
+  ]
+}
