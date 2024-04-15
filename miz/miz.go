@@ -598,6 +598,11 @@ func checkClouds(data weather.WeatherData) (string, int) {
 	var preset string
 	var base int
 
+	// if no clouds then assume clear
+	if len(data.Data[0].Clouds) == 0 {
+		return "", 0
+	}
+
 	base = util.Config.METAR.RunwayElevation
 
 	precip := checkPrecip(data)
