@@ -136,11 +136,12 @@ each parameter.
       mission brief.
   * `use-custom-data`: boolean
     * If true, Real Weather will load METAR data from a checkwx.json file
-      instead of accessing the CheckWX API. This data must be in the same format
-      CheckWX would provide. See [examples/checkwx.json](examples/checkwx.json)
-      and [checkwxapi.com](https://www.checkwxapi.com/documentation/metar) for
-      more info. Only the parameters shown in the example are currently
-      supported.
+      and overwrite data from the CheckWX API. This data must be in the same
+      format CheckWX would provide. See
+      [examples/checkwx.json](examples/checkwx.json) and
+      [checkwxapi.com](https://www.checkwxapi.com/documentation/metar) for more
+      info. Only the parameters shown in the example are currently supported.
+      If not all parameters are given, the missing data will come from CheckWX.
 * `options`
   * `update-time`: boolean
     * Disable/enable Real Weather modifying your mission time.
