@@ -115,8 +115,14 @@ func getWx() weather.WeatherData {
 		debugCheckWx = true
 	}
 
+	data, err = weather.GetWeather(config.Get().METAR.ICAO, config.Get().APIKey)
+	if err != nil {
+		log.Printf("Error getting weather, using default: %v\n", err)
+		data = weather.DefaultWeather
+	}
+
 	if debugCheckWx {
-		log.Println("Using custom weather data from file...")
+		log.Println("Overriding weather with custom data from file...")
 		b, err := os.ReadFile("checkwx.json")
 		if err != nil {
 			log.Fatalf("Could not read checkwx.json: %v", err)
@@ -134,13 +140,6 @@ func getWx() weather.WeatherData {
 			log.Fatalf("Could not parse checkwx.json: %v", err)
 		}
 		log.Println("Parsed weather data: ")
-
-	} else {
-		data, err = weather.GetWeather(config.Get().METAR.ICAO, config.Get().APIKey)
-		if err != nil {
-			log.Printf("Error getting weather, using default: %v\n", err)
-			data = weather.DefaultWeather
-		}
 	}
 
 	return data
