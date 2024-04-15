@@ -114,7 +114,7 @@ func checkParams() {
 	checkStability()
 	checkDefaultPreset()
 	checkFogThickness()
-	checkVisibility()
+	checkFogVisibility()
 	checkDust()
 	checkWind()
 }
@@ -139,7 +139,7 @@ func checkDefaultPreset() {
 
 	var presetFound bool
 	for preset := range weather.DecodePreset {
-		if preset == config.Options.Clouds.DefaultPreset {
+		if preset == `"`+config.Options.Clouds.DefaultPreset+`"` {
 			presetFound = true
 			break
 		}
@@ -165,10 +165,16 @@ func checkFogThickness() {
 		log.Println("Fog minimum thickness is set below min of 0; defaulting to 0")
 		config.Options.Fog.ThicknessMinimum = 0
 	}
+
+	if config.Options.Fog.ThicknessMinimum > config.Options.Fog.ThicknessMaximum {
+		log.Println("Fog minimum thickness is set above fog maximum thickness; defaulting to 0 and 1000")
+		config.Options.Fog.ThicknessMaximum = 1000
+		config.Options.Fog.ThicknessMinimum = 0
+	}
 }
 
-// checkVisibility enforces vis is within [0, 6000]
-func checkVisibility() {
+// checkFogVisibility enforces vis is within [0, 6000]
+func checkFogVisibility() {
 	if config.Options.Fog.VisibilityMaximum > 6000 {
 		log.Println("Fog maximum visibility is set above max of 6000; defaulting to 6000")
 		config.Options.Fog.VisibilityMaximum = 6000
@@ -176,6 +182,12 @@ func checkVisibility() {
 
 	if config.Options.Fog.VisibilityMinimum < 0 {
 		log.Println("Fog minimum visibility is set below min of 0; defaulting to 0")
+		config.Options.Fog.VisibilityMinimum = 0
+	}
+
+	if config.Options.Fog.VisibilityMinimum > config.Options.Fog.VisibilityMaximum {
+		log.Println("Fog minimum visibility is set above fog maximum visibility; defaulting to 0 and 6000")
+		config.Options.Fog.VisibilityMaximum = 6000
 		config.Options.Fog.VisibilityMinimum = 0
 	}
 }
@@ -191,6 +203,12 @@ func checkDust() {
 		log.Println("Dust visibility maximum is set above max of 3000; defaulting to 3000")
 		config.Options.Dust.VisibilityMaximum = 3000
 	}
+
+	if config.Options.Dust.VisibilityMinimum > config.Options.Fog.VisibilityMaximum {
+		log.Println("Dust minimum visibility is set above dust maximum visibility; defaulting to 300 and 3000")
+		config.Options.Dust.VisibilityMaximum = 3000
+		config.Options.Dust.VisibilityMinimum = 300
+	}
 }
 
 // checkWind enforces wind within [0, 50]
@@ -203,6 +221,12 @@ func checkWind() {
 	if config.Options.Wind.Maximum > 50 {
 		log.Println("Wind maximum is set above max of 50; defaulting to 50")
 		config.Options.Wind.Maximum = 50
+	}
+
+	if config.Options.Wind.Minimum > config.Options.Wind.Maximum {
+		log.Println("Win minimum is set above wind maximum; defaulting to 0 and 50")
+		config.Options.Dust.VisibilityMaximum = 50
+		config.Options.Dust.VisibilityMinimum = 0
 	}
 }
 
