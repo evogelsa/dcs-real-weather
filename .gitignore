@@ -3,6 +3,10 @@ __debug_bin
 
 # binaries
 bin/
+realweather
+realweather.exe
+rwbot
+rwbot.exe
 
 # syso
 resource.syso
@@ -10,6 +14,8 @@ resource.syso
 # testing files
 config.json
 checkwx.json
+.rwbot
+botconfig.json
 mission.miz
 realweather.miz
 tmp/

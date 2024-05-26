@@ -76,7 +76,7 @@ func init() {
 			log.Println("Config does not exist, creating one...")
 			err := os.WriteFile("config.json", []byte(defaultConfig), 0666)
 			if err != nil {
-				log.Fatalf("Unable to create config.json.")
+				log.Fatalf("Unable to create config.json: %v", err)
 			}
 			log.Fatalf("Default config created. Please configure with your API key and desired settings, then rerun.")
 		} else {
