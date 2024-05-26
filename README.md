@@ -23,13 +23,23 @@ If using the latest beta version, please see the [beta documentation][2].
 [1]: https://github.com/evogelsa/dcs-real-weather/blob/main/cmd/realweather/README.md
 [2]: https://github.com/evogelsa/dcs-real-weather/blob/dev/cmd/realweather/README.md
 
+## Bot Documentation and Setup
+
+For now, the bot does not have a separate release cycle. All new bot releases
+will be paired with Real Weather releases. Please see the bot directory for
+its documentation; here's a link for the [latest stable release][3] and
+here's a link for the [latest beta release][4].
+
+[3]: https://github.com/evogelsa/dcs-real-weather/blob/main/cmd/bot/README.md
+[4]: https://github.com/evogelsa/dcs-real-weather/blob/dev/cmd/bot/README.md
+
 ## Contributing
 
 Interested in helping to improve this project? Please see the [contributing
 guide](CONTRIBUTING.md) for guidelines on making suggestions, opening new
 issues, or contributing code. Thanks for your interest!
 
-## Enjoying this project?
+## Enjoying DCS Real Weather?
 
 Please consider starring the project to show your support. If you
 would like to get more involved, read the [contributing guide](CONTRIBUTING.md)
