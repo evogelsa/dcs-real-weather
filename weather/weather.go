@@ -14,7 +14,10 @@ var SelectedBase int
 
 const (
 	MPSToKT      = 1.944
+	KtToMPS      = 0.5144
 	MetersToFeet = 3.281
+	FeetToMeters = 0.3048
+	HPaToInHg    = 0.02953
 )
 
 func ClearCodes() []string {
@@ -23,6 +26,10 @@ func ClearCodes() []string {
 
 func CelsiusToFahrenheit(c float64) float64 {
 	return (c * 1.8) + 32
+}
+
+func FahrenheitToCelsius(f float64) float64 {
+	return (f - 32) / 1.8
 }
 
 func GetWindsAloft(location []float64) (WindsAloft, error) {
@@ -268,113 +275,113 @@ func GenerateMETAR(wx WeatherData, rmk string) (string, error) {
 }
 
 type WeatherData struct {
-	Data       []Data `json:"data"`
-	NumResults int    `json:"results"`
+	Data       []Data `json:"data,omitempty"`
+	NumResults int    `json:"results,omitempty"`
 }
 
 type Data struct {
-	Barometer      Barometer      `json:"barometer"`
-	Ceiling        Ceiling        `json:"ceiling"`
-	Clouds         []Clouds       `json:"clouds"`
-	Conditions     []Conditions   `json:"conditions"`
-	Dewpoint       Dewpoint       `json:"dewpoint"`
-	Elevation      Elevation      `json:"elevation"`
-	FlightCategory FlightCategory `json:"flight_category"`
-	Humidity       Humidity       `json:"humidity"`
-	ICAO           string         `json:"icao"`
-	ID             string         `json:"id"`
-	Location       Location       `json:"location"`
-	Observed       string         `json:"observed"`
-	RawText        string         `json:"raw_text"`
-	Station        Station        `json:"station"`
-	Temperature    Temperature    `json:"temperature"`
-	Visibility     Visibility     `json:"visibility"`
-	Wind           Wind           `json:"wind"`
+	Barometer      *Barometer      `json:"barometer,omitempty"`
+	Ceiling        *Ceiling        `json:"ceiling,omitempty"`
+	Clouds         []Clouds        `json:"clouds,omitempty"`
+	Conditions     []Conditions    `json:"conditions,omitempty"`
+	Dewpoint       *Dewpoint       `json:"dewpoint,omitempty"`
+	Elevation      *Elevation      `json:"elevation,omitempty"`
+	FlightCategory *FlightCategory `json:"flight_category,omitempty"`
+	Humidity       *Humidity       `json:"humidity,omitempty"`
+	ICAO           string          `json:"icao,omitempty"`
+	ID             string          `json:"id,omitempty"`
+	Location       *Location       `json:"location,omitempty"`
+	Observed       string          `json:"observed,omitempty"`
+	RawText        string          `json:"raw_text,omitempty"`
+	Station        *Station        `json:"station,omitempty"`
+	Temperature    *Temperature    `json:"temperature,omitempty"`
+	Visibility     *Visibility     `json:"visibility,omitempty"`
+	Wind           *Wind           `json:"wind,omitempty"`
 }
 
 type Barometer struct {
-	Hg  float64 `json:"hg"`
-	HPa float64 `json:"hpa"`
-	KPa float64 `json:"kpa"`
-	MB  float64 `json:"mb"`
+	Hg  float64 `json:"hg,omitempty"`
+	HPa float64 `json:"hpa,omitempty"`
+	KPa float64 `json:"kpa,omitempty"`
+	MB  float64 `json:"mb,omitempty"`
 }
 
 type Ceiling struct {
-	BaseFeetAGL   float64 `json:"base_feet_agl"`
-	BaseMetersAGL float64 `json:"base_meters_agl"`
-	Code          string  `json:"code"`
-	Feet          float64 `json:"feet"`
-	Meters        float64 `json:"meters"`
-	Text          string  `json:"text"`
+	BaseFeetAGL   float64 `json:"base_feet_agl,omitempty"`
+	BaseMetersAGL float64 `json:"base_meters_agl,omitempty"`
+	Code          string  `json:"code,omitempty"`
+	Feet          float64 `json:"feet,omitempty"`
+	Meters        float64 `json:"meters,omitempty"`
+	Text          string  `json:"text,omitempty"`
 }
 
 type Clouds struct {
-	BaseFeetAGL   float64 `json:"base_feet_agl"`
-	BaseMetersAGL float64 `json:"base_meters_agl"`
-	Code          string  `json:"code"`
-	Feet          float64 `json:"feet"`
-	Meters        float64 `json:"meters"`
-	Text          string  `json:"text"`
+	BaseFeetAGL   float64 `json:"base_feet_agl,omitempty"`
+	BaseMetersAGL float64 `json:"base_meters_agl,omitempty"`
+	Code          string  `json:"code,omitempty"`
+	Feet          float64 `json:"feet,omitempty"`
+	Meters        float64 `json:"meters,omitempty"`
+	Text          string  `json:"text,omitempty"`
 }
 
 type Conditions struct {
-	Code string `json:"code"`
-	Text string `json:"text"`
+	Code string `json:"code,omitempty"`
+	Text string `json:"text,omitempty"`
 }
 
 type Dewpoint struct {
-	Celsius    float64 `json:"celsius"`
-	Fahrenheit float64 `json:"fahrenheit"`
+	Celsius    float64 `json:"celsius,omitempty"`
+	Fahrenheit float64 `json:"fahrenheit,omitempty"`
 }
 
 type Elevation struct {
-	Feet   float64 `json:"feet"`
-	Meters float64 `json:"meters"`
+	Feet   float64 `json:"feet,omitempty"`
+	Meters float64 `json:"meters,omitempty"`
 }
 
 type FlightCategory string
 
 type Humidity struct {
-	Percent float64 `json:"percent"`
+	Percent float64 `json:"percent,omitempty"`
 }
 
 type Location struct {
-	Coordinates []float64 `json:"coordinates"`
-	Type        string    `json:"type"`
+	Coordinates []float64 `json:"coordinates,omitempty"`
+	Type        string    `json:"type,omitempty"`
 }
 
 type Station struct {
-	Name     string   `json:"name"`
-	Geometry Geometry `json:"geometry"`
+	Name     string   `json:"name,omitempty"`
+	Geometry Geometry `json:"geometry,omitempty"`
 }
 
 type Geometry struct {
-	Coordinates []float64 `json:"coordinates"`
-	Type        string    `json:"type"`
+	Coordinates []float64 `json:"coordinates,omitempty"`
+	Type        string    `json:"type,omitempty"`
 }
 
 type Temperature struct {
-	Celsius    float64 `json:"celsius"`
-	Fahrenheit float64 `json:"fahrenheit"`
+	Celsius    float64 `json:"celsius,omitempty"`
+	Fahrenheit float64 `json:"fahrenheit,omitempty"`
 }
 
 type Visibility struct {
-	Meters      string  `json:"meters"`
-	MetersFloat float64 `json:"meters_float"`
-	Miles       string  `json:"miles"`
-	MilesFloat  float64 `json:"miles_float"`
+	Meters      string  `json:"meters,omitempty"`
+	MetersFloat float64 `json:"meters_float,omitempty"`
+	Miles       string  `json:"miles,omitempty"`
+	MilesFloat  float64 `json:"miles_float,omitempty"`
 }
 
 type Wind struct {
-	Degrees  float64 `json:"degrees"`
-	SpeedKPH float64 `json:"speed_kph"`
-	SpeedKTS float64 `json:"speed_kts"`
-	SpeedMPH float64 `json:"speed_mph"`
-	SpeedMPS float64 `json:"speed_mps"`
-	GustKPH  float64 `json:"gust_kph"`
-	GustKTS  float64 `json:"gust_kts"`
-	GustMPH  float64 `json:"gust_mph"`
-	GustMPS  float64 `json:"gust_mps"`
+	Degrees  float64 `json:"degrees,omitempty"`
+	SpeedKPH float64 `json:"speed_kph,omitempty"`
+	SpeedKTS float64 `json:"speed_kts,omitempty"`
+	SpeedMPH float64 `json:"speed_mph,omitempty"`
+	SpeedMPS float64 `json:"speed_mps,omitempty"`
+	GustKPH  float64 `json:"gust_kph,omitempty"`
+	GustKTS  float64 `json:"gust_kts,omitempty"`
+	GustMPH  float64 `json:"gust_mph,omitempty"`
+	GustMPS  float64 `json:"gust_mps,omitempty"`
 }
 
 type CloudPreset struct {
@@ -469,15 +476,15 @@ var (
 var DefaultWeather WeatherData = WeatherData{
 	Data: []Data{
 		{
-			Wind: Wind{
+			Wind: &Wind{
 				SpeedMPS: 1.25,
 				Degrees:  270,
 				GustMPS:  3,
 			},
-			Temperature: Temperature{
+			Temperature: &Temperature{
 				Celsius: 15,
 			},
-			Barometer: Barometer{
+			Barometer: &Barometer{
 				Hg: 29.92,
 			},
 			Clouds: []Clouds{

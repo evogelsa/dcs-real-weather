@@ -5,6 +5,8 @@
 [![Discord](https://img.shields.io/discord/1148739727990722751?logo=Discord)](https://discord.com/invite/mjr2SpFuqq)
 [![Go Report Card](https://goreportcard.com/badge/github.com/evogelsa/DCS-real-weather)](https://goreportcard.com/report/github.com/evogelsa/DCS-real-weather)
 
+<img align="right" alt="Real Weather logo" src="docs/img/dcs_real_weather_icon.png" width="200">
+
 ## About
 
 DCS Real Weather is  program meant to be incorporated into a DCS server's

@@ -126,7 +126,8 @@ func getWx() weather.WeatherData {
 		log.Println("Overriding weather with custom data from file...")
 		b, err := os.ReadFile("checkwx.json")
 		if err != nil {
-			log.Fatalf("Could not read checkwx.json: %v", err)
+			log.Printf("Could not read custom override weather, no overrides applied")
+			return data
 		}
 
 		var minify bytes.Buffer
@@ -141,6 +142,11 @@ func getWx() weather.WeatherData {
 			log.Fatalf("Could not parse checkwx.json: %v", err)
 		}
 		log.Println("Parsed weather data: ")
+
+		if err := os.Remove(".rwbot"); err == nil {
+			log.Println("Removing custom weather set by bot")
+			os.Remove("checkwx.json")
+		}
 	}
 
 	return data

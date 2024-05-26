@@ -662,7 +662,7 @@ func checkPrecip(data weather.WeatherData) int {
 }
 
 // checkClouds returns the thickness, density and base of the first cloud
-// layer reported in the METAR in feet
+// layer reported in the METAR in meters
 func checkClouds(data weather.WeatherData) (string, int) {
 	var ceiling bool
 	var preset string
