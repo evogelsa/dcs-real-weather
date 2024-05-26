@@ -25,7 +25,7 @@ app icon button to add a picture for your Real Weather Bot.
 ![app icon](/docs/img/app_icon.png)
 
 If you would like to use the official Real Weather icon for your bot, you can
-find it in [doc/real_weather.png](/docs/img/dcs_real_weather_icon.png).
+find it [here](/docs/img/dcs_real_weather_icon.png).
 
 Once you have personalized the bot to your liking, click on the "OAuth2"
 tab on the left hand side bar. In the OAuth2 URL Generator, select the "bot"

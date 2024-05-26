@@ -7,8 +7,6 @@
 
 <img align="right" alt="Real Weather logo" src="docs/img/dcs_real_weather_icon.png" width="200">
 
-## About
-
 DCS Real Weather is  program meant to be incorporated into a DCS server's
 restart cycle. The utility fetches the most recent weather report (METAR) from
 a selected airport and attempts to make the weather conditions inside a
