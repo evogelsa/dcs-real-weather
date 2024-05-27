@@ -16,7 +16,7 @@ windows: generate
 
 .PHONY: package-windows
 package-windows: windows
-	sleep 1
+	sleep 5
 	cp config/config.json bin/windows/config.json
 	zip -j windows.zip bin/windows/realweather.exe bin/windows/config.json
 	$(eval VERSION := $(shell cat versioninfo/version.txt))
@@ -34,7 +34,7 @@ linux-amd64: generate
 
 .PHONY: package-linux-amd64
 package-linux-amd64: linux-amd64
-	sleep 1
+	sleep 5
 	cp config/config.json bin/linux/config.json
 	$(eval VERSION := $(shell cat versioninfo/version.txt))
 	tar czf bin/linux/realweather_linux_amd64_$(VERSION).tar.gz -C bin/linux/ realweather config.json
@@ -51,7 +51,7 @@ linux-arm: generate
 
 .PHONY: package-linux-arm
 package-linux-arm: linux-arm
-	sleep 1
+	sleep 5
 	cp config/config.json bin/linux/config.json
 	$(eval VERSION := $(shell cat versioninfo/version.txt))
 	tar czf bin/linux/realweather_linux_arm_$(VERSION).tar.gz -C bin/linux/ realweather config.json
@@ -67,7 +67,7 @@ windows-bot: generate
 
 .PHONY: package-windows-bot
 package-windows-bot: windows-bot
-	sleep 1
+	sleep 5
 	cp cmd/bot/config/config.json bin/windows/botconfig.json
 	zip -j windows.zip bin/windows/rwbot.exe bin/windows/botconfig.json
 	$(eval VERSION := $(shell cat versioninfo/version.txt))
@@ -85,7 +85,7 @@ linux-amd64-bot: generate
 
 .PHONY: package-linux-amd64-bot
 package-linux-amd64-bot: generate
-	sleep 1
+	sleep 5
 	cp cmd/bot/config/config.json bin/linux/botconfig.json
 	$(eval VERSION := $(shell cat versioninfo/version.txt))
 	tar czf bin/linux/rwbot_linux_amd64_$(VERSION).tar.gz -C bin/linux/ rwbot botconfig.json
@@ -102,7 +102,7 @@ linux-arm-bot: generate
 
 .PHONY: package-linux-arm-bot
 package-linux-arm-bot: linux-arm-bot
-	sleep 1
+	sleep 5
 	cp cmd/bot/config/config.json bin/linux/botconfig.json
 	$(eval VERSION := $(shell cat versioninfo/version.txt))
 	tar czf bin/linux/rwbot_linux_arm_$(VERSION).tar.gz -C bin/linux/ rwbot botconfig.json
