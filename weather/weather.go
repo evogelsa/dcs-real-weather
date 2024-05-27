@@ -351,8 +351,8 @@ type Location struct {
 }
 
 type Station struct {
-	Name     string   `json:"name,omitempty"`
-	Geometry Geometry `json:"geometry,omitempty"`
+	Name     string    `json:"name,omitempty"`
+	Geometry *Geometry `json:"geometry,omitempty"`
 }
 
 type Geometry struct {
@@ -493,6 +493,18 @@ var DefaultWeather WeatherData = WeatherData{
 				},
 			},
 			Observed: time.Now().Format("2006-01-02T15:04:05"),
+			Station: &Station{
+				Geometry: &Geometry{
+					Coordinates: []float64{0, 0},
+				},
+			},
+			ICAO: "DGAA",
+			Visibility: &Visibility{
+				MilesFloat: 10,
+			},
+			Dewpoint: &Dewpoint{
+				Celsius: 10,
+			},
 		},
 	},
 	NumResults: 1,

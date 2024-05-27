@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
+	"runtime"
 
 	"github.com/evogelsa/DCS-real-weather/config"
 	"github.com/evogelsa/DCS-real-weather/miz"
@@ -49,7 +51,16 @@ func main() {
 
 	defer func() {
 		if r := recover(); r != nil {
-			log.Printf("Unexpected error encountered: %v", r)
+			_, fn, line, ok := runtime.Caller(4)
+			if ok {
+				base := filepath.Base(fn)
+				ext := filepath.Ext(fn)
+				trim := base[:len(base)-len(ext)]
+				e := fmt.Sprintf("%s:%d", trim, line)
+				log.Printf("Unexpected error encountered: %s %v", e, r)
+			} else {
+				log.Printf("Unexpected error encountered: %v", r)
+			}
 		}
 	}()
 
