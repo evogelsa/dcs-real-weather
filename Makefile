@@ -1,5 +1,11 @@
+UNAME := $(shell uname)
+
 .PHONY: release
-release: package-windows package-linux-amd64 package-linux-arm package-windows-bot package-linux-amd64-bot package-linux-arm-bot
+release: update-licenses package-windows package-linux-amd64 package-linux-arm package-windows-bot package-linux-amd64-bot package-linux-arm-bot
+
+.PHONY: update-licenses
+update-licenses:
+	go-licenses report ./... --template=oss-template.tmpl > oss-licenses.txt
 
 .PHONY: generate
 generate:
@@ -18,7 +24,8 @@ windows: generate
 package-windows: windows
 	sleep 5
 	cp config/config.json bin/windows/config.json
-	zip -j windows.zip bin/windows/realweather.exe bin/windows/config.json
+	cp oss-licenses.txt bin/windows/oss-licenses.txt
+	zip -j windows.zip bin/windows/realweather.exe bin/windows/config.json bin/windows/oss-licenses.txt
 	$(eval VERSION := $(shell cat versioninfo/version.txt))
 	mv windows.zip bin/windows/realweather_$(VERSION).zip
 
@@ -36,8 +43,9 @@ linux-amd64: generate
 package-linux-amd64: linux-amd64
 	sleep 5
 	cp config/config.json bin/linux/config.json
+	cp oss-licenses.txt bin/linux/oss-licenses.txt
 	$(eval VERSION := $(shell cat versioninfo/version.txt))
-	tar czf bin/linux/realweather_linux_amd64_$(VERSION).tar.gz -C bin/linux/ realweather config.json
+	tar czf bin/linux/realweather_linux_amd64_$(VERSION).tar.gz -C bin/linux/ realweather config.json oss-licenses.txt
 
 .PHONY: linux-arm
 linux-arm: generate
@@ -53,8 +61,9 @@ linux-arm: generate
 package-linux-arm: linux-arm
 	sleep 5
 	cp config/config.json bin/linux/config.json
+	cp oss-licenses.txt bin/linux/oss-licenses.txt
 	$(eval VERSION := $(shell cat versioninfo/version.txt))
-	tar czf bin/linux/realweather_linux_arm_$(VERSION).tar.gz -C bin/linux/ realweather config.json
+	tar czf bin/linux/realweather_linux_arm_$(VERSION).tar.gz -C bin/linux/ realweather config.json oss-licenses.txt
 
 .PHONY: windows-bot
 windows-bot: generate
@@ -69,7 +78,8 @@ windows-bot: generate
 package-windows-bot: windows-bot
 	sleep 5
 	cp cmd/bot/config/config.json bin/windows/botconfig.json
-	zip -j windows.zip bin/windows/rwbot.exe bin/windows/botconfig.json
+	cp oss-licenses.txt bin/windows/oss-licenses.txt
+	zip -j windows.zip bin/windows/rwbot.exe bin/windows/botconfig.json bin/windows/oss-licenses.txt
 	$(eval VERSION := $(shell cat versioninfo/version.txt))
 	mv windows.zip bin/windows/rwbot_$(VERSION).zip
 
@@ -87,8 +97,9 @@ linux-amd64-bot: generate
 package-linux-amd64-bot: generate
 	sleep 5
 	cp cmd/bot/config/config.json bin/linux/botconfig.json
+	cp oss-licenses.txt bin/linux/oss-licenses.txt
 	$(eval VERSION := $(shell cat versioninfo/version.txt))
-	tar czf bin/linux/rwbot_linux_amd64_$(VERSION).tar.gz -C bin/linux/ rwbot botconfig.json
+	tar czf bin/linux/rwbot_linux_amd64_$(VERSION).tar.gz -C bin/linux/ rwbot botconfig.json oss-licenses.txt
 
 .PHONY: linux-arm-bot
 linux-arm-bot: generate
@@ -104,5 +115,6 @@ linux-arm-bot: generate
 package-linux-arm-bot: linux-arm-bot
 	sleep 5
 	cp cmd/bot/config/config.json bin/linux/botconfig.json
+	cp oss-licenses.txt bin/linux/oss-licenses.txt
 	$(eval VERSION := $(shell cat versioninfo/version.txt))
-	tar czf bin/linux/rwbot_linux_arm_$(VERSION).tar.gz -C bin/linux/ rwbot botconfig.json
+	tar czf bin/linux/rwbot_linux_arm_$(VERSION).tar.gz -C bin/linux/ rwbot botconfig.json oss-licenses.txt
