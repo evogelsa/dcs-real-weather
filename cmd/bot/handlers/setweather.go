@@ -11,12 +11,13 @@ import (
 
 	dg "github.com/bwmarrin/discordgo"
 
+	"github.com/evogelsa/DCS-real-weather/cmd/bot/config"
 	"github.com/evogelsa/DCS-real-weather/weather"
 )
 
 var isICAO = regexp.MustCompile(`^[A-Z]{4}$`).MatchString
 
-func SetWeather(s *dg.Session, i *dg.InteractionCreate, rwPath string) {
+func SetWeather(s *dg.Session, i *dg.InteractionCreate) {
 	const command = `/set-weather`
 	log.Println(command, "called")
 	defer timeCommand(command)()
@@ -24,6 +25,15 @@ func SetWeather(s *dg.Session, i *dg.InteractionCreate, rwPath string) {
 	if ok := verifyCaller(s, i, command, true); !ok {
 		return
 	}
+
+	cfg := config.Get()
+
+	var server int64
+	if len(cfg.Instances) > 1 {
+		server = getServer(i)
+	}
+
+	rwPath := cfg.Instances[server].RealWeatherPath
 
 	var data weather.WeatherData
 	data.Data = make([]weather.Data, 1)

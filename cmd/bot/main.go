@@ -38,28 +38,6 @@ func init() {
 
 		log.SetOutput(mw)
 	}
-
-	// verify bot config
-	var fatalBotConfig bool
-
-	if cfg.GuildID == "" {
-		log.Println("Guild ID is required to be configured.")
-		fatalBotConfig = true
-	}
-
-	if cfg.BotToken == "" {
-		log.Println("Bot token is required to be configured.")
-		fatalBotConfig = true
-	}
-
-	if cfg.RealWeatherPath == "" {
-		log.Println("Real Weather path is required to be configured.")
-		fatalBotConfig = true
-	}
-
-	if fatalBotConfig {
-		log.Fatalf("One or more errors exist in your config. Please correct them then rerun.")
-	}
 }
 
 var s *dg.Session
@@ -236,15 +214,31 @@ var (
 	}
 
 	commandHandlers = map[string]func(s *dg.Session, i *dg.InteractionCreate){
-		"set-weather": func(s *dg.Session, i *dg.InteractionCreate) {
-			handlers.SetWeather(s, i, cfg.RealWeatherPath)
-		},
-		"last-metar": func(s *dg.Session, i *dg.InteractionCreate) {
-			handlers.LastMETAR(s, i, cfg.RealWeatherLog)
-		},
+		"set-weather": handlers.SetWeather,
+		"last-metar":  handlers.LastMETAR,
 	}
 )
 
+// adjust command signatures if using multi instances
+func init() {
+	if len(cfg.Instances) > 1 {
+		for i := range commands {
+			commands[i].Options = append(
+				[]*dg.ApplicationCommandOption{
+					{
+						Type:        dg.ApplicationCommandOptionInteger,
+						Name:        "server",
+						Description: "which server instance to use (first instance is 1)",
+						Required:    true,
+					},
+				},
+				commands[i].Options...,
+			)
+		}
+	}
+}
+
+// add command handlers
 func init() {
 	s.AddHandler(func(s *dg.Session, i *dg.InteractionCreate) {
 		if h, ok := commandHandlers[i.ApplicationCommandData().Name]; ok {
@@ -286,7 +280,7 @@ func main() {
 	for _, v := range commands {
 		_, err := s.ApplicationCommandCreate(s.State.User.ID, guildID, v)
 		if err != nil {
-			log.Printf("Failed to register command: %s", v.Name)
+			log.Printf("Failed to register command %s: %v", v.Name, err)
 		} else {
 			log.Printf("Registered command: %s", v.Name)
 		}
