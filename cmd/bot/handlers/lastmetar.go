@@ -10,6 +10,8 @@ import (
 	"strings"
 
 	dg "github.com/bwmarrin/discordgo"
+
+	"github.com/evogelsa/DCS-real-weather/cmd/bot/config"
 )
 
 type scanner struct {
@@ -69,7 +71,7 @@ func (s *scanner) Line() (string, error) {
 
 var reMETAR = regexp.MustCompile(`^\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2} METAR: (?P<metar>.*)`)
 
-func LastMETAR(s *dg.Session, i *dg.InteractionCreate, rwLogPath string) {
+func LastMETAR(s *dg.Session, i *dg.InteractionCreate) {
 	const command = `/last-metar`
 	log.Println(command, "called")
 	defer timeCommand(command)()
@@ -77,6 +79,15 @@ func LastMETAR(s *dg.Session, i *dg.InteractionCreate, rwLogPath string) {
 	if ok := verifyCaller(s, i, command, false); !ok {
 		return
 	}
+
+	cfg := config.Get()
+
+	var server int64
+	if len(cfg.Instances) > 1 {
+		server = getServer(i)
+	}
+
+	rwLogPath := cfg.Instances[server].RealWeatherLog
 
 	f, err := os.Open(rwLogPath)
 	if err != nil {

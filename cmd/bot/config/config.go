@@ -13,9 +13,11 @@ import (
 type Configuration struct {
 	GuildID         string `json:"guild-id"`
 	BotToken        string `json:"bot-token"`
-	RealWeatherPath string `json:"real-weather-path"`
-	RealWeatherLog  string `json:"real-weather-log-path"`
 	Log             string `json:"log"`
+	Instances []struct {
+		RealWeatherPath string `json:"real-weather-path"`
+		RealWeatherLog  string `json:"real-weather-log-path"`
+	} `json:"instances"`
 }
 
 //go:embed config.json
@@ -50,8 +52,43 @@ func init() {
 		log.Fatalf("Error decoding config: %v", err)
 	}
 
-	// remove exe from path
-	config.RealWeatherPath = filepath.Dir(config.RealWeatherPath)
+	// verify config values
+	var fatalBotConfig bool
+
+	if config.GuildID == "" {
+		log.Println("Guild ID is required to be configured.")
+		fatalBotConfig = true
+	}
+
+	if config.BotToken == "" {
+		log.Println("Bot token is required to be configured.")
+		fatalBotConfig = true
+	}
+
+	if len(config.Instances) < 1 {
+		log.Println("At least one instance must be configured.")
+		fatalBotConfig = true
+	}
+
+	// validate each instance
+	for i := range config.Instances {
+		config.Instances[i].RealWeatherPath = filepath.Dir(config.Instances[i].RealWeatherPath)
+
+		if config.Instances[i].RealWeatherPath == "" {
+			log.Printf("Real Weather path is required to be configured for each instance (check #%d).", i+1)
+			fatalBotConfig = true
+		}
+
+		if config.Instances[i].RealWeatherLog == "" {
+			log.Printf("Real Weather log path is required to be configured for each instance (check #%d).", i+1)
+			fatalBotConfig = true
+		}
+	}
+
+	if fatalBotConfig {
+		log.Fatalf("One or more errors exist in your config. Please correct them then restart the bot!")
+	}
+
 }
 
 func Get() Configuration {

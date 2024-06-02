@@ -92,3 +92,13 @@ func timeCommand(command string) func() {
 		log.Printf("%s completed in %v", command, time.Since(start))
 	}
 }
+
+func getServer(i *dg.InteractionCreate) int64 {
+	for _, option := range i.ApplicationCommandData().Options {
+		if option.Name == "server" {
+			return option.IntValue() - 1
+		}
+	}
+	log.Fatalf("Something went terribly wrong, report this as a bug :)")
+	return -1
+}

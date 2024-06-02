@@ -1,7 +1,11 @@
 {
     "guild-id": "",
     "bot-token": "",
-    "real-weather-path": "",
-    "real-weather-log-path": "",
-    "log": "rwbot.log"
+    "log": "rwbot.log",
+    "instances": [
+        {
+            "real-weather-path": "",
+            "real-weather-log-path": ""
+        }
+    ]
 }
