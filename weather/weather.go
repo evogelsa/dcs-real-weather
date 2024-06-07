@@ -211,11 +211,20 @@ func GenerateMETAR(wx WeatherData, rmk string) (string, error) {
 	metar += fmt.Sprintf("%02d%02d%02dZ ", t.Day(), t.Hour(), t.Minute())
 
 	// winds DIRSPDKT
-	metar += fmt.Sprintf(
-		"%03d%02dKT ",
-		int(data.Wind.Degrees),
-		int(data.Wind.SpeedKTS),
-	)
+	if data.Wind.GustKTS > 0 {
+		metar += fmt.Sprintf(
+			"%03d%02dG%02dKT ",
+			int(data.Wind.Degrees),
+			int(data.Wind.SpeedKTS),
+			int(data.Wind.GustKTS),
+		)
+	} else {
+		metar += fmt.Sprintf(
+			"%03d%02dKT ",
+			int(data.Wind.Degrees),
+			int(data.Wind.SpeedKTS),
+		)
+	}
 
 	// visibility
 	metar += fmt.Sprintf("%dSM ", int(data.Visibility.MilesFloat))
