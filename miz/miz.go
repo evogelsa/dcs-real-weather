@@ -462,6 +462,9 @@ func updateWind(data weather.WeatherData, windsAloft weather.WindsAloft, l *lua.
 
 	// apply gustiness/turbulence to mission
 	gust := data.Data[0].Wind.GustMPS
+	minGust := config.Get().Options.Wind.GustMinimum
+	maxGust := config.Get().Options.Wind.GustMaximum
+	gust = util.Clamp(gust, minGust, maxGust)
 
 	if err := l.DoString(
 		fmt.Sprintf("mission.weather.groundTurbulence = %0.4f\n", gust),
