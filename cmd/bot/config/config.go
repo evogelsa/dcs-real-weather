@@ -15,6 +15,7 @@ type Configuration struct {
 	BotToken        string `json:"bot-token"`
 	Log             string `json:"log"`
 	Instances []struct {
+        Name            string `json:"name"`
 		RealWeatherPath string `json:"real-weather-path"`
 		RealWeatherLog  string `json:"real-weather-log-path"`
 	} `json:"instances"`
@@ -71,16 +72,29 @@ func init() {
 	}
 
 	// validate each instance
+    names := make(map[string]bool)
 	for i := range config.Instances {
+        if _, ok := names[config.Instances[i].Name]; ok {
+            log.Printf("Name is required to be unique for each instance (check instance #%d).", i+1)
+            fatalBotConfig = true
+        }
+
+        if config.Instances[i].Name == "" {
+            log.Printf("Name is required to be configured for each instance (check instance #%d).", i+1)
+            fatalBotConfig = true
+        }
+
+        names[config.Instances[i].Name] = true
+
 		config.Instances[i].RealWeatherPath = filepath.Dir(config.Instances[i].RealWeatherPath)
 
 		if config.Instances[i].RealWeatherPath == "" {
-			log.Printf("Real Weather path is required to be configured for each instance (check #%d).", i+1)
+			log.Printf("Real Weather path is required to be configured for each instance (check instance #%d).", i+1)
 			fatalBotConfig = true
 		}
 
 		if config.Instances[i].RealWeatherLog == "" {
-			log.Printf("Real Weather log path is required to be configured for each instance (check #%d).", i+1)
+			log.Printf("Real Weather log path is required to be configured for each instance (check instance #%d).", i+1)
 			fatalBotConfig = true
 		}
 	}
