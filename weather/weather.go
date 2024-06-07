@@ -192,7 +192,12 @@ func checkWeather(data *WeatherData) error {
 // GenerateMETAR generates a metar based on the weather settings added to the
 // DCS miz
 func GenerateMETAR(wx WeatherData, rmk string) (string, error) {
-	data := wx.Data[0]
+	var data Data
+	if len(wx.Data) > 1 {
+		data = wx.Data[1]
+	} else {
+		data = wx.Data[0]
+	}
 
 	var metar string
 
