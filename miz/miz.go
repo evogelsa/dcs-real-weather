@@ -40,7 +40,7 @@ func init() {
 }
 
 // Update applies weather and time updates to the unpacked mission file
-func Update(data weather.WeatherData, windsAloft weather.WindsAloft) error {
+func Update(data *weather.WeatherData, windsAloft weather.WindsAloft) error {
 	log.Println("Loading mission into Lua VM...")
 
 	// load mission file into lua vm
@@ -53,6 +53,8 @@ func Update(data weather.WeatherData, windsAloft weather.WindsAloft) error {
 
 	// update weather if enabled
 	if config.Get().Options.UpdateWeather {
+		// remove extra weather data and add copy for output
+		data.Data = []weather.Data{data.Data[0], data.Data[0]}
 		if err := updateWeather(data, windsAloft, l); err != nil {
 			return fmt.Errorf("Error updating weather: %v", err)
 		}
@@ -136,7 +138,7 @@ func UpdateBrief(metar string) error {
 }
 
 // updateWeather applies new weather to the given lua state using data
-func updateWeather(data weather.WeatherData, windsAloft weather.WindsAloft, l *lua.LState) error {
+func updateWeather(data *weather.WeatherData, windsAloft weather.WindsAloft, l *lua.LState) error {
 	if config.Get().Options.Wind.OpenMeteo {
 		if err := updateWind(data, windsAloft, l); err != nil {
 			return fmt.Errorf("Error updating wind: %v", err)
@@ -171,7 +173,7 @@ func updateWeather(data weather.WeatherData, windsAloft weather.WindsAloft, l *l
 }
 
 // updateClouds applies cloud data from the given weather to the lua state
-func updateClouds(data weather.WeatherData, l *lua.LState) error {
+func updateClouds(data *weather.WeatherData, l *lua.LState) error {
 	// determine preset to use and cloud base
 	preset, base := checkClouds(data)
 
@@ -232,7 +234,7 @@ func updateClouds(data weather.WeatherData, l *lua.LState) error {
 
 // handleCustomClouds generates legacy weather when no preset capable of matching
 // the desired weather
-func handleCustomClouds(data weather.WeatherData, l *lua.LState, preset string, base int) error {
+func handleCustomClouds(data *weather.WeatherData, l *lua.LState, preset string, base int) error {
 	// only one kind possible when using custom
 	var thickness int = rand.Intn(1801) + 200 // 200 - 2000
 	var density int                           //   0 - 10
@@ -313,7 +315,7 @@ func handleCustomClouds(data weather.WeatherData, l *lua.LState, preset string, 
 }
 
 // updateDust applies dust to mission if METAR reports dust conditions
-func updateDust(data weather.WeatherData, l *lua.LState) error {
+func updateDust(data *weather.WeatherData, l *lua.LState) error {
 	dust := checkDust(data)
 
 	if dust > 0 {
@@ -343,7 +345,7 @@ func updateDust(data weather.WeatherData, l *lua.LState) error {
 }
 
 // updateFog applies fog to mission state
-func updateFog(data weather.WeatherData, l *lua.LState) error {
+func updateFog(data *weather.WeatherData, l *lua.LState) error {
 	fogVis, fogThick := checkFog(data)
 
 	if fogVis > 0 {
@@ -378,7 +380,7 @@ func updateFog(data weather.WeatherData, l *lua.LState) error {
 }
 
 // updatePressure applies pressure to mission state
-func updatePressure(data weather.WeatherData, l *lua.LState) error {
+func updatePressure(data *weather.WeatherData, l *lua.LState) error {
 	// qnh is in mmHg = inHg * 25.4
 	qnh := int(data.Data[0].Barometer.Hg*25.4 + 0.5)
 
@@ -394,7 +396,7 @@ func updatePressure(data weather.WeatherData, l *lua.LState) error {
 }
 
 // updateTemperature applies temperature to mission state
-func updateTemperature(data weather.WeatherData, l *lua.LState) error {
+func updateTemperature(data *weather.WeatherData, l *lua.LState) error {
 	temp := data.Data[0].Temperature.Celsius
 
 	if err := l.DoString(
@@ -410,7 +412,7 @@ func updateTemperature(data weather.WeatherData, l *lua.LState) error {
 
 // updateWind uses open meteo data to get winds aloft data then applies this to
 // the mission state
-func updateWind(data weather.WeatherData, windsAloft weather.WindsAloft, l *lua.LState) error {
+func updateWind(data *weather.WeatherData, windsAloft weather.WindsAloft, l *lua.LState) error {
 	speedGround := windSpeed(1, data)
 
 	// cap wind speeds to configured values
@@ -419,6 +421,9 @@ func updateWind(data weather.WeatherData, windsAloft weather.WindsAloft, l *lua.
 	speedGround = util.Clamp(speedGround, minWind, maxWind)
 	speed2000 := util.Clamp(windsAloft.WindSpeed1900, minWind, maxWind)
 	speed8000 := util.Clamp(windsAloft.WindSpeed7200, minWind, maxWind)
+
+	// set speed to data out
+	data.Data[1].Wind.SpeedKTS = speedGround * weather.MPSToKT
 
 	// note DCS expects winds TO direction, but standard everywhere else is
 	// winds from direction, hence to +180 % 360
@@ -466,6 +471,9 @@ func updateWind(data weather.WeatherData, windsAloft weather.WindsAloft, l *lua.
 	maxGust := config.Get().Options.Wind.GustMaximum
 	gust = util.Clamp(gust, minGust, maxGust)
 
+	// update data out
+	data.Data[1].Wind.GustKTS = gust * weather.MPSToKT
+
 	if err := l.DoString(
 		fmt.Sprintf("mission.weather.groundTurbulence = %0.4f\n", gust),
 	); err != nil {
@@ -481,7 +489,7 @@ func updateWind(data weather.WeatherData, windsAloft weather.WindsAloft, l *lua.
 // updateWindLegacy applies reported wind to mission state and also calculates
 // and applies winds aloft using wind profile power law. This function also
 // applies turbulence/gust data to the mission
-func updateWindLegacy(data weather.WeatherData, l *lua.LState) error {
+func updateWindLegacy(data *weather.WeatherData, l *lua.LState) error {
 	speedGround := windSpeed(1, data)
 	speed2000 := windSpeed(2000, data)
 	speed8000 := windSpeed(8000, data)
@@ -492,6 +500,9 @@ func updateWindLegacy(data weather.WeatherData, l *lua.LState) error {
 	speedGround = util.Clamp(speedGround, minWind, maxWind)
 	speed2000 = util.Clamp(speed2000, minWind, maxWind)
 	speed8000 = util.Clamp(speed8000, minWind, maxWind)
+
+	// update data out
+	data.Data[1].Wind.SpeedKTS = speedGround * weather.MPSToKT
 
 	// apply wind shift to winds aloft layers
 	// this is not really realistic but it adds variety to wind calculation
@@ -537,6 +548,12 @@ func updateWindLegacy(data weather.WeatherData, l *lua.LState) error {
 
 	// apply gustiness/turbulence to mission
 	gust := data.Data[0].Wind.GustMPS
+	minGust := config.Get().Options.Wind.GustMinimum
+	maxGust := config.Get().Options.Wind.GustMaximum
+	gust = util.Clamp(gust, minGust, maxGust)
+
+	// update data out
+	data.Data[1].Wind.GustKTS = gust * weather.MPSToKT
 
 	if err := l.DoString(
 		fmt.Sprintf("mission.weather.groundTurbulence = %0.4f\n", gust),
@@ -550,7 +567,7 @@ func updateWindLegacy(data weather.WeatherData, l *lua.LState) error {
 }
 
 // updateTime applies system time plus/minus configured offset to the mission
-func updateTime(data weather.WeatherData, l *lua.LState) error {
+func updateTime(data *weather.WeatherData, l *lua.LState) error {
 	year, month, day, err := parseDate(data)
 	if err != nil {
 		return fmt.Errorf("Error parsing date: %v", err)
@@ -585,7 +602,7 @@ func updateTime(data weather.WeatherData, l *lua.LState) error {
 // returns extrapolated wind speed at given height using power law
 // https://en.wikipedia.org/wiki/Wind_profile_power_law
 // targHeight should be provided in meters MSL
-func windSpeed(targHeight float64, data weather.WeatherData) float64 {
+func windSpeed(targHeight float64, data *weather.WeatherData) float64 {
 	// default to 9 meters for reference height if elevation is below that
 	var refHeight float64
 	if config.Get().Options.Wind.FixedReference {
@@ -625,7 +642,7 @@ func parseTime() int {
 }
 
 // parseDate returns year, month, day from METAR observed
-func parseDate(data weather.WeatherData) (int, int, int, error) {
+func parseDate(data *weather.WeatherData) (int, int, int, error) {
 	year, err := strconv.Atoi(data.Data[0].Observed[0:4])
 	if err != nil {
 		return 0, 0, 0, fmt.Errorf("Error parsing year from data: %v", err)
@@ -645,7 +662,7 @@ func parseDate(data weather.WeatherData) (int, int, int, error) {
 }
 
 // checkPrecip returns 0 for clear, 1 for rain, and 2 for thunderstorms
-func checkPrecip(data weather.WeatherData) int {
+func checkPrecip(data *weather.WeatherData) int {
 	for _, condition := range data.Data[0].Conditions {
 		if condition.Code == "RA" || // rain
 			condition.Code == "SN" || // snow
@@ -666,7 +683,7 @@ func checkPrecip(data weather.WeatherData) int {
 
 // checkClouds returns the thickness, density and base of the first cloud
 // layer reported in the METAR in meters
-func checkClouds(data weather.WeatherData) (string, int) {
+func checkClouds(data *weather.WeatherData) (string, int) {
 	var ceiling bool
 	var preset string
 	var base int
@@ -832,7 +849,7 @@ func presetAllowed(preset string) bool {
 
 // checkFog looks for either misty or foggy conditions and returns and integer
 // representing dcs visiblity scale
-func checkFog(data weather.WeatherData) (visibility, thickness int) {
+func checkFog(data *weather.WeatherData) (visibility, thickness int) {
 	if !config.Get().Options.Fog.Enabled {
 		return
 	}
@@ -860,7 +877,7 @@ func checkFog(data weather.WeatherData) (visibility, thickness int) {
 
 // checkDust looks for dust conditions and returns a number representing
 // visibility in meters
-func checkDust(data weather.WeatherData) (visibility int) {
+func checkDust(data *weather.WeatherData) (visibility int) {
 	if !config.Get().Options.Dust.Enabled {
 		return
 	}
