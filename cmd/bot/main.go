@@ -222,6 +222,10 @@ var (
 // adjust command signatures if using multi instances
 func init() {
 	if len(cfg.Instances) > 1 {
+        var choices []*dg.ApplicationCommandOptionChoice
+        for i, instance := range cfg.Instances {
+            choices = append(choices, &dg.ApplicationCommandOptionChoice{ Name: instance.Name, Value: i })
+        }
 		for i := range commands {
 			commands[i].Options = append(
 				[]*dg.ApplicationCommandOption{
@@ -230,8 +234,9 @@ func init() {
 						Name:        "server",
 						Description: "which server instance to use (first instance is 1)",
 						Required:    true,
-					},
-				},
+                        Choices: choices,
+                    },
+                },
 				commands[i].Options...,
 			)
 		}

@@ -96,7 +96,7 @@ func timeCommand(command string) func() {
 func getServer(i *dg.InteractionCreate) int64 {
 	for _, option := range i.ApplicationCommandData().Options {
 		if option.Name == "server" {
-			return option.IntValue() - 1
+			return option.IntValue()
 		}
 	}
 	log.Fatalf("Something went terribly wrong, report this as a bug :)")
