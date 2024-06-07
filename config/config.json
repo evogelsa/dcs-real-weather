@@ -19,6 +19,8 @@
     "wind": {
       "minimum": 0,
       "maximum": 50,
+      "gust-minimum": 0,
+      "gust-maximum": 50,
       "open-meteo": true,
       "stability": 0.143,
       "fixed-reference": false

@@ -41,6 +41,8 @@ type Configuration struct {
 		Wind          struct {
 			Minimum        float64 `json:"minimum"`
 			Maximum        float64 `json:"maximum"`
+			GustMinimum    float64 `json:"gust-minimum"`
+			GustMaximum    float64 `json:"gust-maximum"`
 			OpenMeteo      bool    `json:"open-meteo"`
 			Stability      float64 `json:"stability"`
 			FixedReference bool    `json:"fixed-reference"`
