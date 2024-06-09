@@ -61,20 +61,40 @@ and forgotten it, you'll have to reset it. Otherwise, show the token and save it
 into the `"bot-token"` parameter in the config. You will only be able to show
 your token once.
 
-Real Weather Bot also needs to know about your Real Weather installation. Copy
-the path of your Real Weather executable to the `"real-weather-path"` parameter,
-and you log file path to the `"real-weather-log-path"` parameter. Both of these
-can take absolute (e.g. `C:/Users/myuser/Desktop/realweather/realweather.exe`)
-or relative paths (e.g. `../realweather/realweather.exe`).
+You will also need to give your Real Weather Bot a place to put its log file
+with the `"log"` parameter. This can take an absolute or relative path.
 
 > [!NOTE]
-> You can also use backslashes `\` in your paths, but if you do you will have
+> You can use backslashes `\` in your paths, but if you do you will have
 > to escape them with another backslash, so `C:\Users\myuser` would look like
 > `C:\\Users\\myuser`. You can also use forward slashes `/` instead without
 > having to escape them.
 
-Finally, give your Real Weather Bot a place to put its log file with the `"log"`
-parameter. This can also take an absolute or relative path.
+Real Weather Bot also needs to know some basic info about each server instance
+you would like the bot to interface with. The `"instances"` parameter of the
+config is an array where each array item describes one server. The parameters
+you will need to setup are `"name"`, `"real-weather-path"`, and
+`"real-weather-log-path"`. 
+
+The `"name"` parameter serves as both a friendly reminder to you which server
+the section is for, and also as a way to tell the bot which server you want a
+given command to target. When multiple instances are in use, the bot will
+require you to provide a `server` parameter with each command that will take the
+names as an option.
+
+You will also need to give your Real Weather Bot a place to put its log file
+with the `"log"` parameter. This can also take an absolute or relative path.
+
+Each instance must also specify the path of your Real Weather executable with
+the `"real-weather-path"` parameter, and the path to your real weather log file
+with the `"real-weather-log-path"` parameter. Both of these can take absolute
+(e.g. `C:/Users/myuser/Desktop/realweather/realweather.exe`) or relative paths
+(e.g. `../realweather/realweather.exe`).
+
+> [!IMPORTANT]
+> With the current multi-instance implementation, each server specified in
+> `"instances"` should have unique paths to Real Weather and its log. Not
+> abiding this may result in bot commands affecting the wrong server.
 
 Now that everything is configured, you should be able to run the bot and see it
 come online in your discord server. If anything was configured wrong, the bot
