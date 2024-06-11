@@ -56,8 +56,10 @@ each parameter.
     "update-weather": true,  // set to false to disable weather being updated
     "time-offset": "-5h30m", // time offset from system time
     "wind": {
-      "minimum": 0,            // max allowed wind speed in m/s, at least 0
-      "maximum": 50,           // min allowed wind speed in m/s, at most 50
+      "minimum": 0,            // min allowed wind speed in m/s, at least 0
+      "maximum": 50,           // max allowed wind speed in m/s, at most 50
+      "gust-minimum": 0,       // min allowed gust speed in m/s, at least 0
+      "gust-maximum": 50,      // max allowed gust speed in m/s, at most 50
       "open-meteo": true,      // use Open Meteo API for winds aloft
       "stability": 0.143,      // atmospheric stability for wind calculations
       "fixed-reference": false // use a fixed reference for wind calculations
@@ -143,6 +145,12 @@ each parameter.
         will apply to your mission. This value must be at least 0.
     * `maximum`: integer
       * This is the maximum wind speed in meters per second that Real Weather
+        will apply to your mission. This value must be at most 50.
+    * `gust-minimum`: integer
+      * This is the minimum gust speed in meters per second that Real Weather
+        will apply to your mission. This value must be at least 0.
+    * `gust-maximum`: integer
+      * This is the maximum gust speed in meters per second that Real Weather
         will apply to your mission. This value must be at most 50.
     * `open-meteo`: boolean
       * If true, Real Weather will use the Open Meteo API to get winds aloft
