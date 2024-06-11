@@ -120,6 +120,7 @@ func checkParams() {
 	checkFogVisibility()
 	checkDust()
 	checkWind()
+	checkGust()
 }
 
 // checkStability enforces stability must be greater than 0
@@ -227,7 +228,26 @@ func checkWind() {
 	}
 
 	if config.Options.Wind.Minimum > config.Options.Wind.Maximum {
-		log.Println("Win minimum is set above wind maximum; defaulting to 0 and 50")
+		log.Println("Wind minimum is set above wind maximum; defaulting to 0 and 50")
+		config.Options.Dust.VisibilityMaximum = 50
+		config.Options.Dust.VisibilityMinimum = 0
+	}
+}
+
+// checkGust enforces gust within [0, 50]
+func checkGust() {
+	if config.Options.Wind.GustMinimum < 0 {
+		log.Println("Gust minimum is set below min of 0; defaulting to 0")
+		config.Options.Wind.GustMinimum = 0
+	}
+
+	if config.Options.Wind.GustMaximum > 50 {
+		log.Println("Gust maximum is set above max of 50; defaulting to 50")
+		config.Options.Wind.GustMaximum = 50
+	}
+
+	if config.Options.Wind.GustMinimum > config.Options.Wind.GustMaximum {
+		log.Println("Gust minimum is set above gust maximum; defaulting to 0 and 50")
 		config.Options.Dust.VisibilityMaximum = 50
 		config.Options.Dust.VisibilityMinimum = 0
 	}
