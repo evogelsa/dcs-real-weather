@@ -10,6 +10,7 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -21,6 +22,10 @@ import (
 
 	lua "github.com/yuin/gopher-lua"
 )
+
+var metarRE = regexp.MustCompile(`=RW=
+(?P<METAR>.*)
+=RW=`)
 
 //go:embed datadumper.lua
 var dataDumper string
@@ -483,7 +488,6 @@ func updateWind(data *weather.WeatherData, windsAloft weather.WindsAloft, l *lua
 	log.Printf("Gusts: %0.3f m/s (%d kt)\n", gust, int(gust*weather.MPSToKT))
 
 	return nil
-
 }
 
 // updateWindLegacy applies reported wind to mission state and also calculates
@@ -711,7 +715,7 @@ func checkClouds(data *weather.WeatherData) (string, int) {
 	baseLayer := 0
 
 	// table to convert cloud code to integer
-	var codeToVal = map[string]int{
+	codeToVal := map[string]int{
 		"OVC": 4,
 		"BKN": 3,
 		"SCT": 2,
