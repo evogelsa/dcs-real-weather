@@ -111,10 +111,9 @@ each parameter.
     * The runway/airport elevation of the ICAO configured in meters. This is
       used to convert cloud heights between MSL and AGL values for METAR
       accuracy. Using this value the METAR will report the clouds in hundreds of
-      feet AGL. This can be set to 0 to retain the legacy behavior of reporting
-      clouds in MSL altitudes. This value will also be used for the reference
-      height in wind calculation if `open-meteo` and `fixed-reference` are
-      false.
+      feet AGL. Additionally the elevation is used to properly represent the QNH
+      in DCS. This value will also be used for the reference height in wind
+      calculation if `open-meteo` and `fixed-reference` are false.
   * `remarks`: string
     * This adds a RMK section in the METAR string. There is not functional
       impact of this setting. It's used for customization only.

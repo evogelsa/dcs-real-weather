@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"net/http"
 	"time"
 )
@@ -20,6 +21,13 @@ const (
 	MetersToFeet = 3.281
 	FeetToMeters = 0.3048
 	HPaToInHg    = 0.02953
+	InHgToHPa    = 33.86
+	HPaPerMeter  = 0.111
+	InHgToMMHg   = 25.4
+)
+
+const (
+	degToRad = math.Pi / 180
 )
 
 func ClearCodes() []string {
@@ -32,6 +40,25 @@ func CelsiusToFahrenheit(c float64) float64 {
 
 func FahrenheitToCelsius(f float64) float64 {
 	return (f - 32) / 1.8
+}
+
+// QNHToQFF takes a QNH value in hPa, elevation in meters, temperature in
+// Celsius, and latitude in degrees and returns the equivalent QFF values
+func QNHToQFF(qnh, elevation, temperature, latitude float64) float64 {
+	qfe := qnh - HPaPerMeter*elevation
+	var t float64
+
+	// handle inversions using SMHI method
+	if temperature < -7 {
+		t = 0.5*temperature + 275
+	} else if temperature < 2 {
+		t = 0.535*temperature + 275.6
+	} else {
+		t = 1.07*temperature + 274.5
+	}
+
+	qff := qfe * math.Pow(math.E, (elevation*0.034163*(1-0.0026373*math.Cos(latitude*degToRad)))/t)
+	return qff
 }
 
 func GetWindsAloft(location []float64) (WindsAloft, error) {
