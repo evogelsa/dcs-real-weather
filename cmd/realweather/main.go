@@ -113,7 +113,6 @@ func main() {
 
 	// remove unpacked contents from directory
 	miz.Clean()
-
 }
 
 func getWx() weather.WeatherData {
@@ -152,7 +151,11 @@ func getWx() weather.WeatherData {
 		if err != nil {
 			log.Fatalf("Could not parse checkwx.json: %v", err)
 		}
-		log.Println("Parsed weather data: ")
+		log.Println("Parsed weather data")
+
+		if err := weather.ValidateWeather(&data); err != nil {
+			log.Fatalf("Error validating weather data: %v", err)
+		}
 
 		if err := os.Remove(".rwbot"); err == nil {
 			log.Println("Removing custom weather set by bot")
