@@ -381,16 +381,23 @@ func updateFog(data *weather.WeatherData, l *lua.LState) error {
 
 // updatePressure applies pressure to mission state
 func updatePressure(data *weather.WeatherData, l *lua.LState) error {
-	// qnh is in mmHg = inHg * 25.4
-	qnh := int(data.Data[0].Barometer.Hg*25.4 + 0.5)
+	// convert qnh to qff
+	qnh := data.Data[0].Barometer.Hg * weather.InHgToHPa
+	elevation := float64(config.Get().METAR.RunwayElevation)
+	temperature := data.Data[0].Temperature.Celsius
+	latitude := data.Data[0].Station.Geometry.Coordinates[1]
+	qff := weather.QNHToQFF(qnh, elevation, temperature, latitude)
+
+	// convert to mmHg
+	qff *= weather.HPaToInHg * weather.InHgToMMHg
 
 	if err := l.DoString(
-		fmt.Sprintf("mission.weather.qnh = %d\n", qnh),
+		fmt.Sprintf("mission.weather.qnh = %d\n", int(qff+0.5)),
 	); err != nil {
 		return fmt.Errorf("Error updating QNH: %v", err)
 	}
 
-	log.Printf("QNH: %d mmHg (%0.2f inHg)\n", qnh, data.Data[0].Barometer.Hg)
+	log.Printf("QNH: %d hPa (%0.2f inHg)\n", int(qnh+.5), data.Data[0].Barometer.Hg)
 
 	return nil
 }
