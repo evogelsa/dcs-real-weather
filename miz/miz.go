@@ -10,7 +10,6 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
-	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -22,10 +21,6 @@ import (
 
 	lua "github.com/yuin/gopher-lua"
 )
-
-var metarRE = regexp.MustCompile(`=RW=
-(?P<METAR>.*)
-=RW=`)
 
 //go:embed datadumper.lua
 var dataDumper string
