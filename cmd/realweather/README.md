@@ -233,38 +233,42 @@ The DCS presets are shown in following table. These preset names are the same
 names that can be added to the `disallowed-presets` and `default-preset` config
 parameters.
 
-| Preset Name    | Cloud Layers         |
-|----------------|----------------------|
-| "Preset1"      | FEW070               |
-| "Preset2"      | FEW080 SCT230        |
-| "Preset3"      | SCT080 FEW210        |
-| "Preset4"      | SCT080 SCT240        |
-| "Preset5"      | SCT140 FEW270 BKN400 |
-| "Preset6"      | SCT080 FEW400        |
-| "Preset7"      | BKN075 SCT210 SCT400 |
-| "Preset8"      | SCT180 FEW360 FEW400 |
-| "Preset9"      | BKN075 SCT200 FEW410 |
-| "Preset10"     | SCT180 FEW360 FEW400 |
-| "Preset11"     | BKN180 BKN320 FEW410 |
-| "Preset12"     | BKN120 SCT220 FEW410 |
-| "Preset13"     | BKN120 BKN260 FEW410 |
-| "Preset14"     | BKN070 FEW410        |
-| "Preset15"     | SCT140 BKN240 FEW400 |
-| "Preset16"     | BKN140 BKN280 FEW400 |
-| "Preset17"     | BKN070 BKN200 BKN320 |
-| "Preset18"     | BKN130 BKN250 BKN380 |
-| "Preset19"     | OVC090 BKN230 BKN310 |
-| "Preset20"     | BKN130 BKN280 FEW380 |
-| "Preset21"     | BKN070 OVC170        |
-| "Preset22"     | OVC070 BKN170        |
-| "Preset23"     | OVC110 BKN180 SCT320 |
-| "Preset24"     | OVC030 OVC170 BKN340 |
-| "Preset25"     | OVC120 OVC220 OVC400 |
-| "Preset26"     | OVC090 BKN230 SCT320 |
-| "Preset27"     | OVC080 BKN250 BKN340 |
-| "RainyPreset1" | OVC030 OVC280 FEW400 |
-| "RainyPreset2" | OVC030 SCT180 FEW400 |
-| "RainyPreset3" | OVC060 OVC190 SCT340 |
+| Preset Name      | Cloud Layers         |
+|------------------|----------------------|
+| "Preset1"        | FEW070               |
+| "Preset2"        | FEW080 SCT230        |
+| "Preset3"        | SCT080 FEW210        |
+| "Preset4"        | SCT080 SCT240        |
+| "Preset5"        | SCT140 FEW270 BKN400 |
+| "Preset6"        | SCT080 FEW400        |
+| "Preset7"        | BKN075 SCT210 SCT400 |
+| "Preset8"        | SCT180 FEW360 FEW400 |
+| "Preset9"        | BKN075 SCT200 FEW410 |
+| "Preset10"       | SCT180 FEW360 FEW400 |
+| "Preset11"       | BKN180 BKN320 FEW410 |
+| "Preset12"       | BKN120 SCT220 FEW410 |
+| "Preset13"       | BKN120 BKN260 FEW410 |
+| "Preset14"       | BKN070 FEW410        |
+| "Preset15"       | SCT140 BKN240 FEW400 |
+| "Preset16"       | BKN140 BKN280 FEW400 |
+| "Preset17"       | BKN070 BKN200 BKN320 |
+| "Preset18"       | BKN130 BKN250 BKN380 |
+| "Preset19"       | OVC090 BKN230 BKN310 |
+| "Preset20"       | BKN130 BKN280 FEW380 |
+| "Preset21"       | BKN070 OVC170        |
+| "Preset22"       | OVC070 BKN170        |
+| "Preset23"       | OVC110 BKN180 SCT320 |
+| "Preset24"       | OVC030 OVC170 BKN340 |
+| "Preset25"       | OVC120 OVC220 OVC400 |
+| "Preset26"       | OVC090 BKN230 SCT320 |
+| "Preset27"       | OVC080 BKN250 BKN340 |
+| "RainyPreset1"   | OVC030 OVC280 FEW400 |
+| "RainyPreset2"   | OVC030 SCT180 FEW400 |
+| "RainyPreset3"   | OVC060 OVC190 SCT340 |
+| "RainyPreset4"   | SCT080 FEW360        |
+| "RainyPreset5"   | BKN070 BKN200 BKN320 |
+| "RainyPreset6"   | OVC090 BKN230 BKN310 |
+| "NEWRAINPRESET4" | SCT080 SCT120        |
 
 > [!NOTE]
 > The lowest cloud layer's altitude may vary since Real Weather will try to
