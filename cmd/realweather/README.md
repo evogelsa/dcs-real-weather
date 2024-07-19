@@ -118,8 +118,11 @@ each parameter.
     * This adds a RMK section in the METAR string. There is not functional
       impact of this setting. It's used for customization only.
   * `add-to-brief`: boolean
-    * If true, Real Weather will add the generated METAR to the bottom of your
-      mission brief.
+    * If true, Real Weather will add the generated METAR to your mission brief.
+      If your brief contains `==Real Weather METAR==` anywhere in the brief,
+      then the METAR will be inserted at the line immediately following,
+      replacing whatever is currently there. Otherwise, the METAR will be
+      appended to the end of your mission brief.
   * `use-custom-data`: boolean
     * If true, Real Weather will load METAR data from a checkwx.json file
       and overwrite data from the CheckWX API. This data must be in the same
