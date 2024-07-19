@@ -765,12 +765,18 @@ func selectPreset(kind string, base int, precip bool) (string, int) {
 	}
 
 	// if precip and overcast, then use OVC+RA preset
-	// if precip and not ovc but using legacy wx, use legacy wx
-	// if precip and not ovc but not using legacy wx, ignore precip
+	// if precip and broken, then use BKN+RA preset
+	// if precip and scattered, then use SCT+RA preset
+	// if precip and not ovc/bkn/sct but using legacy wx, use legacy wx
+	// if precip and not ovc/bkn/sct but not using legacy wx, ignore precip
 
 	if precip {
 		if kind == "OVC" {
 			kind = "OVC+RA"
+		} else if kind == "BKN" {
+			kind = "BKN+RA"
+		} else if kind == "SCT" {
+			kind = "SCT+RA"
 		} else if config.Get().Options.Clouds.FallbackToNoPreset {
 			log.Printf("No suitable weather preset for code=%s and base=%d", kind, base)
 			log.Printf("Fallback to no preset is enabled, using custom weather")
