@@ -301,7 +301,7 @@ func GenerateMETAR(wx WeatherData, rmk string) (string, error) {
 	var metar string
 
 	// add ICAO
-	metar += "METAR: " + data.ICAO + " "
+	metar += data.ICAO + " "
 
 	// get observed time, no need to translate time zone since it's in Zulu
 	t, err := time.Parse("2006-01-02T15:04:05Z", data.Observed)

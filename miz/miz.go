@@ -10,6 +10,7 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -26,6 +27,10 @@ import (
 var dataDumper string
 
 var l *lua.LState
+
+var metarRE = regexp.MustCompile(`==Real Weather METAR==
+(?P<metar>.*)
+`)
 
 func init() {
 	l = lua.NewState(lua.Options{
@@ -102,15 +107,36 @@ func UpdateBrief(metar string) error {
 	}
 
 	log.Println("Loaded mission brief into Lua VM")
+	log.Println("Parsing mission brief for RW METAR insertion location...")
+
+	// parse brief dictionary for existing brief text
+	lv := l.GetGlobal("dictionary")
+	var newBrief string
+	if dict, ok := lv.(*lua.LTable); ok {
+		if brief, ok := dict.RawGetString("DictKey_descriptionText_1").(lua.LString); ok {
+			// replace METAR after marker
+			if metarRE.MatchString(brief.String()) {
+				newBrief = metarRE.ReplaceAllString(brief.String(), "==Real Weather METAR==\\\n"+metar+"\\\n")
+				log.Println(newBrief)
+			} else {
+				log.Println("Could not find RW METAR insertion location, METAR will be appended")
+				newBrief = brief.String() + "\n\n" + metar
+				newBrief = strings.ReplaceAll(newBrief, "\n", "\\\n")
+			}
+		} else {
+			log.Println("Unable to parse existing brief, new brief will be written")
+			newBrief = metar
+		}
+	} else {
+		log.Println("Unable to parse existing brief, new brief will be written")
+		newBrief = metar
+	}
+
 	log.Println("Adding METAR to mission brief...")
 
-	// add whitespace to beginning of metar so its separate from brief
-	metar = `\n\n` + metar
-
-	// add metar to bottom of brief
+	// write new brief
 	if err := l.DoString(
-		"dictionary.DictKey_descriptionText_1 = " +
-			"dictionary.DictKey_descriptionText_1 .. " + `"` + metar + `"`,
+		`dictionary.DictKey_descriptionText_1 = "` + newBrief + `"`,
 	); err != nil {
 		return fmt.Errorf("Error updating mission brief: %v", err)
 	}
@@ -125,7 +151,7 @@ func UpdateBrief(metar string) error {
 		return fmt.Errorf("Error serializing lua state: %v", err)
 	}
 
-	lv := l.GetGlobal("rw_dict")
+	lv = l.GetGlobal("rw_dict")
 	if s, ok := lv.(lua.LString); ok {
 		os.WriteFile("mission_unpacked/l10n/DEFAULT/dictionary", []byte(string(s)), 0666)
 	} else {
