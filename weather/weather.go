@@ -514,6 +514,10 @@ var CloudPresets map[string][]CloudPreset = map[string][]CloudPreset{
 		{`"Preset11"`, 2520, 5460}, // Scattered 6
 		{`"Preset12"`, 1680, 3360}, // Scattered 7
 	},
+	"SCT+RA": {
+		{`"RainyPreset4"`, 1260, 4200},  // Light Rain 1
+		{`"NEWRAINPRESET4"`, 840, 5174}, // Light Rain 4
+	},
 	"BKN": {
 		{`"Preset13"`, 1680, 3360}, // Broken 1
 		{`"Preset14"`, 1680, 3360}, // Broken 2
@@ -523,6 +527,9 @@ var CloudPresets map[string][]CloudPreset = map[string][]CloudPreset{
 		{`"Preset18"`, 0, 3780},    // Broken 6
 		{`"Preset19"`, 0, 2940},    // Broken 7
 		{`"Preset20"`, 0, 3780},    // Broken 8
+	},
+	"BKN+RA": {
+		{`"RainyPreset5"`, 1260, 2520}, // Light Rain 2
 	},
 	"OVC": {
 		{`"Preset21"`, 1260, 4200}, // Overcast 1
@@ -534,9 +541,10 @@ var CloudPresets map[string][]CloudPreset = map[string][]CloudPreset{
 		{`"Preset27"`, 420, 2520},  // Overcast 7
 	},
 	"OVC+RA": {
-		{`"RainyPreset1"`, 420, 2940}, // Overcast And Rain 1
-		{`"RainyPreset2"`, 840, 2520}, // Overcast And Rain 2
-		{`"RainyPreset3"`, 840, 2520}, // Overcast And Rain 3
+		{`"RainyPreset1"`, 420, 2940},  // Overcast And Rain 1
+		{`"RainyPreset2"`, 840, 2520},  // Overcast And Rain 2
+		{`"RainyPreset3"`, 840, 2520},  // Overcast And Rain 3
+		{`"RainyPreset6"`, 1260, 2940}, // Light Rain 3
 	},
 }
 
@@ -546,36 +554,40 @@ type Cloud struct {
 }
 
 var DecodePreset = map[string][]Cloud{
-	`"Preset1"`:      {{"FEW", "070"}},
-	`"Preset2"`:      {{"FEW", "080"}, {"SCT", "230"}},
-	`"Preset3"`:      {{"SCT", "080"}, {"FEW", "210"}},
-	`"Preset4"`:      {{"SCT", "080"}, {"SCT", "240"}},
-	`"Preset5"`:      {{"SCT", "140"}, {"FEW", "270"}, {"BKN", "400"}},
-	`"Preset6"`:      {{"SCT", "080"}, {"FEW", "400"}},
-	`"Preset7"`:      {{"BKN", "075"}, {"SCT", "210"}, {"SCT", "400"}},
-	`"Preset8"`:      {{"SCT", "180"}, {"FEW", "360"}, {"FEW", "400"}},
-	`"Preset9"`:      {{"BKN", "075"}, {"SCT", "200"}, {"FEW", "410"}},
-	`"Preset10"`:     {{"SCT", "180"}, {"FEW", "360"}, {"FEW", "400"}},
-	`"Preset11"`:     {{"BKN", "180"}, {"BKN", "320"}, {"FEW", "410"}},
-	`"Preset12"`:     {{"BKN", "120"}, {"SCT", "220"}, {"FEW", "410"}},
-	`"Preset13"`:     {{"BKN", "120"}, {"BKN", "260"}, {"FEW", "410"}},
-	`"Preset14"`:     {{"BKN", "070"}, {"FEW", "410"}},
-	`"Preset15"`:     {{"SCT", "140"}, {"BKN", "240"}, {"FEW", "400"}},
-	`"Preset16"`:     {{"BKN", "140"}, {"BKN", "280"}, {"FEW", "400"}},
-	`"Preset17"`:     {{"BKN", "070"}, {"BKN", "200"}, {"BKN", "320"}},
-	`"Preset18"`:     {{"BKN", "130"}, {"BKN", "250"}, {"BKN", "380"}},
-	`"Preset19"`:     {{"OVC", "090"}, {"BKN", "230"}, {"BKN", "310"}},
-	`"Preset20"`:     {{"BKN", "130"}, {"BKN", "280"}, {"FEW", "380"}},
-	`"Preset21"`:     {{"BKN", "070"}, {"OVC", "170"}},
-	`"Preset22"`:     {{"OVC", "070"}, {"BKN", "170"}},
-	`"Preset23"`:     {{"OVC", "110"}, {"BKN", "180"}, {"SCT", "320"}},
-	`"Preset24"`:     {{"OVC", "030"}, {"OVC", "170"}, {"BKN", "340"}},
-	`"Preset25"`:     {{"OVC", "120"}, {"OVC", "220"}, {"OVC", "400"}},
-	`"Preset26"`:     {{"OVC", "090"}, {"BKN", "230"}, {"SCT", "320"}},
-	`"Preset27"`:     {{"OVC", "080"}, {"BKN", "250"}, {"BKN", "340"}},
-	`"RainyPreset1"`: {{"OVC", "030"}, {"OVC", "280"}, {"FEW", "400"}},
-	`"RainyPreset2"`: {{"OVC", "030"}, {"SCT", "180"}, {"FEW", "400"}},
-	`"RainyPreset3"`: {{"OVC", "060"}, {"OVC", "190"}, {"SCT", "340"}},
+	`"Preset1"`:        {{"FEW", "070"}},
+	`"Preset2"`:        {{"FEW", "080"}, {"SCT", "230"}},
+	`"Preset3"`:        {{"SCT", "080"}, {"FEW", "210"}},
+	`"Preset4"`:        {{"SCT", "080"}, {"SCT", "240"}},
+	`"Preset5"`:        {{"SCT", "140"}, {"FEW", "270"}, {"BKN", "400"}},
+	`"Preset6"`:        {{"SCT", "080"}, {"FEW", "400"}},
+	`"Preset7"`:        {{"BKN", "075"}, {"SCT", "210"}, {"SCT", "400"}},
+	`"Preset8"`:        {{"SCT", "180"}, {"FEW", "360"}, {"FEW", "400"}},
+	`"Preset9"`:        {{"BKN", "075"}, {"SCT", "200"}, {"FEW", "410"}},
+	`"Preset10"`:       {{"SCT", "180"}, {"FEW", "360"}, {"FEW", "400"}},
+	`"Preset11"`:       {{"BKN", "180"}, {"BKN", "320"}, {"FEW", "410"}},
+	`"Preset12"`:       {{"BKN", "120"}, {"SCT", "220"}, {"FEW", "410"}},
+	`"Preset13"`:       {{"BKN", "120"}, {"BKN", "260"}, {"FEW", "410"}},
+	`"Preset14"`:       {{"BKN", "070"}, {"FEW", "410"}},
+	`"Preset15"`:       {{"SCT", "140"}, {"BKN", "240"}, {"FEW", "400"}},
+	`"Preset16"`:       {{"BKN", "140"}, {"BKN", "280"}, {"FEW", "400"}},
+	`"Preset17"`:       {{"BKN", "070"}, {"BKN", "200"}, {"BKN", "320"}},
+	`"Preset18"`:       {{"BKN", "130"}, {"BKN", "250"}, {"BKN", "380"}},
+	`"Preset19"`:       {{"OVC", "090"}, {"BKN", "230"}, {"BKN", "310"}},
+	`"Preset20"`:       {{"BKN", "130"}, {"BKN", "280"}, {"FEW", "380"}},
+	`"Preset21"`:       {{"BKN", "070"}, {"OVC", "170"}},
+	`"Preset22"`:       {{"OVC", "070"}, {"BKN", "170"}},
+	`"Preset23"`:       {{"OVC", "110"}, {"BKN", "180"}, {"SCT", "320"}},
+	`"Preset24"`:       {{"OVC", "030"}, {"OVC", "170"}, {"BKN", "340"}},
+	`"Preset25"`:       {{"OVC", "120"}, {"OVC", "220"}, {"OVC", "400"}},
+	`"Preset26"`:       {{"OVC", "090"}, {"BKN", "230"}, {"SCT", "320"}},
+	`"Preset27"`:       {{"OVC", "080"}, {"BKN", "250"}, {"BKN", "340"}},
+	`"RainyPreset1"`:   {{"OVC", "030"}, {"OVC", "280"}, {"FEW", "400"}},
+	`"RainyPreset2"`:   {{"OVC", "030"}, {"SCT", "180"}, {"FEW", "400"}},
+	`"RainyPreset3"`:   {{"OVC", "060"}, {"OVC", "190"}, {"SCT", "340"}},
+	`"RainyPreset4"`:   {{"SCT", "080"}, {"FEW", "360"}},
+	`"RainyPreset5"`:   {{"BKN", "070"}, {"BKN", "200"}, {"BKN", "320"}},
+	`"RainyPreset6"`:   {{"OVC", "090"}, {"BKN", "230"}, {"BKN", "310"}},
+	`"NEWRAINPRESET4"`: {{"SCT", "080"}, {"SCT", "120"}},
 }
 
 var DefaultWeather WeatherData = WeatherData{
