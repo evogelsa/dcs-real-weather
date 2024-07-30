@@ -22,7 +22,6 @@ windows: generate
 
 .PHONY: package-windows
 package-windows: windows
-	sleep 5
 	cp config/config.json bin/windows/config.json
 	cp oss-licenses.txt bin/windows/oss-licenses.txt
 	zip -j windows.zip bin/windows/realweather.exe bin/windows/config.json bin/windows/oss-licenses.txt
@@ -41,7 +40,6 @@ linux-amd64: generate
 
 .PHONY: package-linux-amd64
 package-linux-amd64: linux-amd64
-	sleep 5
 	cp config/config.json bin/linux/config.json
 	cp oss-licenses.txt bin/linux/oss-licenses.txt
 	$(eval VERSION := $(shell cat versioninfo/version.txt))
@@ -59,7 +57,6 @@ linux-arm: generate
 
 .PHONY: package-linux-arm
 package-linux-arm: linux-arm
-	sleep 5
 	cp config/config.json bin/linux/config.json
 	cp oss-licenses.txt bin/linux/oss-licenses.txt
 	$(eval VERSION := $(shell cat versioninfo/version.txt))
@@ -76,7 +73,6 @@ windows-bot: generate
 
 .PHONY: package-windows-bot
 package-windows-bot: windows-bot
-	sleep 5
 	cp cmd/bot/config/config.json bin/windows/botconfig.json
 	cp oss-licenses.txt bin/windows/oss-licenses.txt
 	zip -j windows.zip bin/windows/rwbot.exe bin/windows/botconfig.json bin/windows/oss-licenses.txt
@@ -95,7 +91,6 @@ linux-amd64-bot: generate
 
 .PHONY: package-linux-amd64-bot
 package-linux-amd64-bot: generate
-	sleep 5
 	cp cmd/bot/config/config.json bin/linux/botconfig.json
 	cp oss-licenses.txt bin/linux/oss-licenses.txt
 	$(eval VERSION := $(shell cat versioninfo/version.txt))
@@ -113,7 +108,6 @@ linux-arm-bot: generate
 
 .PHONY: package-linux-arm-bot
 package-linux-arm-bot: linux-arm-bot
-	sleep 5
 	cp cmd/bot/config/config.json bin/linux/botconfig.json
 	cp oss-licenses.txt bin/linux/oss-licenses.txt
 	$(eval VERSION := $(shell cat versioninfo/version.txt))
