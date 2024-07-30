@@ -94,7 +94,7 @@ func main() {
 	var metar string
 	if metar, err = weather.GenerateMETAR(data, config.Get().METAR.Remarks); err == nil {
 		// make metar last thing to be print
-		defer log.Println(metar)
+		defer log.Println("METAR: "+metar)
 	} else {
 		log.Printf("Error creating DCS METAR: %v", err)
 	}
