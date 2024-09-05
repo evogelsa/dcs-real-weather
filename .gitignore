@@ -27,3 +27,4 @@ versioninfo/git.txt
 versioninfo/version.txt
 versioninfo/versioninfo.json
 versioninfo/versioninfo.go
+versioninfo/generate/generate
