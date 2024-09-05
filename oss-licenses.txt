@@ -130,9 +130,9 @@ SOFTWARE.
 License for golang.org/x/crypto
 ============================================================
 
-Version: v0.0.0-20210421170649-83a5a9bb288b
+Version: v0.1.0
 License: BSD-3-Clause
-URL: https://cs.opensource.google/go/x/crypto/+/83a5a9bb:LICENSE
+URL: https://cs.opensource.google/go/x/crypto/+/v0.1.0:LICENSE
 
 Copyright (c) 2009 The Go Authors. All rights reserved.
 
