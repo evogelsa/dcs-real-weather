@@ -1,7 +1,7 @@
 UNAME := $(shell uname)
 
 .PHONY: release
-release: update-licenses package-windows package-linux-amd64 package-linux-arm package-windows-bot package-linux-amd64-bot package-linux-arm-bot
+release: update-licenses package-windows package-linux-amd64 package-linux-arm package-windows-bot package-linux-amd64-bot package-linux-arm-bot bundle-artifacts
 
 .PHONY: update-licenses
 update-licenses:
@@ -16,8 +16,8 @@ windows: generate
 	@echo "--------------------------------"
 	@echo "Building for Windows (amd64)"
 	@echo "--------------------------------"
-	-mkdir "bin"
-	-mkdir "bin/windows"
+	-@mkdir "bin"
+	-@mkdir "bin/windows"
 	cd "cmd/realweather" && env GOOS=windows GOARCH=amd64 go build -o ../../bin/windows/realweather.exe -trimpath
 
 .PHONY: package-windows
@@ -33,8 +33,8 @@ linux-amd64: generate
 	@echo "--------------------------------"
 	@echo "Building for Linux (amd64)"
 	@echo "--------------------------------"
-	-mkdir "bin"
-	-mkdir "bin/linux"
+	-@mkdir "bin"
+	-@mkdir "bin/linux"
 	-rm resource.syso
 	env GOOS=linux GOARCH=amd64 go build -o bin/linux/realweather -trimpath cmd/realweather/main.go
 
@@ -50,8 +50,8 @@ linux-arm: generate
 	@echo "--------------------------------"
 	@echo "Building for Linux (arm)"
 	@echo "--------------------------------"
-	-mkdir "bin"
-	-mkdir "bin/linux"
+	-@mkdir "bin"
+	-@mkdir "bin/linux"
 	-rm resource.syso
 	env GOOS=linux GOARCH=arm go build -o bin/linux/realweather -trimpath cmd/realweather/main.go
 
@@ -67,8 +67,8 @@ windows-bot: generate
 	@echo "--------------------------------"
 	@echo "Building bot for Windows (amd64)"
 	@echo "--------------------------------"
-	-mkdir "bin"
-	-mkdir "bin/windows"
+	-@mkdir "bin"
+	-@mkdir "bin/windows"
 	cd "cmd/bot" && env GOOS=windows GOARCH=amd64 go build -o ../../bin/windows/rwbot.exe -trimpath
 
 .PHONY: package-windows-bot
@@ -84,8 +84,8 @@ linux-amd64-bot: generate
 	@echo "--------------------------------"
 	@echo "Building bot for Linux (amd64)"
 	@echo "--------------------------------"
-	-mkdir "bin"
-	-mkdir "bin/linux"
+	-@mkdir "bin"
+	-@mkdir "bin/linux"
 	-rm resource.syso
 	env GOOS=linux GOARCH=amd64 go build -o bin/linux/rwbot -trimpath cmd/bot/main.go
 
@@ -101,8 +101,8 @@ linux-arm-bot: generate
 	@echo "--------------------------------"
 	@echo "Building bot for Linux (arm)"
 	@echo "--------------------------------"
-	-mkdir "bin"
-	-mkdir "bin/linux"
+	-@mkdir "bin"
+	-@mkdir "bin/linux"
 	-rm resource.syso
 	env GOOS=linux GOARCH=arm go build -o bin/linux/rwbot -trimpath cmd/bot/main.go
 
@@ -112,3 +112,19 @@ package-linux-arm-bot: linux-arm-bot
 	cp oss-licenses.txt bin/linux/oss-licenses.txt
 	$(eval VERSION := $(shell cat versioninfo/version.txt))
 	tar czf bin/linux/rwbot_linux_arm_$(VERSION).tar.gz -C bin/linux/ rwbot botconfig.json oss-licenses.txt
+
+.PHONY: bundle-artifacts
+bundle-artifacts:
+	@echo "--------------------------------"
+	@echo "Bundling all build artifacts"
+	@echo "--------------------------------"
+	-@mkdir "bin"
+	-@mkdir "bin/bundle"
+	$(eval VERSION := $(shell cat versioninfo/version.txt))
+	-rm bin/bundle/*
+	-cp bin/windows/realweather_$(VERSION).zip bin/bundle
+	-cp bin/windows/rwbot_$(VERSION).zip bin/bundle
+	-cp bin/linux/realweather_linux_amd64_$(VERSION).tar.gz bin/bundle
+	-cp bin/linux/rwbot_linux_amd64_$(VERSION).tar.gz bin/bundle
+	-cp bin/linux/realweather_linux_arm_$(VERSION).tar.gz bin/bundle
+	-cp bin/linux/rwbot_linux_arm_$(VERSION).tar.gz bin/bundle
