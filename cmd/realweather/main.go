@@ -1,6 +1,5 @@
 package main
 
-//go:generate go run ../../versioninfo/generate/generate.go ../../versioninfo/
 //go:generate goversioninfo -o resource.syso ../../versioninfo/versioninfo.json
 
 import (
@@ -9,6 +8,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -94,7 +94,7 @@ func main() {
 	var metar string
 	if metar, err = weather.GenerateMETAR(data, config.Get().METAR.Remarks); err == nil {
 		// make metar last thing to be print
-		defer log.Println("METAR: "+metar)
+		defer log.Println("METAR: " + metar)
 	} else {
 		log.Printf("Error creating DCS METAR: %v", err)
 	}
@@ -126,7 +126,17 @@ func getWx() weather.WeatherData {
 		debugCheckWx = true
 	}
 
-	data, err = weather.GetWeather(config.Get().METAR.ICAO, config.Get().APIKey)
+	var icao string
+	if config.Get().METAR.ICAO != "" {
+		icao = config.Get().METAR.ICAO
+	} else if len(config.Get().METAR.ICAOList) > 0 {
+		icao = config.Get().METAR.ICAOList[rand.Intn(len(config.Get().METAR.ICAOList))]
+	} else {
+		// Should never reach this code if config validation is working properly
+		icao = "DGAA"
+	}
+
+	data, err = weather.GetWeather(icao, config.Get().APIKey)
 	if err != nil {
 		log.Printf("Error getting weather, using default: %v\n", err)
 		data = weather.DefaultWeather

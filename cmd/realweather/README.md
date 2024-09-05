@@ -46,6 +46,7 @@ each parameter.
   },
   "metar": {
     "icao": "KDLH",          // ICAO of the aiport to fetch METAR from
+    "icao-list": [],         // List of ICAOs to randomly choose from
     "runway-elevation": 0,   // elevation of runway in meters MSL
     "remarks": "",           // addtional remarks for METAR, customization only
     "add-to-brief": true,    // add METAR text to bottom of mission brief
@@ -107,6 +108,12 @@ each parameter.
 * `metar`
   * `icao`: string
     * This is the ICAO of the airport you would like weather to be pulled from.
+      This option is mutually exclusive with `icao-list`; if both are supplied,
+      `icao` will be used. To use `icao-list`, set this to `""`.
+  * `icao-list`: string array
+    * This is a list of ICAOs to randomly choose to fetch weather data from.
+      This option is mutually exclusive with `icao`; if both are supplied,
+      `icao` will be used. Set `icao` to `""` to use `icao-list`.
   * `runway-elevation`: integer
     * The runway/airport elevation of the ICAO configured in meters. This is
       used to convert cloud heights between MSL and AGL values for METAR
