@@ -1,11 +1,9 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
 	"path"
 	"path/filepath"
 	"regexp"
@@ -66,15 +64,11 @@ const (
 var re = regexp.MustCompile(`v(?P<Major>\d+)\.(?P<Minor>\d+)\.(?P<Patch>\d+)-?(?P<Pre>(?:alpha)|(?:beta)|(?:rc\d*))?-?(?P<CommitNum>\d*)?.*(?:-g(?P<Commit>\w*))?`)
 
 func main() {
-	cmd := exec.Command("git", "describe", "--tags")
-	out := &bytes.Buffer{}
-	cmd.Stdout = out
-	err := cmd.Run()
-	if err != nil {
-		log.Fatalf("error getting git info: %v", err)
+	if !(len(os.Args) > 1) {
+		log.Fatalf("Must supply version!")
 	}
 
-	gitInfo := out.String()
+	gitInfo := os.Args[1]
 
 	match := re.FindStringSubmatch(gitInfo)
 	v := make(map[string]string)
@@ -84,6 +78,9 @@ func main() {
 			v[name] = match[i]
 		}
 	}
+	if len(v) == 0 {
+		log.Fatalln("Could not parse version:", gitInfo, match, v)
+	}
 
 	major, _ := strconv.Atoi(v["Major"])
 	minor, _ := strconv.Atoi(v["Minor"])
@@ -92,18 +89,20 @@ func main() {
 	pre := v["Pre"]
 	commit := v["Commit"]
 
+	log.Printf("Major: %d, Minor: %d, Patch: %d, Build: %d, Pre: %s, Commit: %s", major, minor, patch, commitNum, pre, commit)
+
 	versionInfoOut := "versioninfo.json"
 	metaOut := "versioninfo.go"
 	iconPath := "icon.ico"
 	versionOut := "version.txt"
-	if len(os.Args) > 1 {
-		versionInfoOut = filepath.Join(os.Args[1], versionInfoOut)
-		metaOut = filepath.Join(os.Args[1], metaOut)
-		iconPath = path.Join(os.Args[1], iconPath)
-		versionOut = filepath.Join(os.Args[1], versionOut)
+	if len(os.Args) > 2 {
+		versionInfoOut = filepath.Join(os.Args[2], versionInfoOut)
+		metaOut = filepath.Join(os.Args[2], metaOut)
+		iconPath = path.Join(os.Args[2], iconPath)
+		versionOut = filepath.Join(os.Args[2], versionOut)
 	}
 
-	os.WriteFile(
+	err := os.WriteFile(
 		versionInfoOut,
 		[]byte(fmt.Sprintf(
 			versionInfo,
@@ -126,8 +125,11 @@ func main() {
 		)),
 		os.ModePerm,
 	)
+	if err != nil {
+		log.Println(err)
+	}
 
-	os.WriteFile(
+	err = os.WriteFile(
 		metaOut,
 		[]byte(fmt.Sprintf(
 			meta,
@@ -140,10 +142,16 @@ func main() {
 		)),
 		os.ModePerm,
 	)
+	if err != nil {
+		log.Println(err)
+	}
 
-	os.WriteFile(
+	err = os.WriteFile(
 		versionOut,
 		[]byte(gitInfo),
 		os.ModePerm,
 	)
+	if err != nil {
+		log.Println(err)
+	}
 }
