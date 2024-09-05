@@ -93,7 +93,7 @@ func main() {
 
 	versionInfoOut := "versioninfo.json"
 	metaOut := "versioninfo.go"
-	iconPath := "icon.ico"
+	iconPath := "../../versioninfo/icon.ico"
 	versionOut := "version.txt"
 	if len(os.Args) > 2 {
 		versionInfoOut = filepath.Join(os.Args[2], versionInfoOut)

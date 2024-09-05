@@ -1,6 +1,5 @@
 package main
 
-//go:generate go run ../../versioninfo/generate/generate.go ../../versioninfo/
 //go:generate goversioninfo -o resource.syso ../../versioninfo/versioninfo.json
 
 import (

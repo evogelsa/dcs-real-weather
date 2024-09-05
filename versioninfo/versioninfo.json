@@ -30,6 +30,6 @@
 		  "CharsetID": "0"
 	  }
 	},
-	"IconPath": "icon.ico",
+	"IconPath": "../../versioninfo/icon.ico",
 	"ManifestPath": ""
 }
