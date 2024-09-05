@@ -28,11 +28,12 @@ type Configuration struct {
 		Log           string `json:"log"`
 	} `json:"files"`
 	METAR struct {
-		ICAO            string `json:"icao"`
-		RunwayElevation int    `json:"runway-elevation"`
-		Remarks         string `json:"remarks"`
-		AddToBrief      bool   `json:"add-to-brief"`
-		UseCustomData   bool   `json:"use-custom-data"`
+		ICAO            string   `json:"icao"`
+		ICAOList        []string `json:"icao-list"`
+		RunwayElevation int      `json:"runway-elevation"`
+		Remarks         string   `json:"remarks"`
+		AddToBrief      bool     `json:"add-to-brief"`
+		UseCustomData   bool     `json:"use-custom-data"`
 	} `json:"metar"`
 	Options struct {
 		UpdateTime    bool   `json:"update-time"`
@@ -70,7 +71,6 @@ type Configuration struct {
 // ParseConfig reads config.json and returns a Configuration struct of the
 // parameters found
 func init() {
-
 	file, err := os.Open("config.json")
 	if err != nil {
 		// if config.json does not exist, create it and exit
@@ -114,6 +114,7 @@ func init() {
 }
 
 func checkParams() {
+	checkICAO()
 	checkStability()
 	checkDefaultPreset()
 	checkFogThickness()
@@ -121,6 +122,15 @@ func checkParams() {
 	checkDust()
 	checkWind()
 	checkGust()
+}
+
+func checkICAO() {
+	if config.METAR.ICAO == "" && len(config.METAR.ICAOList) == 0 {
+		log.Println("ICAO or ICAO list must be supplied, defaulting to DGAA")
+		config.METAR.ICAO = "DGAA"
+	} else if config.METAR.ICAO != "" && len(config.METAR.ICAOList) > 0 {
+		log.Println("ICAO and ICAO list both supplied, only ICAO will be used")
+	}
 }
 
 // checkStability enforces stability must be greater than 0
