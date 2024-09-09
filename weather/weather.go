@@ -16,14 +16,16 @@ var (
 )
 
 const (
-	MPSToKT      = 1.944
-	KtToMPS      = 0.5144
-	MetersToFeet = 3.281
-	FeetToMeters = 0.3048
-	HPaToInHg    = 0.02953
-	InHgToHPa    = 33.86
-	HPaPerMeter  = 0.111
-	InHgToMMHg   = 25.4
+	MPSToKT       = 1.944
+	KtToMPS       = 0.5144
+	MetersToFeet  = 3.281
+	FeetToMeters  = 0.3048
+	HPaToInHg     = 0.02953
+	InHgToHPa     = 33.86
+	HPaPerMeter   = 0.111
+	InHgToMMHg    = 25.4
+	MilesToMeters = 5280 * FeetToMeters
+	MetersToMiles = MetersToFeet / 5280
 )
 
 const (
@@ -31,7 +33,51 @@ const (
 )
 
 func ClearCodes() []string {
-	return []string{"CAVOK", "CLR", "SKC", "NSC", "NCD"}
+	return []string{
+		"CAVOK", // ceiling and vis OK
+		"CLR",   // clear below 12000
+		"SKC",   // sky clear
+		"NSC",   // no significant cloud cover
+		"NCD",   // no clouds measured
+	}
+}
+
+func FogCodes() []string {
+	return []string{
+		"FG", // fog
+		"BR", // mist
+	}
+}
+
+func DustCodes() []string {
+	return []string{
+		"HZ", // haze
+		"DU", // widespread dust
+		"SA", // sand
+		"PO", // dust/sand whirls
+		"DS", // duststorm
+		"SS", // sandstorm
+	}
+}
+
+func PrecipCodes() []string {
+	return []string{
+		"RA", // rain
+		"SN", // snow
+		"DZ", // drizzle
+		"SG", // snow grains
+		"GS", // snow pellets or small hail
+		"GR", // hail
+		"PL", // ice pellets
+		"IC", // ice crystals
+		"UP", // unknown precip
+	}
+}
+
+func StormCodes() []string {
+	return []string{
+		"TS", // thunderstorm
+	}
 }
 
 func CelsiusToFahrenheit(c float64) float64 {
@@ -138,7 +184,23 @@ func GetWindsAloft(location []float64) (WindsAloft, error) {
 	return data, nil
 }
 
-func GetWeather(icao, apiKey string) (WeatherData, error) {
+type API int
+
+const (
+	APICheckWX = iota
+	APIAviationWeather
+)
+
+// GetWeather calls the appropriate function to get weather from the desired
+// API
+func GetWeather(icao string, api API, apiKey string) (WeatherData, error) {
+	if api == APIAviationWeather {
+		return getWeatherAlternate(icao)
+	}
+	return getWeather(icao, apiKey)
+}
+
+func getWeather(icao, apiKey string) (WeatherData, error) {
 	log.Println("Getting weather from CheckWX...")
 
 	// create http client to fetch weather data, timeout after 5 sec
@@ -285,6 +347,23 @@ func ValidateWeather(data *WeatherData) error {
 		}
 	}
 
+	if data.Data[0].Station == nil {
+		log.Println("No station data, defaulting to (0, 0)")
+		data.Data[0].Station = &Station{
+			Geometry: &Geometry{
+				Coordinates: []float64{0, 0},
+			},
+		}
+	}
+
+	if len(data.Data[0].Observed) < 10 {
+		log.Println("Observation data may be missing date, defaulting to today's date")
+		t := time.Now()
+		data.Data[0].Observed = fmt.Sprintf("%04d-%02d-%02d", t.Year(), t.Month(), t.Day())
+	}
+
+	log.Println("Weather data validated successfully")
+
 	return nil
 }
 
@@ -331,7 +410,8 @@ func GenerateMETAR(wx WeatherData, rmk string) (string, error) {
 	}
 
 	// visibility
-	metar += fmt.Sprintf("%dSM ", int(data.Visibility.MilesFloat))
+	vis := data.Visibility.MetersFloat * MetersToMiles
+	metar += fmt.Sprintf("%dSM ", int(vis))
 
 	// conditions
 	for _, cond := range data.Conditions {
@@ -463,7 +543,7 @@ type Station struct {
 }
 
 type Geometry struct {
-	Coordinates []float64 `json:"coordinates,omitempty"`
+	Coordinates []float64 `json:"coordinates,omitempty"` // longitude, latitude
 	Type        string    `json:"type,omitempty"`
 }
 

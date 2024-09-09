@@ -264,7 +264,7 @@ func handleCustomClouds(data *weather.WeatherData, l *lua.LState, preset string,
 	// only one kind possible when using custom
 	var thickness int = rand.Intn(1801) + 200 // 200 - 2000
 	var density int                           //   0 - 10
-	var precip int                            //   0 - 2
+	var precip precipitation                  //   0 - 2
 	base = util.Clamp(base, 300, 5000)        // 300 - 5000
 
 	//  0 - clear
@@ -281,11 +281,11 @@ func handleCustomClouds(data *weather.WeatherData, l *lua.LState, preset string,
 
 	precip = checkPrecip(data)
 	var precipStr string
-	if precip == 2 {
+	if precip == PrecipStorm {
 		// make thunderstorm clouds thicc
 		thickness = rand.Intn(501) + 1500 // can be up to 2000
 		precipStr = "TS"
-	} else if precip == 1 {
+	} else if precip == PrecipSome {
 		thickness = rand.Intn(1801) + 200 // 200 - 2000
 		precipStr = "RA"
 	} else {
@@ -682,35 +682,35 @@ func parseDate(data *weather.WeatherData) (int, int, int, error) {
 
 	month, err := strconv.Atoi(data.Data[0].Observed[5:7])
 	if err != nil {
-		return 0, 0, 0, fmt.Errorf("Error parsing month from data: %v", err)
+		return year, 0, 0, fmt.Errorf("Error parsing month from data: %v", err)
 	}
 
 	day, err := strconv.Atoi(data.Data[0].Observed[8:10])
 	if err != nil {
-		return 0, 0, 0, fmt.Errorf("Error parsing day from data: %v", err)
+		return year, month, 0, fmt.Errorf("Error parsing day from data: %v", err)
 	}
 
 	return year, month, day, nil
 }
 
+type precipitation int
+
+const (
+	PrecipNone precipitation = iota
+	PrecipSome
+	PrecipStorm
+)
+
 // checkPrecip returns 0 for clear, 1 for rain, and 2 for thunderstorms
-func checkPrecip(data *weather.WeatherData) int {
+func checkPrecip(data *weather.WeatherData) precipitation {
 	for _, condition := range data.Data[0].Conditions {
-		if condition.Code == "RA" || // rain
-			condition.Code == "SN" || // snow
-			condition.Code == "DZ" || // drizzle
-			condition.Code == "SG" || // snow grains
-			condition.Code == "GS" || // snow pellets or small hail
-			condition.Code == "GR" || // hail
-			condition.Code == "PL" || // ice pellets
-			condition.Code == "IC" || // ice crystals
-			condition.Code == "UP" { // unknown precip
-			return 1
-		} else if condition.Code[:2] == "TS" {
-			return 2
+		if slices.Contains(weather.PrecipCodes(), condition.Code) {
+			return PrecipSome
+		} else if slices.Contains(weather.StormCodes(), condition.Code[:2]) {
+			return PrecipStorm
 		}
 	}
-	return 0
+	return PrecipNone
 }
 
 // checkClouds returns the thickness, density and base of the first cloud
@@ -754,7 +754,7 @@ func checkClouds(data *weather.WeatherData) (string, int) {
 	// is precip, otherwise picks first ceiling if there is ceiling, otherwise
 	// picks first layer
 	for i, cloud := range data.Data[0].Clouds {
-		if precip > 0 {
+		if precip > PrecipNone {
 			if codeToVal[cloud.Code] > fullestLayer {
 				fullestLayer = codeToVal[cloud.Code]
 				baseLayer = i
@@ -775,7 +775,7 @@ func checkClouds(data *weather.WeatherData) (string, int) {
 	code := data.Data[0].Clouds[baseLayer].Code
 
 	// updates base with selected in case of fallback to legacy
-	preset, base = selectPreset(code, base, precip > 0)
+	preset, base = selectPreset(code, base, precip > PrecipNone)
 
 	return preset, base
 }
@@ -893,8 +893,7 @@ func checkFog(data *weather.WeatherData) (visibility, thickness int) {
 	}
 
 	for _, condition := range data.Data[0].Conditions {
-		if condition.Code == "FG" || condition.Code == "BR" {
-
+		if slices.Contains(weather.FogCodes(), condition.Code) {
 			thickness = rand.Intn(
 				config.Get().Options.Fog.ThicknessMaximum-
 					config.Get().Options.Fog.ThicknessMinimum,
@@ -921,10 +920,7 @@ func checkDust(data *weather.WeatherData) (visibility int) {
 	}
 
 	for _, condition := range data.Data[0].Conditions {
-		if condition.Code == "HZ" || condition.Code == "DU" ||
-			condition.Code == "SA" || condition.Code == "PO" ||
-			condition.Code == "DS" || condition.Code == "SS" {
-
+		if slices.Contains(weather.DustCodes(), condition.Code) {
 			return int(util.Clamp(
 				data.Data[0].Visibility.MetersFloat,
 				config.Get().Options.Dust.VisibilityMinimum,

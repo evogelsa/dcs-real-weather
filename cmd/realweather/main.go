@@ -136,7 +136,14 @@ func getWx() weather.WeatherData {
 		icao = "DGAA"
 	}
 
-	data, err = weather.GetWeather(icao, config.Get().APIKey)
+	var api weather.API
+	if config.Get().METAR.UseAviationWeather {
+		api = weather.APIAviationWeather
+	} else {
+		api = weather.APICheckWX
+	}
+
+	data, err = weather.GetWeather(icao, api, config.Get().APIKey)
 	if err != nil {
 		log.Printf("Error getting weather, using default: %v\n", err)
 		data = weather.DefaultWeather

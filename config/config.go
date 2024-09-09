@@ -28,12 +28,13 @@ type Configuration struct {
 		Log           string `json:"log"`
 	} `json:"files"`
 	METAR struct {
-		ICAO            string   `json:"icao"`
-		ICAOList        []string `json:"icao-list"`
-		RunwayElevation int      `json:"runway-elevation"`
-		Remarks         string   `json:"remarks"`
-		AddToBrief      bool     `json:"add-to-brief"`
-		UseCustomData   bool     `json:"use-custom-data"`
+		ICAO               string   `json:"icao"`
+		ICAOList           []string `json:"icao-list"`
+		RunwayElevation    int      `json:"runway-elevation"`
+		Remarks            string   `json:"remarks"`
+		AddToBrief         bool     `json:"add-to-brief"`
+		UseCustomData      bool     `json:"use-custom-data"`
+		UseAviationWeather bool     `json:"use-aviation-weather"`
 	} `json:"metar"`
 	Options struct {
 		UpdateTime    bool   `json:"update-time"`
@@ -80,7 +81,7 @@ func init() {
 			if err != nil {
 				log.Fatalf("Unable to create config.json: %v", err)
 			}
-			log.Fatalf("Default config created. Please configure with your API key and desired settings, then rerun.")
+			log.Fatalf("Default config created. Please configure with your desired settings, then rerun.")
 		} else {
 			log.Fatalf("Error opening config.json: %v\n", err)
 		}
@@ -114,6 +115,7 @@ func init() {
 }
 
 func checkParams() {
+	checkAPI()
 	checkICAO()
 	checkStability()
 	checkDefaultPreset()
@@ -122,6 +124,15 @@ func checkParams() {
 	checkDust()
 	checkWind()
 	checkGust()
+}
+
+func checkAPI() {
+	if config.APIKey == "" && !config.METAR.UseAviationWeather {
+		log.Println("API key for CheckWX is missing and `use-aviation-weather` is false.")
+		log.Println("Real Weather will default `use-aviation-weather` to true.")
+		log.Println("Set `use-aviation-weather` to true or supply an API key to supress this warning")
+		config.METAR.UseAviationWeather = true
+	}
 }
 
 func checkICAO() {
