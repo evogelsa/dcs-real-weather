@@ -50,7 +50,8 @@ each parameter.
     "runway-elevation": 0,   // elevation of runway in meters MSL
     "remarks": "",           // addtional remarks for METAR, customization only
     "add-to-brief": true,    // add METAR text to bottom of mission brief
-    "use-custom-data": false // use custom data from checkwx.json file
+    "use-custom-data": false,// use custom data from checkwx.json file
+    "use-aviation-weather": false // fetch data from aviationweather.gov
   },
   "options": {
     "update-time": true,     // set to false to disable time being updated
@@ -138,6 +139,9 @@ each parameter.
       [checkwxapi.com](https://www.checkwxapi.com/documentation/metar) for more
       info. Only the parameters shown in the example are currently supported.
       If not all parameters are given, the missing data will come from CheckWX.
+  * `use-aviation-weather`: boolean
+    * If true, Real Weather will fetch METAR data from
+    [aviationweather.gov](https://aviationweather.gov) instead of CheckWX.
 * `options`
   * `update-time`: boolean
     * Disable/enable Real Weather modifying your mission time.
