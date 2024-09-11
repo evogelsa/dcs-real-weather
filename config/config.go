@@ -2,106 +2,139 @@ package config
 
 import (
 	_ "embed"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"io/fs"
 	"log"
 	"os"
+	"regexp"
+	"slices"
+	"time"
+
+	"github.com/pelletier/go-toml/v2"
 
 	"github.com/evogelsa/DCS-real-weather/weather"
 )
 
-//go:embed config.json
+//go:embed config.toml
 var defaultConfig string
+
+const configName = "config.toml"
 
 // config stores the parsed configuration. Use Get() to retrieve it
 var config Configuration
 
 // Configuration is the structure of config.json to be parsed
 type Configuration struct {
-	APIKey string `json:"api-key"`
-	Files  struct {
-		InputMission  string `json:"input-mission"`
-		OutputMission string `json:"output-mission"`
-		Log           string `json:"log"`
-	} `json:"files"`
-	METAR struct {
-		ICAO               string   `json:"icao"`
-		ICAOList           []string `json:"icao-list"`
-		RunwayElevation    int      `json:"runway-elevation"`
-		Remarks            string   `json:"remarks"`
-		AddToBrief         bool     `json:"add-to-brief"`
-		UseCustomData      bool     `json:"use-custom-data"`
-		UseAviationWeather bool     `json:"use-aviation-weather"`
-	} `json:"metar"`
+	RealWeather struct {
+		Mission struct {
+			Input  string `toml:"input"`
+			Output string `toml:"output"`
+			Brief  struct {
+				AddMETAR  bool   `toml:"add-metar"`
+				InsertKey string `toml:"insert-key"`
+				Remarks   string `toml:"remarks"`
+			} `toml:"brief"`
+		} `toml:"mission"`
+		Log struct {
+			Enable bool   `toml:"enable"`
+			File   string `toml:"file"`
+		} `toml:"log"`
+	} `toml:"realweather"`
+	API struct {
+		ProviderPriority []string `toml:"provider-priority"`
+		AviationWeather  struct {
+			Enable bool `toml:"enable"`
+		} `toml:"aviationweather"`
+		CheckWX struct {
+			Enable bool   `toml:"enable"`
+			Key    string `toml:"key"`
+		} `toml:"checkwx"`
+		Custom struct {
+			Enable   bool   `toml:"enable"`
+			File     string `toml:"file"`
+			Override bool   `toml:"override"`
+		} `toml:"custom"`
+		OpenMeteo struct {
+			Enable bool `toml:"enable"`
+		} `toml:"openmeteo"`
+	} `toml:"api"`
 	Options struct {
-		UpdateTime    bool   `json:"update-time"`
-		UpdateWeather bool   `json:"update-weather"`
-		TimeOffset    string `json:"time-offset"`
-		Wind          struct {
-			Minimum        float64 `json:"minimum"`
-			Maximum        float64 `json:"maximum"`
-			GustMinimum    float64 `json:"gust-minimum"`
-			GustMaximum    float64 `json:"gust-maximum"`
-			OpenMeteo      bool    `json:"open-meteo"`
-			Stability      float64 `json:"stability"`
-			FixedReference bool    `json:"fixed-reference"`
-		} `json:"wind"`
-		Clouds struct {
-			DisallowedPresets  []string `json:"disallowed-presets"`
-			FallbackToNoPreset bool     `json:"fallback-to-no-preset"`
-			DefaultPreset      string   `json:"default-preset"`
+		Time struct {
+			Enable     bool   `toml:"enable"`
+			SystemTime bool   `toml:"system-time"`
+			Offset     string `toml:"offset"`
+		} `toml:"time"`
+		Weather struct {
+			Enable          bool     `toml:"enable"`
+			ICAO            string   `toml:"icao"`
+			ICAOList        []string `toml:"icao-list"`
+			RunwayElevation float64  `toml:"runway-elevation"`
+			Wind            struct {
+				Enable         bool    `toml:"enable"`
+				Minimum        float64 `toml:"minimum"`
+				Maximum        float64 `toml:"maximum"`
+				GustMinimum    float64 `toml:"gust-minimum"`
+				GustMaximum    float64 `toml:"gust-maximum"`
+				Stability      float64 `toml:"stability"`
+				FixedReference bool    `toml:"fixed-reference"`
+			} `toml:"wind"`
+			Clouds struct {
+				FallbackToLegacy bool `toml:"fallback-to-legacy"`
+				Presets          struct {
+					Default    string   `toml:"default"`
+					Disallowed []string `toml:"disallowed"`
+				} `toml:"presets"`
+			} `toml:"clouds"`
+			Fog struct {
+				Enabled           bool    `toml:"enabled"`
+				ThicknessMinimum  float64 `toml:"thickness-minimum"`
+				ThicknessMaximum  float64 `toml:"thickness-maximum"`
+				VisibilityMinimum float64 `toml:"visibility-minimum"`
+				VisibilityMaximum float64 `toml:"visibility-maximum"`
+			} `toml:"fog"`
+			Dust struct {
+				Enabled           bool    `toml:"enabled"`
+				VisibilityMinimum float64 `toml:"visibility-minimum"`
+				VisibilityMaximum float64 `toml:"visibility-maximum"`
+			}
 		}
-		Fog struct {
-			Enabled           bool `json:"enabled"`
-			ThicknessMinimum  int  `json:"thickness-minimum"`
-			ThicknessMaximum  int  `json:"thickness-maximum"`
-			VisibilityMinimum int  `json:"visibility-minimum"`
-			VisibilityMaximum int  `json:"visibility-maximum"`
-		} `json:"fog"`
-		Dust struct {
-			Enabled           bool `json:"enabled"`
-			VisibilityMinimum int  `json:"visibility-minimum"`
-			VisibilityMaximum int  `json:"visibility-maximum"`
-		} `json:"dust"`
-	} `json:"options"`
+	}
 }
 
-// ParseConfig reads config.json and returns a Configuration struct of the
-// parameters found
+// init reads config.toml and umarshals into config
 func init() {
-	file, err := os.Open("config.json")
+	file, err := os.Open(configName)
 	if err != nil {
-		// if config.json does not exist, create it and exit
+		// if config.toml does not exist, create it and exit
 		if errors.Is(err, fs.ErrNotExist) {
 			log.Println("Config does not exist, creating one...")
-			err := os.WriteFile("config.json", []byte(defaultConfig), 0666)
+			err := os.WriteFile(configName, []byte(defaultConfig), 0666)
 			if err != nil {
-				log.Fatalf("Unable to create config.json: %v", err)
+				log.Fatalf("Unable to create %s: %v", configName, err)
 			}
 			log.Fatalf("Default config created. Please configure with your desired settings, then rerun.")
 		} else {
-			log.Fatalf("Error opening config.json: %v\n", err)
+			log.Fatalf("Error opening %s: %v\n", configName, err)
 		}
 	}
 
 	defer file.Close()
-	decoder := json.NewDecoder(file)
+	decoder := toml.NewDecoder(file)
 	err = decoder.Decode(&config)
 	if err != nil {
-		log.Fatalf("Error decoding config.json: %v\n", err)
+		log.Fatalf("Error decoding %s: %v\n", configName, err)
 	}
 
-	if config.Files.Log != "" {
+	if config.RealWeather.Log.Enable {
 		f, err := os.OpenFile(
-			config.Files.Log,
+			config.RealWeather.Log.File,
 			os.O_WRONLY|os.O_CREATE|os.O_APPEND,
 			0644,
 		)
 		if err != nil {
-			log.Printf("Error opening log file: %v\n", err)
+			log.Printf("Error opening log file %s: %v\n", config.RealWeather.Log.File, err)
 		}
 		// defer f.Close()
 
@@ -114,163 +147,234 @@ func init() {
 	checkParams()
 }
 
+// checkParams calls the config checking functions
 func checkParams() {
+	checkRealWeather()
 	checkAPI()
-	checkICAO()
-	checkStability()
-	checkDefaultPreset()
-	checkFogThickness()
-	checkFogVisibility()
-	checkDust()
-	checkWind()
-	checkGust()
+	checkOptionsTime()
+	checkOptionsWeather()
+	checkOptionsWind()
+	checkOptionsClouds()
+	checkOptionsFog()
+	checkOptionsDust()
 }
 
+// checkRealWeather validates the realweather section of the config
+func checkRealWeather() {
+	var fatal bool
+	if config.RealWeather.Mission.Input == "" {
+		log.Println("No input mission configured, one must be supplied")
+		fatal = true
+	}
+	if config.RealWeather.Mission.Output == "" {
+		log.Println("No output mission configured, one must be supplied")
+		fatal = true
+	}
+	if _, err := regexp.Compile(config.RealWeather.Mission.Brief.InsertKey); err != nil {
+		log.Printf("Brief insert key must be valid when used in a PCRE regular expression: %v", err)
+		fatal = true
+	}
+	if fatal {
+		log.Fatalln("Irrecoverable errors found in config, please correct these and try again.")
+	}
+}
+
+// checkAPI validates all the API settings in the config
 func checkAPI() {
-	if config.APIKey == "" && !config.METAR.UseAviationWeather {
-		log.Println("API key for CheckWX is missing and `use-aviation-weather` is false.")
-		log.Println("Real Weather will default `use-aviation-weather` to true.")
-		log.Println("Set `use-aviation-weather` to true or supply an API key to supress this warning")
-		config.METAR.UseAviationWeather = true
+	// if checkwx is enabled, validate that a key is present
+	if config.API.CheckWX.Enable && config.API.CheckWX.Key == "" {
+		log.Println("API key for CheckWX is missing. CheckWX will be disabled")
+		config.API.CheckWX.Enable = false
+	}
+
+	// validate at least one provider is enabled
+	if !config.API.AviationWeather.Enable &&
+		!config.API.CheckWX.Enable &&
+		!config.API.Custom.Enable {
+		log.Println("All providers are disabled, aviationweather will be enabled by default")
+		config.API.AviationWeather.Enable = true
 	}
 }
 
-func checkICAO() {
-	if config.METAR.ICAO == "" && len(config.METAR.ICAOList) == 0 {
-		log.Println("ICAO or ICAO list must be supplied, defaulting to DGAA")
-		config.METAR.ICAO = "DGAA"
-	} else if config.METAR.ICAO != "" && len(config.METAR.ICAOList) > 0 {
-		log.Println("ICAO and ICAO list both supplied, only ICAO will be used")
+// checkOptionsTime validates the time options in the config
+func checkOptionsTime() {
+	_, err := time.ParseDuration(config.Options.Time.Offset)
+	if err != nil {
+		log.Printf(
+			"Could not parse time offset of %s: %v",
+			config.Options.Time.Offset,
+			err,
+		)
+		log.Println("Time offset will default to zero")
+		config.Options.Time.Offset = "0"
 	}
 }
 
-// checkStability enforces stability must be greater than 0
-func checkStability() {
-	if config.Options.Wind.Stability <= 0 {
+// checkOptionsWeather valides the weather options in the config
+func checkOptionsWeather() {
+	// validate ICAOs given are valid format (doesn't check if actually exists)
+	re := regexp.MustCompile("^[A-Z]{4}$")
+	for i, icao := range config.Options.Weather.ICAOList {
+		if !re.MatchString(icao) {
+			log.Printf("ICAO %s in ICAO list is not a valid ICAO and will not be used", icao)
+			config.Options.Weather.ICAOList = slices.Delete(
+				config.Options.Weather.ICAOList,
+				i,
+				i+1,
+			)
+		}
+	}
+
+	if config.Options.Weather.ICAO != "" {
+		if !re.MatchString(config.Options.Weather.ICAO) {
+			log.Printf("ICAO %s is not a valid ICAO and will not be used", config.Options.Weather.ICAO)
+			config.Options.Weather.ICAO = ""
+		}
+	}
+
+	// validate an option for ICAO exists
+	if config.Options.Weather.ICAO == "" && len(config.Options.Weather.ICAOList) == 0 {
+		log.Println("ICAO or ICAO list must be supplied, defaulting to ICAO to DGAA")
+		config.Options.Weather.ICAO = "DGAA"
+	} else if config.Options.Weather.ICAO != "" && len(config.Options.Weather.ICAOList) > 0 {
+		log.Println("ICAO and ICAO list cannot be used at the same time, only ICAO will be used")
+	}
+}
+
+// checkOptionsWind validates wind options in the config
+func checkOptionsWind() {
+	if config.Options.Weather.Wind.Minimum < 0 {
+		log.Println("Wind minimum is set below min of 0; defaulting to 0")
+		config.Options.Weather.Wind.Minimum = 0
+	}
+
+	if config.Options.Weather.Wind.Maximum > 50 {
+		log.Println("Wind maximum is set above max of 50; defaulting to 50")
+		config.Options.Weather.Wind.Maximum = 50
+	}
+
+	if config.Options.Weather.Wind.Minimum > config.Options.Weather.Wind.Maximum {
+		log.Println("Wind minimum is set above wind maximum; defaulting to 0 and 50")
+		config.Options.Weather.Wind.Minimum = 50
+		config.Options.Weather.Wind.Maximum = 0
+	}
+
+	if config.Options.Weather.Wind.GustMinimum < 0 {
+		log.Println("Gust minimum is set below min of 0; defaulting to 0")
+		config.Options.Weather.Wind.GustMinimum = 0
+	}
+
+	if config.Options.Weather.Wind.GustMaximum > 50 {
+		log.Println("Gust maximum is set above max of 50; defaulting to 50")
+		config.Options.Weather.Wind.GustMaximum = 50
+	}
+
+	if config.Options.Weather.Wind.GustMinimum > config.Options.Weather.Wind.GustMaximum {
+		log.Println("Gust minimum is set above gust maximum; defaulting to 0 and 50")
+		config.Options.Weather.Wind.Maximum = 50
+		config.Options.Weather.Wind.Minimum = 0
+	}
+
+	if config.Options.Weather.Wind.Stability <= 0 {
 		log.Printf(
 			"Parsed stability of %0.3f from config file, but stability must be greater than 0.\n",
-			config.Options.Wind.Stability,
+			config.Options.Weather.Wind.Stability,
 		)
 		log.Println("Stability will default to neutral stability of 0.143.")
-		config.Options.Wind.Stability = 0.143
+		config.Options.Weather.Wind.Stability = 0.143
 	}
 }
 
-// checkDefaultPreset enforces default preset must exist
-func checkDefaultPreset() {
-	if config.Options.Clouds.DefaultPreset == "" {
-		return
-	}
-
+// checkOptionsClouds validates cloud options in the config
+func checkOptionsClouds() {
 	var presetFound bool
-	for preset := range weather.DecodePreset {
-		if preset == `"`+config.Options.Clouds.DefaultPreset+`"` {
-			presetFound = true
-			break
+	if config.Options.Weather.Clouds.Presets.Default != "" {
+		for preset := range weather.DecodePreset {
+			if preset == `"`+config.Options.Weather.Clouds.Presets.Default+`"` {
+				presetFound = true
+				break
+			}
 		}
+	} else {
+		presetFound = true
 	}
 
 	if !presetFound {
 		log.Printf(
 			"Default preset %s is not a valid preset. Using clear instead",
-			config.Options.Clouds.DefaultPreset,
+			config.Options.Weather.Clouds.Presets.Default,
 		)
-		config.Options.Clouds.DefaultPreset = ""
+		config.Options.Weather.Clouds.Presets.Default = ""
+	}
+
+	for _, preset := range config.Options.Weather.Clouds.Presets.Disallowed {
+		presetFound = false
+		for valid := range weather.DecodePreset {
+			if valid == `"`+config.Options.Weather.Clouds.Presets.Default+`"` {
+				presetFound = true
+				break
+			}
+		}
+		if !presetFound {
+			log.Printf(
+				"Preset %s in disallowed list is not a valid preset; it'll be ignored",
+				preset,
+			)
+		}
 	}
 }
 
-// checkFogThickness enforces fog thickness within [0, 1000]
-func checkFogThickness() {
-	if config.Options.Fog.ThicknessMaximum > 1000 {
+// checkOptionsFog enforces fog configuration options
+func checkOptionsFog() {
+	if config.Options.Weather.Fog.ThicknessMaximum > 1000 {
 		log.Println("Fog maximum thickness is set above max of 1000; defaulting to 1000")
-		config.Options.Fog.ThicknessMaximum = 1000
+		config.Options.Weather.Fog.ThicknessMaximum = 1000
 	}
 
-	if config.Options.Fog.ThicknessMinimum < 0 {
+	if config.Options.Weather.Fog.ThicknessMinimum < 0 {
 		log.Println("Fog minimum thickness is set below min of 0; defaulting to 0")
-		config.Options.Fog.ThicknessMinimum = 0
+		config.Options.Weather.Fog.ThicknessMinimum = 0
 	}
 
-	if config.Options.Fog.ThicknessMinimum > config.Options.Fog.ThicknessMaximum {
+	if config.Options.Weather.Fog.ThicknessMinimum > config.Options.Weather.Fog.ThicknessMaximum {
 		log.Println("Fog minimum thickness is set above fog maximum thickness; defaulting to 0 and 1000")
-		config.Options.Fog.ThicknessMaximum = 1000
-		config.Options.Fog.ThicknessMinimum = 0
+		config.Options.Weather.Fog.ThicknessMaximum = 1000
+		config.Options.Weather.Fog.ThicknessMinimum = 0
 	}
-}
 
-// checkFogVisibility enforces vis is within [0, 6000]
-func checkFogVisibility() {
-	if config.Options.Fog.VisibilityMaximum > 6000 {
+	if config.Options.Weather.Fog.VisibilityMaximum > 6000 {
 		log.Println("Fog maximum visibility is set above max of 6000; defaulting to 6000")
-		config.Options.Fog.VisibilityMaximum = 6000
+		config.Options.Weather.Fog.VisibilityMaximum = 6000
 	}
 
-	if config.Options.Fog.VisibilityMinimum < 0 {
+	if config.Options.Weather.Fog.VisibilityMinimum < 0 {
 		log.Println("Fog minimum visibility is set below min of 0; defaulting to 0")
-		config.Options.Fog.VisibilityMinimum = 0
+		config.Options.Weather.Fog.VisibilityMinimum = 0
 	}
 
-	if config.Options.Fog.VisibilityMinimum > config.Options.Fog.VisibilityMaximum {
+	if config.Options.Weather.Fog.VisibilityMinimum > config.Options.Weather.Fog.VisibilityMaximum {
 		log.Println("Fog minimum visibility is set above fog maximum visibility; defaulting to 0 and 6000")
-		config.Options.Fog.VisibilityMaximum = 6000
-		config.Options.Fog.VisibilityMinimum = 0
+		config.Options.Weather.Fog.VisibilityMaximum = 6000
+		config.Options.Weather.Fog.VisibilityMinimum = 0
 	}
 }
 
-// checkDust enforces dust within [300, 3000]
-func checkDust() {
-	if config.Options.Dust.VisibilityMinimum < 300 {
+// checkOptionsDust enforces dust configuration options
+func checkOptionsDust() {
+	if config.Options.Weather.Dust.VisibilityMinimum < 300 {
 		log.Println("Dust visibility minimum is set below min of 300; defaulting to 300")
-		config.Options.Dust.VisibilityMinimum = 300
+		config.Options.Weather.Dust.VisibilityMinimum = 300
 	}
 
-	if config.Options.Dust.VisibilityMaximum > 3000 {
+	if config.Options.Weather.Dust.VisibilityMaximum > 3000 {
 		log.Println("Dust visibility maximum is set above max of 3000; defaulting to 3000")
-		config.Options.Dust.VisibilityMaximum = 3000
+		config.Options.Weather.Dust.VisibilityMaximum = 3000
 	}
 
-	if config.Options.Dust.VisibilityMinimum > config.Options.Fog.VisibilityMaximum {
+	if config.Options.Weather.Dust.VisibilityMinimum > config.Options.Weather.Fog.VisibilityMaximum {
 		log.Println("Dust minimum visibility is set above dust maximum visibility; defaulting to 300 and 3000")
-		config.Options.Dust.VisibilityMaximum = 3000
-		config.Options.Dust.VisibilityMinimum = 300
-	}
-}
-
-// checkWind enforces wind within [0, 50]
-func checkWind() {
-	if config.Options.Wind.Minimum < 0 {
-		log.Println("Wind minimum is set below min of 0; defaulting to 0")
-		config.Options.Wind.Minimum = 0
-	}
-
-	if config.Options.Wind.Maximum > 50 {
-		log.Println("Wind maximum is set above max of 50; defaulting to 50")
-		config.Options.Wind.Maximum = 50
-	}
-
-	if config.Options.Wind.Minimum > config.Options.Wind.Maximum {
-		log.Println("Wind minimum is set above wind maximum; defaulting to 0 and 50")
-		config.Options.Dust.VisibilityMaximum = 50
-		config.Options.Dust.VisibilityMinimum = 0
-	}
-}
-
-// checkGust enforces gust within [0, 50]
-func checkGust() {
-	if config.Options.Wind.GustMinimum < 0 {
-		log.Println("Gust minimum is set below min of 0; defaulting to 0")
-		config.Options.Wind.GustMinimum = 0
-	}
-
-	if config.Options.Wind.GustMaximum > 50 {
-		log.Println("Gust maximum is set above max of 50; defaulting to 50")
-		config.Options.Wind.GustMaximum = 50
-	}
-
-	if config.Options.Wind.GustMinimum > config.Options.Wind.GustMaximum {
-		log.Println("Gust minimum is set above gust maximum; defaulting to 0 and 50")
-		config.Options.Dust.VisibilityMaximum = 50
-		config.Options.Dust.VisibilityMinimum = 0
+		config.Options.Weather.Dust.VisibilityMaximum = 3000
+		config.Options.Weather.Dust.VisibilityMinimum = 300
 	}
 }
 
@@ -282,7 +386,7 @@ func Set(param string, value interface{}) error {
 	switch param {
 	case "open-meteo":
 		v := value.(bool)
-		config.Options.Wind.OpenMeteo = v
+		config.API.OpenMeteo.Enable = v
 	default:
 		return fmt.Errorf("Unsupported parameter")
 	}

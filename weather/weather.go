@@ -10,9 +10,47 @@ import (
 	"time"
 )
 
-var (
-	SelectedPreset string
-	SelectedBase   int
+type CloudPreset struct {
+	Name    string
+	MinBase int
+	MaxBase int
+}
+
+type Cloud struct {
+	Name string
+	Base string
+}
+
+type OpenMeteoData struct {
+	Latitude         float64 `json:"latitude"`
+	Longitude        float64 `json:"longitude"`
+	Elevation        float64 `json:"elevation"`
+	GenerationTime   float64 `json:"generationtime_ms"`
+	UTCOffsetSeconds int     `json:"utc_offset_seconds"`
+	Timezone         string  `json:"timezone"`
+	TimezoneAbbr     string  `json:"timezone_abbreviation"`
+	Hourly           struct {
+		Time              []string  `json:"time"`
+		WindSpeed1900     []float64 `json:"windspeed_800hPa"`
+		WindSpeed7200     []float64 `json:"windspeed_400hPa"`
+		WindDirection1900 []int     `json:"winddirection_800hPa"`
+		WindDirection7200 []int     `json:"winddirection_400hPa"`
+	} `json:"hourly"`
+}
+
+type WindsAloft struct {
+	WindSpeed1900     float64
+	WindSpeed7200     float64
+	WindDirection1900 int
+	WindDirection7200 int
+}
+
+type API string
+
+const (
+	APICheckWX         API = "checkwx"
+	APIAviationWeather API = "aviationweather"
+	APICustom          API = "custom"
 )
 
 const (
@@ -31,6 +69,136 @@ const (
 const (
 	degToRad = math.Pi / 180
 )
+
+var (
+	SelectedPreset string
+	SelectedBase   int
+)
+
+var CloudPresets map[string][]CloudPreset = map[string][]CloudPreset{
+	"FEW": {
+		{`"Preset1"`, 840, 4200},  // Light Scattered 1
+		{`"Preset2"`, 1260, 2520}, // Light Scattered 2
+	},
+	"SCT": {
+		{`"Preset3"`, 840, 2520},   // High Scattered 1
+		{`"Preset4"`, 1260, 2520},  // High Scattered 2
+		{`"Preset5"`, 1260, 4620},  // Scattered 1
+		{`"Preset6"`, 1260, 4200},  // Scattered 2
+		{`"Preset7"`, 1680, 5040},  // Scattered 3
+		{`"Preset8"`, 3780, 5460},  // High Scattered 3
+		{`"Preset9"`, 1680, 3780},  // Scattered 4
+		{`"Preset10"`, 1260, 4200}, // Scattered 5
+		{`"Preset11"`, 2520, 5460}, // Scattered 6
+		{`"Preset12"`, 1680, 3360}, // Scattered 7
+	},
+	"SCT+RA": {
+		{`"RainyPreset4"`, 1260, 4200},  // Light Rain 1
+		{`"NEWRAINPRESET4"`, 840, 5174}, // Light Rain 4
+	},
+	"BKN": {
+		{`"Preset13"`, 1680, 3360}, // Broken 1
+		{`"Preset14"`, 1680, 3360}, // Broken 2
+		{`"Preset15"`, 840, 5040},  // Broken 3
+		{`"Preset16"`, 1260, 4200}, // Broken 4
+		{`"Preset17"`, 0, 2520},    // Broken 5
+		{`"Preset18"`, 0, 3780},    // Broken 6
+		{`"Preset19"`, 0, 2940},    // Broken 7
+		{`"Preset20"`, 0, 3780},    // Broken 8
+	},
+	"BKN+RA": {
+		{`"RainyPreset5"`, 1260, 2520}, // Light Rain 2
+	},
+	"OVC": {
+		{`"Preset21"`, 1260, 4200}, // Overcast 1
+		{`"Preset22"`, 420, 4200},  // Overcast 2
+		{`"Preset23"`, 840, 3360},  // Overcast 3
+		{`"Preset24"`, 420, 2520},  // Overcast 4
+		{`"Preset25"`, 420, 3360},  // Overcast 5
+		{`"Preset26"`, 420, 2940},  // Overcast 6
+		{`"Preset27"`, 420, 2520},  // Overcast 7
+	},
+	"OVC+RA": {
+		{`"RainyPreset1"`, 420, 2940},  // Overcast And Rain 1
+		{`"RainyPreset2"`, 840, 2520},  // Overcast And Rain 2
+		{`"RainyPreset3"`, 840, 2520},  // Overcast And Rain 3
+		{`"RainyPreset6"`, 1260, 2940}, // Light Rain 3
+	},
+}
+
+var DecodePreset = map[string][]Cloud{
+	`"Preset1"`:        {{"FEW", "070"}},
+	`"Preset2"`:        {{"FEW", "080"}, {"SCT", "230"}},
+	`"Preset3"`:        {{"SCT", "080"}, {"FEW", "210"}},
+	`"Preset4"`:        {{"SCT", "080"}, {"SCT", "240"}},
+	`"Preset5"`:        {{"SCT", "140"}, {"FEW", "270"}, {"BKN", "400"}},
+	`"Preset6"`:        {{"SCT", "080"}, {"FEW", "400"}},
+	`"Preset7"`:        {{"BKN", "075"}, {"SCT", "210"}, {"SCT", "400"}},
+	`"Preset8"`:        {{"SCT", "180"}, {"FEW", "360"}, {"FEW", "400"}},
+	`"Preset9"`:        {{"BKN", "075"}, {"SCT", "200"}, {"FEW", "410"}},
+	`"Preset10"`:       {{"SCT", "180"}, {"FEW", "360"}, {"FEW", "400"}},
+	`"Preset11"`:       {{"BKN", "180"}, {"BKN", "320"}, {"FEW", "410"}},
+	`"Preset12"`:       {{"BKN", "120"}, {"SCT", "220"}, {"FEW", "410"}},
+	`"Preset13"`:       {{"BKN", "120"}, {"BKN", "260"}, {"FEW", "410"}},
+	`"Preset14"`:       {{"BKN", "070"}, {"FEW", "410"}},
+	`"Preset15"`:       {{"SCT", "140"}, {"BKN", "240"}, {"FEW", "400"}},
+	`"Preset16"`:       {{"BKN", "140"}, {"BKN", "280"}, {"FEW", "400"}},
+	`"Preset17"`:       {{"BKN", "070"}, {"BKN", "200"}, {"BKN", "320"}},
+	`"Preset18"`:       {{"BKN", "130"}, {"BKN", "250"}, {"BKN", "380"}},
+	`"Preset19"`:       {{"OVC", "090"}, {"BKN", "230"}, {"BKN", "310"}},
+	`"Preset20"`:       {{"BKN", "130"}, {"BKN", "280"}, {"FEW", "380"}},
+	`"Preset21"`:       {{"BKN", "070"}, {"OVC", "170"}},
+	`"Preset22"`:       {{"OVC", "070"}, {"BKN", "170"}},
+	`"Preset23"`:       {{"OVC", "110"}, {"BKN", "180"}, {"SCT", "320"}},
+	`"Preset24"`:       {{"OVC", "030"}, {"OVC", "170"}, {"BKN", "340"}},
+	`"Preset25"`:       {{"OVC", "120"}, {"OVC", "220"}, {"OVC", "400"}},
+	`"Preset26"`:       {{"OVC", "090"}, {"BKN", "230"}, {"SCT", "320"}},
+	`"Preset27"`:       {{"OVC", "080"}, {"BKN", "250"}, {"BKN", "340"}},
+	`"RainyPreset1"`:   {{"OVC", "030"}, {"OVC", "280"}, {"FEW", "400"}},
+	`"RainyPreset2"`:   {{"OVC", "030"}, {"SCT", "180"}, {"FEW", "400"}},
+	`"RainyPreset3"`:   {{"OVC", "060"}, {"OVC", "190"}, {"SCT", "340"}},
+	`"RainyPreset4"`:   {{"SCT", "080"}, {"FEW", "360"}},
+	`"RainyPreset5"`:   {{"BKN", "070"}, {"BKN", "200"}, {"BKN", "320"}},
+	`"RainyPreset6"`:   {{"OVC", "090"}, {"BKN", "230"}, {"BKN", "310"}},
+	`"NEWRAINPRESET4"`: {{"SCT", "080"}, {"SCT", "120"}},
+}
+
+var DefaultWeather WeatherData = WeatherData{
+	Data: []Data{
+		{
+			Wind: &Wind{
+				SpeedMPS: 1.25,
+				Degrees:  270,
+				GustMPS:  3,
+			},
+			Temperature: &Temperature{
+				Celsius: 15,
+			},
+			Barometer: &Barometer{
+				Hg: 29.92,
+			},
+			Clouds: []Clouds{
+				{
+					Code: "CLR",
+				},
+			},
+			Observed: time.Now().Format("2006-01-02T15:04:05"),
+			Station: &Station{
+				Geometry: &Geometry{
+					Coordinates: []float64{0, 0},
+				},
+			},
+			ICAO: "DGAA",
+			Visibility: &Visibility{
+				MilesFloat: 10,
+			},
+			Dewpoint: &Dewpoint{
+				Celsius: 10,
+			},
+		},
+	},
+	NumResults: 1,
+}
 
 func ClearCodes() []string {
 	return []string{
@@ -184,80 +352,19 @@ func GetWindsAloft(location []float64) (WindsAloft, error) {
 	return data, nil
 }
 
-type API int
-
-const (
-	APICheckWX = iota
-	APIAviationWeather
-)
-
 // GetWeather calls the appropriate function to get weather from the desired
-// API
-func GetWeather(icao string, api API, apiKey string) (WeatherData, error) {
-	if api == APIAviationWeather {
-		return getWeatherAlternate(icao)
+// API.
+func GetWeather(icao string, api API, meta string) (WeatherData, error) {
+	switch api {
+	case APIAviationWeather:
+		return getWeatherAviationWeather(icao)
+	case APICheckWX:
+		return getWeatherCheckWX(icao, meta)
+	case APICustom:
+		return getWeatherCustom(meta)
+	default:
+		return WeatherData{}, fmt.Errorf("Invalid API provider")
 	}
-	return getWeather(icao, apiKey)
-}
-
-func getWeather(icao, apiKey string) (WeatherData, error) {
-	log.Println("Getting weather from CheckWX...")
-
-	// create http client to fetch weather data, timeout after 5 sec
-	timeout := time.Duration(5 * time.Second)
-	client := http.Client{Timeout: timeout}
-
-	request, err := http.NewRequest(
-		"GET",
-		"https://api.checkwx.com/metar/"+icao+"/decoded",
-		nil,
-	)
-	if err != nil {
-		return WeatherData{}, err
-	}
-	request.Header.Set("X-API-Key", apiKey)
-
-	// make api request
-	resp, err := client.Do(request)
-	if err != nil {
-		return WeatherData{}, fmt.Errorf(
-			"Error making request to CheckWX: %v",
-			err,
-		)
-	}
-
-	// verify response OK
-	if resp.StatusCode != http.StatusOK {
-		return WeatherData{}, fmt.Errorf("CheckWX bad status: %v", resp.Status)
-	}
-	defer resp.Body.Close()
-
-	// parse response byte array
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return WeatherData{}, fmt.Errorf(
-			"Error parsing CheckWX response: %v",
-			err,
-		)
-	}
-
-	log.Println("Got weather data:", string(body))
-	log.Println("Parsing weather...")
-
-	// format json resposne into weatherdata struct
-	var res WeatherData
-	err = json.Unmarshal(body, &res)
-	if err != nil {
-		return WeatherData{}, err
-	}
-
-	if err := ValidateWeather(&res); err != nil {
-		return res, err
-	}
-
-	log.Println("Parsed weather")
-
-	return res, nil
 }
 
 // ValidateWeather takes in weather data from the API and checks the first
@@ -465,268 +572,4 @@ func GenerateMETAR(wx WeatherData, rmk string) (string, error) {
 	}
 
 	return metar, nil
-}
-
-type WeatherData struct {
-	Data       []Data `json:"data,omitempty"`
-	NumResults int    `json:"results,omitempty"`
-}
-
-type Data struct {
-	Barometer      *Barometer   `json:"barometer,omitempty"`
-	Ceiling        *Ceiling     `json:"ceiling,omitempty"`
-	Clouds         []Clouds     `json:"clouds,omitempty"`
-	Conditions     []Conditions `json:"conditions,omitempty"`
-	Dewpoint       *Dewpoint    `json:"dewpoint,omitempty"`
-	Elevation      *Elevation   `json:"elevation,omitempty"`
-	FlightCategory string       `json:"flight_category,omitempty"`
-	Humidity       *Humidity    `json:"humidity,omitempty"`
-	ICAO           string       `json:"icao,omitempty"`
-	ID             string       `json:"id,omitempty"`
-	Observed       string       `json:"observed,omitempty"`
-	RawText        string       `json:"raw_text,omitempty"`
-	Station        *Station     `json:"station,omitempty"`
-	Temperature    *Temperature `json:"temperature,omitempty"`
-	Visibility     *Visibility  `json:"visibility,omitempty"`
-	Wind           *Wind        `json:"wind,omitempty"`
-}
-
-type Barometer struct {
-	Hg  float64 `json:"hg,omitempty"`
-	HPa float64 `json:"hpa,omitempty"`
-	KPa float64 `json:"kpa,omitempty"`
-	MB  float64 `json:"mb,omitempty"`
-}
-
-type Ceiling struct {
-	BaseFeetAGL   float64 `json:"base_feet_agl,omitempty"`
-	BaseMetersAGL float64 `json:"base_meters_agl,omitempty"`
-	Code          string  `json:"code,omitempty"`
-	Feet          float64 `json:"feet,omitempty"`
-	Meters        float64 `json:"meters,omitempty"`
-	Text          string  `json:"text,omitempty"`
-}
-
-type Clouds struct {
-	BaseFeetAGL   float64 `json:"base_feet_agl,omitempty"`
-	BaseMetersAGL float64 `json:"base_meters_agl,omitempty"`
-	Code          string  `json:"code,omitempty"`
-	Feet          float64 `json:"feet,omitempty"`
-	Meters        float64 `json:"meters,omitempty"`
-	Text          string  `json:"text,omitempty"`
-}
-
-type Conditions struct {
-	Code string `json:"code,omitempty"`
-	Text string `json:"text,omitempty"`
-}
-
-type Dewpoint struct {
-	Celsius    float64 `json:"celsius,omitempty"`
-	Fahrenheit float64 `json:"fahrenheit,omitempty"`
-}
-
-type Elevation struct {
-	Feet   float64 `json:"feet,omitempty"`
-	Meters float64 `json:"meters,omitempty"`
-}
-
-type Humidity struct {
-	Percent float64 `json:"percent,omitempty"`
-}
-
-type Station struct {
-	Location string    `json:"location,omitempty"`
-	Name     string    `json:"name,omitempty"`
-	Type     string    `json:"type,omitempty"`
-	Geometry *Geometry `json:"geometry,omitempty"`
-}
-
-type Geometry struct {
-	Coordinates []float64 `json:"coordinates,omitempty"` // longitude, latitude
-	Type        string    `json:"type,omitempty"`
-}
-
-type Temperature struct {
-	Celsius    float64 `json:"celsius,omitempty"`
-	Fahrenheit float64 `json:"fahrenheit,omitempty"`
-}
-
-type Visibility struct {
-	Meters      string  `json:"meters,omitempty"`
-	MetersFloat float64 `json:"meters_float,omitempty"`
-	Miles       string  `json:"miles,omitempty"`
-	MilesFloat  float64 `json:"miles_float,omitempty"`
-}
-
-type Wind struct {
-	Degrees  float64 `json:"degrees,omitempty"`
-	SpeedKPH float64 `json:"speed_kph,omitempty"`
-	SpeedKTS float64 `json:"speed_kts,omitempty"`
-	SpeedMPH float64 `json:"speed_mph,omitempty"`
-	SpeedMPS float64 `json:"speed_mps,omitempty"`
-	GustKPH  float64 `json:"gust_kph,omitempty"`
-	GustKTS  float64 `json:"gust_kts,omitempty"`
-	GustMPH  float64 `json:"gust_mph,omitempty"`
-	GustMPS  float64 `json:"gust_mps,omitempty"`
-}
-
-type CloudPreset struct {
-	Name    string
-	MinBase int
-	MaxBase int
-}
-
-var CloudPresets map[string][]CloudPreset = map[string][]CloudPreset{
-	"FEW": {
-		{`"Preset1"`, 840, 4200},  // Light Scattered 1
-		{`"Preset2"`, 1260, 2520}, // Light Scattered 2
-	},
-	"SCT": {
-		{`"Preset3"`, 840, 2520},   // High Scattered 1
-		{`"Preset4"`, 1260, 2520},  // High Scattered 2
-		{`"Preset5"`, 1260, 4620},  // Scattered 1
-		{`"Preset6"`, 1260, 4200},  // Scattered 2
-		{`"Preset7"`, 1680, 5040},  // Scattered 3
-		{`"Preset8"`, 3780, 5460},  // High Scattered 3
-		{`"Preset9"`, 1680, 3780},  // Scattered 4
-		{`"Preset10"`, 1260, 4200}, // Scattered 5
-		{`"Preset11"`, 2520, 5460}, // Scattered 6
-		{`"Preset12"`, 1680, 3360}, // Scattered 7
-	},
-	"SCT+RA": {
-		{`"RainyPreset4"`, 1260, 4200},  // Light Rain 1
-		{`"NEWRAINPRESET4"`, 840, 5174}, // Light Rain 4
-	},
-	"BKN": {
-		{`"Preset13"`, 1680, 3360}, // Broken 1
-		{`"Preset14"`, 1680, 3360}, // Broken 2
-		{`"Preset15"`, 840, 5040},  // Broken 3
-		{`"Preset16"`, 1260, 4200}, // Broken 4
-		{`"Preset17"`, 0, 2520},    // Broken 5
-		{`"Preset18"`, 0, 3780},    // Broken 6
-		{`"Preset19"`, 0, 2940},    // Broken 7
-		{`"Preset20"`, 0, 3780},    // Broken 8
-	},
-	"BKN+RA": {
-		{`"RainyPreset5"`, 1260, 2520}, // Light Rain 2
-	},
-	"OVC": {
-		{`"Preset21"`, 1260, 4200}, // Overcast 1
-		{`"Preset22"`, 420, 4200},  // Overcast 2
-		{`"Preset23"`, 840, 3360},  // Overcast 3
-		{`"Preset24"`, 420, 2520},  // Overcast 4
-		{`"Preset25"`, 420, 3360},  // Overcast 5
-		{`"Preset26"`, 420, 2940},  // Overcast 6
-		{`"Preset27"`, 420, 2520},  // Overcast 7
-	},
-	"OVC+RA": {
-		{`"RainyPreset1"`, 420, 2940},  // Overcast And Rain 1
-		{`"RainyPreset2"`, 840, 2520},  // Overcast And Rain 2
-		{`"RainyPreset3"`, 840, 2520},  // Overcast And Rain 3
-		{`"RainyPreset6"`, 1260, 2940}, // Light Rain 3
-	},
-}
-
-type Cloud struct {
-	Name string
-	Base string
-}
-
-var DecodePreset = map[string][]Cloud{
-	`"Preset1"`:        {{"FEW", "070"}},
-	`"Preset2"`:        {{"FEW", "080"}, {"SCT", "230"}},
-	`"Preset3"`:        {{"SCT", "080"}, {"FEW", "210"}},
-	`"Preset4"`:        {{"SCT", "080"}, {"SCT", "240"}},
-	`"Preset5"`:        {{"SCT", "140"}, {"FEW", "270"}, {"BKN", "400"}},
-	`"Preset6"`:        {{"SCT", "080"}, {"FEW", "400"}},
-	`"Preset7"`:        {{"BKN", "075"}, {"SCT", "210"}, {"SCT", "400"}},
-	`"Preset8"`:        {{"SCT", "180"}, {"FEW", "360"}, {"FEW", "400"}},
-	`"Preset9"`:        {{"BKN", "075"}, {"SCT", "200"}, {"FEW", "410"}},
-	`"Preset10"`:       {{"SCT", "180"}, {"FEW", "360"}, {"FEW", "400"}},
-	`"Preset11"`:       {{"BKN", "180"}, {"BKN", "320"}, {"FEW", "410"}},
-	`"Preset12"`:       {{"BKN", "120"}, {"SCT", "220"}, {"FEW", "410"}},
-	`"Preset13"`:       {{"BKN", "120"}, {"BKN", "260"}, {"FEW", "410"}},
-	`"Preset14"`:       {{"BKN", "070"}, {"FEW", "410"}},
-	`"Preset15"`:       {{"SCT", "140"}, {"BKN", "240"}, {"FEW", "400"}},
-	`"Preset16"`:       {{"BKN", "140"}, {"BKN", "280"}, {"FEW", "400"}},
-	`"Preset17"`:       {{"BKN", "070"}, {"BKN", "200"}, {"BKN", "320"}},
-	`"Preset18"`:       {{"BKN", "130"}, {"BKN", "250"}, {"BKN", "380"}},
-	`"Preset19"`:       {{"OVC", "090"}, {"BKN", "230"}, {"BKN", "310"}},
-	`"Preset20"`:       {{"BKN", "130"}, {"BKN", "280"}, {"FEW", "380"}},
-	`"Preset21"`:       {{"BKN", "070"}, {"OVC", "170"}},
-	`"Preset22"`:       {{"OVC", "070"}, {"BKN", "170"}},
-	`"Preset23"`:       {{"OVC", "110"}, {"BKN", "180"}, {"SCT", "320"}},
-	`"Preset24"`:       {{"OVC", "030"}, {"OVC", "170"}, {"BKN", "340"}},
-	`"Preset25"`:       {{"OVC", "120"}, {"OVC", "220"}, {"OVC", "400"}},
-	`"Preset26"`:       {{"OVC", "090"}, {"BKN", "230"}, {"SCT", "320"}},
-	`"Preset27"`:       {{"OVC", "080"}, {"BKN", "250"}, {"BKN", "340"}},
-	`"RainyPreset1"`:   {{"OVC", "030"}, {"OVC", "280"}, {"FEW", "400"}},
-	`"RainyPreset2"`:   {{"OVC", "030"}, {"SCT", "180"}, {"FEW", "400"}},
-	`"RainyPreset3"`:   {{"OVC", "060"}, {"OVC", "190"}, {"SCT", "340"}},
-	`"RainyPreset4"`:   {{"SCT", "080"}, {"FEW", "360"}},
-	`"RainyPreset5"`:   {{"BKN", "070"}, {"BKN", "200"}, {"BKN", "320"}},
-	`"RainyPreset6"`:   {{"OVC", "090"}, {"BKN", "230"}, {"BKN", "310"}},
-	`"NEWRAINPRESET4"`: {{"SCT", "080"}, {"SCT", "120"}},
-}
-
-var DefaultWeather WeatherData = WeatherData{
-	Data: []Data{
-		{
-			Wind: &Wind{
-				SpeedMPS: 1.25,
-				Degrees:  270,
-				GustMPS:  3,
-			},
-			Temperature: &Temperature{
-				Celsius: 15,
-			},
-			Barometer: &Barometer{
-				Hg: 29.92,
-			},
-			Clouds: []Clouds{
-				{
-					Code: "CLR",
-				},
-			},
-			Observed: time.Now().Format("2006-01-02T15:04:05"),
-			Station: &Station{
-				Geometry: &Geometry{
-					Coordinates: []float64{0, 0},
-				},
-			},
-			ICAO: "DGAA",
-			Visibility: &Visibility{
-				MilesFloat: 10,
-			},
-			Dewpoint: &Dewpoint{
-				Celsius: 10,
-			},
-		},
-	},
-	NumResults: 1,
-}
-
-type OpenMeteoData struct {
-	Latitude         float64 `json:"latitude"`
-	Longitude        float64 `json:"longitude"`
-	Elevation        float64 `json:"elevation"`
-	GenerationTime   float64 `json:"generationtime_ms"`
-	UTCOffsetSeconds int     `json:"utc_offset_seconds"`
-	Timezone         string  `json:"timezone"`
-	TimezoneAbbr     string  `json:"timezone_abbreviation"`
-	Hourly           struct {
-		Time              []string  `json:"time"`
-		WindSpeed1900     []float64 `json:"windspeed_800hPa"`
-		WindSpeed7200     []float64 `json:"windspeed_400hPa"`
-		WindDirection1900 []int     `json:"winddirection_800hPa"`
-		WindDirection7200 []int     `json:"winddirection_400hPa"`
-	} `json:"hourly"`
-}
-
-type WindsAloft struct {
-	WindSpeed1900     float64
-	WindSpeed7200     float64
-	WindDirection1900 int
-	WindDirection7200 int
 }

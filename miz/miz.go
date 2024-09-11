@@ -28,10 +28,6 @@ var dataDumper string
 
 var l *lua.LState
 
-var metarRE = regexp.MustCompile(`==Real Weather METAR==
-(?P<metar>.*)
-`)
-
 func init() {
 	l = lua.NewState(lua.Options{
 		RegistrySize:     1024,
@@ -57,7 +53,7 @@ func Update(data *weather.WeatherData, windsAloft weather.WindsAloft) error {
 	log.Println("Updating mission...")
 
 	// update weather if enabled
-	if config.Get().Options.UpdateWeather {
+	if config.Get().Options.Weather.Enable {
 		// remove extra weather data and add copy for output
 		data.Data = []weather.Data{data.Data[0], data.Data[0]}
 		if err := updateWeather(data, windsAloft, l); err != nil {
@@ -66,7 +62,7 @@ func Update(data *weather.WeatherData, windsAloft weather.WindsAloft) error {
 	}
 
 	// update time if enabled
-	if config.Get().Options.UpdateTime {
+	if config.Get().Options.Time.Enable {
 		if err := updateTime(data, l); err != nil {
 			return fmt.Errorf("Error updating time: %v", err)
 		}
@@ -99,6 +95,9 @@ func Update(data *weather.WeatherData, windsAloft weather.WindsAloft) error {
 
 // UpdateBrief updates the unpacked mission brief with the generated METAR
 func UpdateBrief(metar string) error {
+	key := config.Get().RealWeather.Mission.Brief.InsertKey
+	metarRE := regexp.MustCompile(key + "\n(?P<metar>.*)\n")
+
 	log.Println("Loading mission brief into Lua VM...")
 
 	// load brief into lua vm
@@ -115,11 +114,10 @@ func UpdateBrief(metar string) error {
 	if dict, ok := lv.(*lua.LTable); ok {
 		if brief, ok := dict.RawGetString("DictKey_descriptionText_1").(lua.LString); ok {
 			// replace METAR after marker
-			if metarRE.MatchString(brief.String()) {
+			if key != "" && metarRE.MatchString(brief.String()) {
 				newBrief = metarRE.ReplaceAllString(brief.String(), "==Real Weather METAR==\\\n"+metar+"\\\n")
-				log.Println(newBrief)
 			} else {
-				log.Println("Could not find RW METAR insertion location, METAR will be appended")
+				log.Println("METAR will be appended to brief")
 				newBrief = brief.String() + "\n\n" + metar
 				newBrief = strings.ReplaceAll(newBrief, "\n", "\\\n")
 			}
@@ -165,7 +163,7 @@ func UpdateBrief(metar string) error {
 
 // updateWeather applies new weather to the given lua state using data
 func updateWeather(data *weather.WeatherData, windsAloft weather.WindsAloft, l *lua.LState) error {
-	if config.Get().Options.Wind.OpenMeteo {
+	if config.Get().API.OpenMeteo.Enable {
 		if err := updateWind(data, windsAloft, l); err != nil {
 			return fmt.Errorf("Error updating wind: %v", err)
 		}
@@ -409,7 +407,7 @@ func updateFog(data *weather.WeatherData, l *lua.LState) error {
 func updatePressure(data *weather.WeatherData, l *lua.LState) error {
 	// convert qnh to qff
 	qnh := data.Data[0].Barometer.Hg * weather.InHgToHPa
-	elevation := float64(config.Get().METAR.RunwayElevation)
+	elevation := float64(config.Get().Options.Weather.RunwayElevation)
 	temperature := data.Data[0].Temperature.Celsius
 	latitude := data.Data[0].Station.Geometry.Coordinates[1]
 	qff := weather.QNHToQFF(qnh, elevation, temperature, latitude)
@@ -449,8 +447,8 @@ func updateWind(data *weather.WeatherData, windsAloft weather.WindsAloft, l *lua
 	speedGround := windSpeed(1, data)
 
 	// cap wind speeds to configured values
-	minWind := config.Get().Options.Wind.Minimum
-	maxWind := config.Get().Options.Wind.Maximum
+	minWind := config.Get().Options.Weather.Wind.Minimum
+	maxWind := config.Get().Options.Weather.Wind.Maximum
 	speedGround = util.Clamp(speedGround, minWind, maxWind)
 	speed2000 := util.Clamp(windsAloft.WindSpeed1900, minWind, maxWind)
 	speed8000 := util.Clamp(windsAloft.WindSpeed7200, minWind, maxWind)
@@ -500,8 +498,8 @@ func updateWind(data *weather.WeatherData, windsAloft weather.WindsAloft, l *lua
 
 	// apply gustiness/turbulence to mission
 	gust := data.Data[0].Wind.GustMPS
-	minGust := config.Get().Options.Wind.GustMinimum
-	maxGust := config.Get().Options.Wind.GustMaximum
+	minGust := config.Get().Options.Weather.Wind.GustMinimum
+	maxGust := config.Get().Options.Weather.Wind.GustMaximum
 	gust = util.Clamp(gust, minGust, maxGust)
 
 	// update data out
@@ -527,8 +525,8 @@ func updateWindLegacy(data *weather.WeatherData, l *lua.LState) error {
 	speed8000 := windSpeed(8000, data)
 
 	// cap wind speeds to configured values
-	minWind := config.Get().Options.Wind.Minimum
-	maxWind := config.Get().Options.Wind.Maximum
+	minWind := config.Get().Options.Weather.Wind.Minimum
+	maxWind := config.Get().Options.Weather.Wind.Maximum
 	speedGround = util.Clamp(speedGround, minWind, maxWind)
 	speed2000 = util.Clamp(speed2000, minWind, maxWind)
 	speed8000 = util.Clamp(speed8000, minWind, maxWind)
@@ -580,8 +578,8 @@ func updateWindLegacy(data *weather.WeatherData, l *lua.LState) error {
 
 	// apply gustiness/turbulence to mission
 	gust := data.Data[0].Wind.GustMPS
-	minGust := config.Get().Options.Wind.GustMinimum
-	maxGust := config.Get().Options.Wind.GustMaximum
+	minGust := config.Get().Options.Weather.Wind.GustMinimum
+	maxGust := config.Get().Options.Weather.Wind.GustMaximum
 	gust = util.Clamp(gust, minGust, maxGust)
 
 	// update data out
@@ -637,10 +635,10 @@ func updateTime(data *weather.WeatherData, l *lua.LState) error {
 func windSpeed(targHeight float64, data *weather.WeatherData) float64 {
 	// default to 9 meters for reference height if elevation is below that
 	var refHeight float64
-	if config.Get().Options.Wind.FixedReference {
+	if config.Get().Options.Weather.Wind.FixedReference {
 		refHeight = 1
 	} else {
-		refHeight = math.Max(1, float64(config.Get().METAR.RunwayElevation))
+		refHeight = math.Max(1, float64(config.Get().Options.Weather.RunwayElevation))
 	}
 
 	refSpeed := data.Data[0].Wind.SpeedMPS
@@ -650,21 +648,22 @@ func windSpeed(targHeight float64, data *weather.WeatherData) float64 {
 
 	return refSpeed * math.Pow(
 		targHeight/refHeight,
-		config.Get().Options.Wind.Stability,
+		config.Get().Options.Weather.Wind.Stability,
 	)
 }
 
 // parseTime returns system time in seconds with offset defined in config file
 func parseTime() int {
+	// TODO: respect config for system or report time
 	// get system time in second
 	t := time.Now()
 
-	offset, err := time.ParseDuration(config.Get().Options.TimeOffset)
+	offset, err := time.ParseDuration(config.Get().Options.Time.Offset)
 	if err != nil {
 		offset = 0
 		log.Printf(
 			"Could not parse time-offset of %s: %v. Program will default to 0 offset",
-			config.Get().Options.TimeOffset,
+			config.Get().Options.Time.Offset,
 			err,
 		)
 	}
@@ -725,7 +724,7 @@ func checkClouds(data *weather.WeatherData) (string, int) {
 		return "", 0
 	}
 
-	base = config.Get().METAR.RunwayElevation
+	base = int(config.Get().Options.Weather.RunwayElevation + 0.5)
 
 	precip := checkPrecip(data)
 
@@ -803,7 +802,7 @@ func selectPreset(kind string, base int, precip bool) (string, int) {
 			kind = "BKN+RA"
 		} else if kind == "SCT" {
 			kind = "SCT+RA"
-		} else if config.Get().Options.Clouds.FallbackToNoPreset {
+		} else if config.Get().Options.Weather.Clouds.FallbackToLegacy {
 			log.Printf("No suitable weather preset for code=%s and base=%d", kind, base)
 			log.Printf("Fallback to no preset is enabled, using custom weather")
 			return "CUSTOM " + kind[:3], base
@@ -835,7 +834,7 @@ func selectPreset(kind string, base int, precip bool) (string, int) {
 	log.Printf("No suitable weather preset for code=%s and base=%d", kind, base)
 
 	// no valid preset found, is use nonpreset weather enabled?
-	if config.Get().Options.Clouds.FallbackToNoPreset {
+	if config.Get().Options.Weather.Clouds.FallbackToLegacy {
 		log.Printf("Fallback to no preset is enabled, using custom weather")
 		return "CUSTOM " + kind[:3], base
 	}
@@ -849,8 +848,8 @@ func selectPreset(kind string, base int, precip bool) (string, int) {
 	// still no valid presets? use the configured default preset if there is
 	// one, otherwise default to clear
 	if len(validPresets) == 0 {
-		if config.Get().Options.Clouds.DefaultPreset != "" {
-			defaultPreset := config.Get().Options.Clouds.DefaultPreset
+		if config.Get().Options.Weather.Clouds.Presets.Default != "" {
+			defaultPreset := config.Get().Options.Weather.Clouds.Presets.Default
 			defaultPreset = `"` + defaultPreset + `"`
 
 			log.Printf(
@@ -876,7 +875,7 @@ func selectPreset(kind string, base int, precip bool) (string, int) {
 // presetAllowed checks if a preset is in the disallowed presets inside the
 // config file. If the preset is disallowed the func returns false
 func presetAllowed(preset string) bool {
-	for _, disallowed := range config.Get().Options.Clouds.DisallowedPresets {
+	for _, disallowed := range config.Get().Options.Weather.Clouds.Presets.Disallowed {
 		if preset == `"`+disallowed+`"` {
 			return false
 		}
@@ -888,21 +887,21 @@ func presetAllowed(preset string) bool {
 // checkFog looks for either misty or foggy conditions and returns and integer
 // representing dcs visiblity scale
 func checkFog(data *weather.WeatherData) (visibility, thickness int) {
-	if !config.Get().Options.Fog.Enabled {
+	if !config.Get().Options.Weather.Fog.Enabled {
 		return
 	}
 
 	for _, condition := range data.Data[0].Conditions {
 		if slices.Contains(weather.FogCodes(), condition.Code) {
 			thickness = rand.Intn(
-				config.Get().Options.Fog.ThicknessMaximum-
-					config.Get().Options.Fog.ThicknessMinimum,
-			) + config.Get().Options.Fog.ThicknessMinimum
+				int(config.Get().Options.Weather.Fog.ThicknessMaximum+0.5)-
+					int(config.Get().Options.Weather.Fog.ThicknessMinimum+0.5),
+			) + int(config.Get().Options.Weather.Fog.ThicknessMinimum+0.5)
 
 			visibility = int(util.Clamp(
 				data.Data[0].Visibility.MetersFloat,
-				config.Get().Options.Fog.VisibilityMinimum,
-				config.Get().Options.Fog.VisibilityMaximum,
+				config.Get().Options.Weather.Fog.VisibilityMinimum,
+				config.Get().Options.Weather.Fog.VisibilityMaximum,
 			))
 
 			return
@@ -915,7 +914,7 @@ func checkFog(data *weather.WeatherData) (visibility, thickness int) {
 // checkDust looks for dust conditions and returns a number representing
 // visibility in meters
 func checkDust(data *weather.WeatherData) (visibility int) {
-	if !config.Get().Options.Dust.Enabled {
+	if !config.Get().Options.Weather.Dust.Enabled {
 		return
 	}
 
@@ -923,8 +922,8 @@ func checkDust(data *weather.WeatherData) (visibility int) {
 		if slices.Contains(weather.DustCodes(), condition.Code) {
 			return int(util.Clamp(
 				data.Data[0].Visibility.MetersFloat,
-				config.Get().Options.Dust.VisibilityMinimum,
-				config.Get().Options.Dust.VisibilityMaximum,
+				config.Get().Options.Weather.Dust.VisibilityMinimum,
+				config.Get().Options.Weather.Dust.VisibilityMaximum,
 			))
 		}
 	}
@@ -936,7 +935,7 @@ func checkDust(data *weather.WeatherData) (visibility int) {
 func Unzip() ([]string, error) {
 	log.Println("Unpacking mission file...")
 
-	src := config.Get().Files.InputMission
+	src := config.Get().RealWeather.Mission.Input
 	log.Println("Source file:", src)
 	dest := "mission_unpacked"
 
@@ -1015,7 +1014,7 @@ func Zip() error {
 
 	baseFolder := "mission_unpacked/"
 
-	dest := config.Get().Files.OutputMission
+	dest := config.Get().RealWeather.Mission.Output
 	outFile, err := os.Create(dest)
 	if err != nil {
 		return fmt.Errorf("Error creating output file: %v", err)
