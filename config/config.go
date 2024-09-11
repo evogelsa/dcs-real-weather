@@ -17,14 +17,6 @@ import (
 	"github.com/evogelsa/DCS-real-weather/weather"
 )
 
-//go:embed config.toml
-var defaultConfig string
-
-const configName = "config.toml"
-
-// config stores the parsed configuration. Use Get() to retrieve it
-var config Configuration
-
 // Configuration is the structure of config.json to be parsed
 type Configuration struct {
 	RealWeather struct {
@@ -103,6 +95,14 @@ type Configuration struct {
 	}
 }
 
+const configName = "config.toml"
+
+// config stores the parsed configuration. Use Get() to retrieve it
+var config Configuration
+
+//go:embed config.toml
+var defaultConfig string
+
 // init reads config.toml and umarshals into config
 func init() {
 	log.Printf("Reading %s", configName)
@@ -149,6 +149,21 @@ func init() {
 	log.Println("Validating configuration")
 	checkParams()
 	log.Println("Configuration validated")
+}
+
+func Get() Configuration {
+	return config
+}
+
+func Set(param string, value interface{}) error {
+	switch param {
+	case "open-meteo":
+		v := value.(bool)
+		config.API.OpenMeteo.Enable = v
+	default:
+		return fmt.Errorf("Unsupported parameter")
+	}
+	return nil
 }
 
 // checkParams calls the config checking functions
@@ -400,19 +415,4 @@ func checkOptionsDust() {
 		config.Options.Weather.Dust.VisibilityMaximum = 3000
 		config.Options.Weather.Dust.VisibilityMinimum = 300
 	}
-}
-
-func Get() Configuration {
-	return config
-}
-
-func Set(param string, value interface{}) error {
-	switch param {
-	case "open-meteo":
-		v := value.(bool)
-		config.API.OpenMeteo.Enable = v
-	default:
-		return fmt.Errorf("Unsupported parameter")
-	}
-	return nil
 }

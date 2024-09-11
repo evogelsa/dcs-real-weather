@@ -12,45 +12,17 @@ import (
 	"github.com/evogelsa/DCS-real-weather/cmd/bot/handlers"
 )
 
+// bot config
 var (
 	cfg      config.Configuration
 	guildID  string
 	botToken string
 )
 
-// init initializes the configuration
-func init() {
-	cfg = config.Get()
-
-	// set log file if configured
-	if cfg.Log != "" {
-		f, err := os.OpenFile(
-			cfg.Log,
-			os.O_WRONLY|os.O_CREATE|os.O_APPEND,
-			0644,
-		)
-		if err != nil {
-			log.Printf("Error opening log file: %v\n", err)
-		}
-		// defer f.Close() let file be closed when program exits
-
-		mw := io.MultiWriter(os.Stdout, f)
-
-		log.SetOutput(mw)
-	}
-}
-
+// discord session
 var s *dg.Session
 
-// init initializes the bot session
-func init() {
-	var err error
-	s, err = dg.New("Bot " + cfg.BotToken)
-	if err != nil {
-		log.Fatalf("Error registering new bot: %v", err)
-	}
-}
-
+// commands and handlers
 var (
 	commands = []*dg.ApplicationCommand{
 		{
@@ -218,6 +190,37 @@ var (
 		"last-metar":  handlers.LastMETAR,
 	}
 )
+
+// initializes the configuration
+func init() {
+	cfg = config.Get()
+
+	// set log file if configured
+	if cfg.Log != "" {
+		f, err := os.OpenFile(
+			cfg.Log,
+			os.O_WRONLY|os.O_CREATE|os.O_APPEND,
+			0644,
+		)
+		if err != nil {
+			log.Printf("Error opening log file: %v\n", err)
+		}
+		// defer f.Close() let file be closed when program exits
+
+		mw := io.MultiWriter(os.Stdout, f)
+
+		log.SetOutput(mw)
+	}
+}
+
+// initializes the bot session
+func init() {
+	var err error
+	s, err = dg.New("Bot " + cfg.BotToken)
+	if err != nil {
+		log.Fatalf("Error registering new bot: %v", err)
+	}
+}
 
 // adjust command signatures if using multi instances
 func init() {

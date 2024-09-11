@@ -23,6 +23,14 @@ import (
 	lua "github.com/yuin/gopher-lua"
 )
 
+type precipitation int
+
+const (
+	precipNone precipitation = iota
+	precipSome
+	precipStorm
+)
+
 //go:embed datadumper.lua
 var dataDumper string
 
@@ -161,6 +169,118 @@ func UpdateBrief(metar string) error {
 	return nil
 }
 
+// Unzip will decompress a zip archive, moving all files and folders
+// within the zip file to dest, taken from https://golangcode.com/unzip-files-in-go/
+func Unzip() ([]string, error) {
+	log.Println("Unpacking mission file...")
+
+	src := config.Get().RealWeather.Mission.Input
+	log.Println("Source file:", src)
+	dest := "mission_unpacked"
+
+	var filenames []string
+
+	r, err := zip.OpenReader(src)
+	if err != nil {
+		return filenames, err
+	}
+	defer r.Close()
+
+	for _, f := range r.File {
+
+		// Store filename/path for returning and using later on
+		fpath := filepath.Join(dest, f.Name)
+
+		// Check for ZipSlip. More Info: http://bit.ly/2MsjAWE
+		if !strings.HasPrefix(
+			fpath,
+			filepath.Clean(dest)+string(os.PathSeparator),
+		) {
+			return filenames, fmt.Errorf("%s: illegal file path", fpath)
+		}
+
+		filenames = append(filenames, fpath)
+
+		if f.FileInfo().IsDir() {
+			// Make Folder
+			err := os.MkdirAll(fpath, os.ModePerm)
+			if err != nil {
+				return filenames, err
+			}
+			continue
+		}
+
+		// Make File
+		if err = os.MkdirAll(filepath.Dir(fpath), os.ModePerm); err != nil {
+			return filenames, err
+		}
+
+		outFile, err := os.OpenFile(
+			fpath,
+			os.O_WRONLY|os.O_CREATE|os.O_TRUNC,
+			f.Mode(),
+		)
+		if err != nil {
+			return filenames, err
+		}
+
+		rc, err := f.Open()
+		if err != nil {
+			return filenames, err
+		}
+
+		_, err = io.Copy(outFile, rc)
+
+		// Close the file without defer to close before next iteration of loop
+		outFile.Close()
+		rc.Close()
+
+		if err != nil {
+			return filenames, err
+		}
+	}
+
+	log.Println("Unpacked mission file")
+	// log.Println("unzipped:\n\t" + strings.Join(filenames, "\n\t"))
+
+	return filenames, nil
+}
+
+// Zip takes the unpacked mission and recreates the mission file
+// taken from https://golangcode.com/create-zip-files-in-go/
+func Zip() error {
+	log.Println("Repacking mission file...")
+
+	baseFolder := "mission_unpacked/"
+
+	dest := config.Get().RealWeather.Mission.Output
+	outFile, err := os.Create(dest)
+	if err != nil {
+		return fmt.Errorf("Error creating output file: %v", err)
+	}
+	defer outFile.Close()
+
+	w := zip.NewWriter(outFile)
+
+	addFiles(w, baseFolder, "")
+
+	err = w.Close()
+	if err != nil {
+		return fmt.Errorf("Error closing output file: %v", err)
+	}
+
+	log.Println("Repacked mission file")
+
+	return nil
+}
+
+// Clean will remove the unpacked mission from directory
+func Clean() {
+	directory := "mission_unpacked/"
+	os.RemoveAll(directory)
+	log.Println("Removed unpacked mission")
+}
+
 // updateWeather applies new weather to the given lua state using data
 func updateWeather(data *weather.WeatherData, windsAloft weather.WindsAloft, l *lua.LState) error {
 	if config.Get().API.OpenMeteo.Enable {
@@ -279,11 +399,11 @@ func handleCustomClouds(data *weather.WeatherData, l *lua.LState, preset string,
 
 	precip = checkPrecip(data)
 	var precipStr string
-	if precip == PrecipStorm {
+	if precip == precipStorm {
 		// make thunderstorm clouds thicc
 		thickness = rand.Intn(501) + 1500 // can be up to 2000
 		precipStr = "TS"
-	} else if precip == PrecipSome {
+	} else if precip == precipSome {
 		thickness = rand.Intn(1801) + 200 // 200 - 2000
 		precipStr = "RA"
 	} else {
@@ -671,24 +791,16 @@ func windSpeed(targHeight float64, data *weather.WeatherData) float64 {
 	)
 }
 
-type precipitation int
-
-const (
-	PrecipNone precipitation = iota
-	PrecipSome
-	PrecipStorm
-)
-
 // checkPrecip returns 0 for clear, 1 for rain, and 2 for thunderstorms
 func checkPrecip(data *weather.WeatherData) precipitation {
 	for _, condition := range data.Data[0].Conditions {
 		if slices.Contains(weather.PrecipCodes(), condition.Code) {
-			return PrecipSome
+			return precipSome
 		} else if slices.Contains(weather.StormCodes(), condition.Code[:2]) {
-			return PrecipStorm
+			return precipStorm
 		}
 	}
-	return PrecipNone
+	return precipNone
 }
 
 // checkClouds returns the thickness, density and base of the first cloud
@@ -732,7 +844,7 @@ func checkClouds(data *weather.WeatherData) (string, int) {
 	// is precip, otherwise picks first ceiling if there is ceiling, otherwise
 	// picks first layer
 	for i, cloud := range data.Data[0].Clouds {
-		if precip > PrecipNone {
+		if precip > precipNone {
 			if codeToVal[cloud.Code] > fullestLayer {
 				fullestLayer = codeToVal[cloud.Code]
 				baseLayer = i
@@ -753,7 +865,7 @@ func checkClouds(data *weather.WeatherData) (string, int) {
 	code := data.Data[0].Clouds[baseLayer].Code
 
 	// updates base with selected in case of fallback to legacy
-	preset, base = selectPreset(code, base, precip > PrecipNone)
+	preset, base = selectPreset(code, base, precip > precipNone)
 
 	return preset, base
 }
@@ -909,111 +1021,6 @@ func checkDust(data *weather.WeatherData) (visibility int) {
 	return 0
 }
 
-// Unzip will decompress a zip archive, moving all files and folders
-// within the zip file to dest, taken from https://golangcode.com/unzip-files-in-go/
-func Unzip() ([]string, error) {
-	log.Println("Unpacking mission file...")
-
-	src := config.Get().RealWeather.Mission.Input
-	log.Println("Source file:", src)
-	dest := "mission_unpacked"
-
-	var filenames []string
-
-	r, err := zip.OpenReader(src)
-	if err != nil {
-		return filenames, err
-	}
-	defer r.Close()
-
-	for _, f := range r.File {
-
-		// Store filename/path for returning and using later on
-		fpath := filepath.Join(dest, f.Name)
-
-		// Check for ZipSlip. More Info: http://bit.ly/2MsjAWE
-		if !strings.HasPrefix(
-			fpath,
-			filepath.Clean(dest)+string(os.PathSeparator),
-		) {
-			return filenames, fmt.Errorf("%s: illegal file path", fpath)
-		}
-
-		filenames = append(filenames, fpath)
-
-		if f.FileInfo().IsDir() {
-			// Make Folder
-			err := os.MkdirAll(fpath, os.ModePerm)
-			if err != nil {
-				return filenames, err
-			}
-			continue
-		}
-
-		// Make File
-		if err = os.MkdirAll(filepath.Dir(fpath), os.ModePerm); err != nil {
-			return filenames, err
-		}
-
-		outFile, err := os.OpenFile(
-			fpath,
-			os.O_WRONLY|os.O_CREATE|os.O_TRUNC,
-			f.Mode(),
-		)
-		if err != nil {
-			return filenames, err
-		}
-
-		rc, err := f.Open()
-		if err != nil {
-			return filenames, err
-		}
-
-		_, err = io.Copy(outFile, rc)
-
-		// Close the file without defer to close before next iteration of loop
-		outFile.Close()
-		rc.Close()
-
-		if err != nil {
-			return filenames, err
-		}
-	}
-
-	log.Println("Unpacked mission file")
-	// log.Println("unzipped:\n\t" + strings.Join(filenames, "\n\t"))
-
-	return filenames, nil
-}
-
-// Zip takes the unpacked mission and recreates the mission file
-// taken from https://golangcode.com/create-zip-files-in-go/
-func Zip() error {
-	log.Println("Repacking mission file...")
-
-	baseFolder := "mission_unpacked/"
-
-	dest := config.Get().RealWeather.Mission.Output
-	outFile, err := os.Create(dest)
-	if err != nil {
-		return fmt.Errorf("Error creating output file: %v", err)
-	}
-	defer outFile.Close()
-
-	w := zip.NewWriter(outFile)
-
-	addFiles(w, baseFolder, "")
-
-	err = w.Close()
-	if err != nil {
-		return fmt.Errorf("Error closing output file: %v", err)
-	}
-
-	log.Println("Repacked mission file")
-
-	return nil
-}
-
 // addFiles handles adding each file in directory to zip archive
 // taken from https://golangcode.com/create-zip-files-in-go/
 func addFiles(w *zip.Writer, basePath, baseInZip string) error {
@@ -1059,11 +1066,4 @@ func addFiles(w *zip.Writer, basePath, baseInZip string) error {
 	}
 
 	return nil
-}
-
-// Clean will remove the unpacked mission from directory
-func Clean() {
-	directory := "mission_unpacked/"
-	os.RemoveAll(directory)
-	log.Println("Removed unpacked mission")
 }
