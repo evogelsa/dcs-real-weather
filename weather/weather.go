@@ -190,7 +190,7 @@ var DefaultWeather WeatherData = WeatherData{
 			},
 			ICAO: "DGAA",
 			Visibility: &Visibility{
-				MilesFloat: 10,
+				MetersFloat: 9000,
 			},
 			Dewpoint: &Dewpoint{
 				Celsius: 10,
@@ -379,62 +379,50 @@ func ValidateWeather(data *WeatherData) error {
 	if data.Data[0].Barometer == nil {
 		log.Println("No barometer data, defaulting to 760 mmHg")
 		data.Data[0].Barometer = &Barometer{
-			Hg:  29.92,
-			HPa: 1013.2,
-			KPa: 101.32,
-			MB:  1013.2,
+			Hg: 29.92,
 		}
 	}
 
 	if data.Data[0].Ceiling == nil {
 		log.Println("No ceiling data, defaulting to clear")
 		data.Data[0].Ceiling = &Ceiling{
-			BaseFeetAGL:   0,
-			BaseMetersAGL: 0,
-			Code:          "CLR",
-			Feet:          0,
-			Meters:        0,
-			Text:          "Clear",
+			Code: "CLR",
+			// Feet:   0,
+			Meters: 0,
+			// Text:   "Clear",
 		}
 	}
 
 	if data.Data[0].Dewpoint == nil {
 		log.Println("No dewpoint data, defaulting to 0 Celsius")
 		data.Data[0].Dewpoint = &Dewpoint{
-			Celsius:    0,
-			Fahrenheit: 32,
+			Celsius: 0,
+			// Fahrenheit: 32,
 		}
 	}
 
 	if data.Data[0].Elevation == nil {
 		log.Println("No elevation data, defaulting to 0 meters")
 		data.Data[0].Elevation = &Elevation{
-			Feet:   0,
+			// Feet:   0,
 			Meters: 0,
-		}
-	}
-
-	if data.Data[0].Humidity == nil {
-		log.Println("No humidity data, defaulting to 0%")
-		data.Data[0].Humidity = &Humidity{
-			Percent: 0,
 		}
 	}
 
 	if data.Data[0].Temperature == nil {
 		log.Println("No temperature data, defaulting to 15 Celsius")
 		data.Data[0].Temperature = &Temperature{
-			Celsius:    15,
-			Fahrenheit: 59,
+			Celsius: 15,
+			// Fahrenheit: 59,
 		}
 	}
 
 	if data.Data[0].Visibility == nil {
 		log.Println("No visibility data, defaulting to 10+ SM")
 		data.Data[0].Visibility = &Visibility{
-			Miles:       "Greater than 10 miles",
-			MilesFloat:  10,
-			Meters:      "Greater than 9000 meters",
+			// Miles:       "Greater than 10 miles",
+			// MilesFloat:  10,
+			// Meters:      "Greater than 9000 meters",
 			MetersFloat: 9000,
 		}
 	}
@@ -443,13 +431,7 @@ func ValidateWeather(data *WeatherData) error {
 		log.Println("No wind data, defaulting to calm")
 		data.Data[0].Wind = &Wind{
 			Degrees:  0,
-			SpeedKPH: 0,
-			SpeedKTS: 0,
-			SpeedMPH: 0,
 			SpeedMPS: 0,
-			GustKPH:  0,
-			GustKTS:  0,
-			GustMPH:  0,
 			GustMPS:  0,
 		}
 	}
@@ -501,18 +483,18 @@ func GenerateMETAR(wx WeatherData, rmk string) (string, error) {
 	metar += fmt.Sprintf("%02d%02d%02dZ ", t.Day(), t.Hour(), t.Minute())
 
 	// winds DIRSPDKT
-	if data.Wind.GustKTS > 0 {
+	if data.Wind.GustMPS > 0 {
 		metar += fmt.Sprintf(
 			"%03d%02dG%02dKT ",
 			int(data.Wind.Degrees),
-			int(data.Wind.SpeedKTS),
-			int(data.Wind.GustKTS),
+			int(data.Wind.SpeedMPS*MPSToKT+0.5),
+			int(data.Wind.GustMPS*MPSToKT+0.5),
 		)
 	} else {
 		metar += fmt.Sprintf(
 			"%03d%02dKT ",
 			int(data.Wind.Degrees),
-			int(data.Wind.SpeedKTS),
+			int(data.Wind.SpeedMPS*MPSToKT),
 		)
 	}
 

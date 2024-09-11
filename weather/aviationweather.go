@@ -153,11 +153,11 @@ func convertWind(out *WeatherData, data []aviationWeatherData) {
 	}
 
 	if data[0].WindSpeed != nil {
-		out.Data[0].Wind.SpeedKTS = *data[0].WindSpeed
+		out.Data[0].Wind.SpeedMPS = *data[0].WindSpeed * KtToMPS
 	}
 
 	if data[0].WindGust != nil {
-		out.Data[0].Wind.GustKTS = *data[0].WindGust
+		out.Data[0].Wind.GustMPS = *data[0].WindGust * KtToMPS
 	}
 }
 

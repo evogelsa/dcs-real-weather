@@ -574,7 +574,7 @@ func updateWind(data *weather.WeatherData, windsAloft weather.WindsAloft, l *lua
 	speed8000 := util.Clamp(windsAloft.WindSpeed7200, minWind, maxWind)
 
 	// set speed to data out
-	data.Data[1].Wind.SpeedKTS = speedGround * weather.MPSToKT
+	data.Data[1].Wind.SpeedMPS = speedGround
 
 	// note DCS expects winds TO direction, but standard everywhere else is
 	// winds from direction, hence to +180 % 360
@@ -623,7 +623,7 @@ func updateWind(data *weather.WeatherData, windsAloft weather.WindsAloft, l *lua
 	gust = util.Clamp(gust, minGust, maxGust)
 
 	// update data out
-	data.Data[1].Wind.GustKTS = gust * weather.MPSToKT
+	data.Data[1].Wind.GustMPS = gust
 
 	if err := l.DoString(
 		fmt.Sprintf("mission.weather.groundTurbulence = %0.4f\n", gust),
@@ -652,7 +652,7 @@ func updateWindLegacy(data *weather.WeatherData, l *lua.LState) error {
 	speed8000 = util.Clamp(speed8000, minWind, maxWind)
 
 	// update data out
-	data.Data[1].Wind.SpeedKTS = speedGround * weather.MPSToKT
+	data.Data[1].Wind.SpeedMPS = speedGround
 
 	// apply wind shift to winds aloft layers
 	// this is not really realistic but it adds variety to wind calculation
@@ -703,7 +703,7 @@ func updateWindLegacy(data *weather.WeatherData, l *lua.LState) error {
 	gust = util.Clamp(gust, minGust, maxGust)
 
 	// update data out
-	data.Data[1].Wind.GustKTS = gust * weather.MPSToKT
+	data.Data[1].Wind.GustMPS = gust
 
 	if err := l.DoString(
 		fmt.Sprintf("mission.weather.groundTurbulence = %0.4f\n", gust),
