@@ -139,7 +139,7 @@ func getWx() weather.WeatherData {
 	apiList := make([]struct {
 		Provider weather.API
 		Enable   bool
-	}, 3)
+	}, len(config.Get().API.ProviderPriority))
 	for i, provider := range config.Get().API.ProviderPriority {
 		switch weather.API(provider) {
 		case weather.APICheckWX:

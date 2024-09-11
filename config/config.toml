@@ -48,7 +48,7 @@ file = "realweather.log"
 # This determines the priority of METAR providers real weather will use. The
 # first provider in the list is highest priority. The additional providers will
 # be used as a fallback if the default provider does not respond or has an
-# error, and they will be selected in the order they appear.
+# error. All available providers should be listed, even if not enabled
 provider-priority = [
   "aviationweather",
   "checkwx",

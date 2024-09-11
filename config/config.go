@@ -105,6 +105,8 @@ type Configuration struct {
 
 // init reads config.toml and umarshals into config
 func init() {
+	log.Printf("Reading %s", configName)
+
 	file, err := os.Open(configName)
 	if err != nil {
 		// if config.toml does not exist, create it and exit
@@ -144,7 +146,9 @@ func init() {
 	}
 
 	// enforce configuration parameters
+	log.Println("Validating configuration")
 	checkParams()
+	log.Println("Configuration validated")
 }
 
 // checkParams calls the config checking functions
@@ -193,6 +197,26 @@ func checkAPI() {
 		!config.API.Custom.Enable {
 		log.Println("All providers are disabled, aviationweather will be enabled by default")
 		config.API.AviationWeather.Enable = true
+	}
+
+	// verify providers are valid
+	knownProviders := []weather.API{
+		weather.APIAviationWeather,
+		weather.APICheckWX,
+		weather.APICustom,
+	}
+	for _, provider := range config.API.ProviderPriority {
+		if !slices.Contains(knownProviders, weather.API(provider)) {
+			log.Printf("Provider %s is not a recognized API; it will be ignored", provider)
+		}
+	}
+
+	// ensure each provider is in priority list
+	for _, provider := range knownProviders {
+		if !slices.Contains(config.API.ProviderPriority, string(provider)) {
+			log.Printf("Provider %s missing from priority list, adding to end", provider)
+			config.API.ProviderPriority = append(config.API.ProviderPriority, string(provider))
+		}
 	}
 }
 
