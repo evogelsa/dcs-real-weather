@@ -598,12 +598,31 @@ func updateWindLegacy(data *weather.WeatherData, l *lua.LState) error {
 
 // updateTime applies system time plus/minus configured offset to the mission
 func updateTime(data *weather.WeatherData, l *lua.LState) error {
-	year, month, day, err := parseDate(data)
-	if err != nil {
-		return fmt.Errorf("Error parsing date: %v", err)
+	var t time.Time
+	var err error
+	if config.Get().Options.Time.SystemTime {
+		t = time.Now()
+	} else {
+		t, err = time.Parse("2006-01-02T15:04:05", data.Data[0].Observed)
+		if err != nil {
+			t, err = time.Parse("2006-01-02T15:04:05Z", data.Data[0].Observed)
+			if err != nil {
+				log.Printf("Error parsing METAR time: %v", err)
+				log.Println("Using system time as fallback")
+				t = time.Now()
+			}
+		}
 	}
 
-	sec := parseTime()
+	offset, err := time.ParseDuration(config.Get().Options.Time.Offset)
+	if err != nil {
+		log.Printf("Could not parse time-offset of %s: %v", config.Get().Options.Time.Offset, err)
+		log.Println("Using default offset of 0")
+		offset = 0
+	}
+	t = t.Add(offset)
+
+	seconds := ((t.Hour()*60)+t.Minute())*60 + t.Second()
 
 	if err := l.DoString(
 		fmt.Sprintf(
@@ -611,7 +630,7 @@ func updateTime(data *weather.WeatherData, l *lua.LState) error {
 				"mission.date.Month = %d\n"+
 				"mission.date.Day = %d\n"+
 				"mission.start_time = %d\n",
-			year, month, day, sec,
+			t.Year(), t.Month(), t.Day(), seconds,
 		),
 	); err != nil {
 		return fmt.Errorf("Error updating time: %v", err)
@@ -623,7 +642,7 @@ func updateTime(data *weather.WeatherData, l *lua.LState) error {
 			"\tMonth: %d\n"+
 			"\tDay: %d\n"+
 			"\tStart time: %d (%02d:%02d:%02d)\n",
-		year, month, day, sec, sec/3600, (sec%3600)/60, sec%60,
+		t.Year(), t.Month(), t.Day(), seconds, t.Hour(), t.Minute(), t.Second(),
 	)
 
 	return nil
@@ -650,46 +669,6 @@ func windSpeed(targHeight float64, data *weather.WeatherData) float64 {
 		targHeight/refHeight,
 		config.Get().Options.Weather.Wind.Stability,
 	)
-}
-
-// parseTime returns system time in seconds with offset defined in config file
-func parseTime() int {
-	// TODO: respect config for system or report time
-	// get system time in second
-	t := time.Now()
-
-	offset, err := time.ParseDuration(config.Get().Options.Time.Offset)
-	if err != nil {
-		offset = 0
-		log.Printf(
-			"Could not parse time-offset of %s: %v. Program will default to 0 offset",
-			config.Get().Options.Time.Offset,
-			err,
-		)
-	}
-	t = t.Add(offset)
-
-	return ((t.Hour()*60)+t.Minute())*60 + t.Second()
-}
-
-// parseDate returns year, month, day from METAR observed
-func parseDate(data *weather.WeatherData) (int, int, int, error) {
-	year, err := strconv.Atoi(data.Data[0].Observed[0:4])
-	if err != nil {
-		return 0, 0, 0, fmt.Errorf("Error parsing year from data: %v", err)
-	}
-
-	month, err := strconv.Atoi(data.Data[0].Observed[5:7])
-	if err != nil {
-		return year, 0, 0, fmt.Errorf("Error parsing month from data: %v", err)
-	}
-
-	day, err := strconv.Atoi(data.Data[0].Observed[8:10])
-	if err != nil {
-		return year, month, 0, fmt.Errorf("Error parsing day from data: %v", err)
-	}
-
-	return year, month, day, nil
 }
 
 type precipitation int

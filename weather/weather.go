@@ -490,9 +490,9 @@ func GenerateMETAR(wx WeatherData, rmk string) (string, error) {
 	metar += data.ICAO + " "
 
 	// get observed time, no need to translate time zone since it's in Zulu
-	t, err := time.Parse("2006-01-02T15:04:05Z", data.Observed)
+	t, err := time.Parse("2006-01-02T15:04:05", data.Observed)
 	if err != nil {
-		t, err = time.Parse("2006-01-02T15:04:05", data.Observed)
+		t, err = time.Parse("2006-01-02T15:04:05Z", data.Observed)
 		if err != nil {
 			return "", fmt.Errorf("Error parsing METAR time: %v", err)
 		}
