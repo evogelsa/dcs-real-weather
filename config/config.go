@@ -95,7 +95,13 @@ type Configuration struct {
 	}
 }
 
-const configName = "config.toml"
+// Overrideable defines values of the config which can be overridden through
+// command line interface
+type Overrideable struct {
+	APICustomEnable bool
+	MissionInput    string
+	MissionOutput   string
+}
 
 // config stores the parsed configuration. Use Get() to retrieve it
 var config Configuration
@@ -103,8 +109,8 @@ var config Configuration
 //go:embed config.toml
 var defaultConfig string
 
-// init reads config.toml and umarshals into config
-func init() {
+// Init reads config.toml and umarshals into config
+func Init(configName string, overrides Overrideable) {
 	log.Printf("Reading %s", configName)
 
 	file, err := os.Open(configName)
@@ -145,6 +151,19 @@ func init() {
 		log.SetOutput(mw)
 	}
 
+	// apply overrides
+	if overrides.APICustomEnable {
+		config.API.Custom.Enable = overrides.APICustomEnable
+	}
+
+	if overrides.MissionInput != "" {
+		config.RealWeather.Mission.Input = overrides.MissionInput
+	}
+
+	if overrides.MissionOutput != "" {
+		config.RealWeather.Mission.Output = overrides.MissionOutput
+	}
+
 	// enforce configuration parameters
 	log.Println("Validating configuration")
 	checkParams()
@@ -160,6 +179,12 @@ func Set(param string, value interface{}) error {
 	case "open-meteo":
 		v := value.(bool)
 		config.API.OpenMeteo.Enable = v
+	case "input":
+		v := value.(string)
+		config.RealWeather.Mission.Input = v
+	case "output":
+		v := value.(string)
+		config.RealWeather.Mission.Output = v
 	default:
 		return fmt.Errorf("Unsupported parameter")
 	}

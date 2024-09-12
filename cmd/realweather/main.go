@@ -19,11 +19,18 @@ import (
 
 // flag vars
 var (
-	debugCheckWx bool
+	enableCustom  bool
+	configName    string
+	inputMission  string
+	outputMission string
 )
 
 func init() {
-	flag.BoolVar(&debugCheckWx, "debug-checkwx", false, "load checkwx data from checkwx.json")
+	flag.StringVar(&configName, "config", "config.toml", "override default config name to use")
+
+	flag.BoolVar(&enableCustom, "enable-custom", false, "forcibly enables the custom weather provider")
+	flag.StringVar(&inputMission, "input", "", "override input mission in config")
+	flag.StringVar(&outputMission, "output", "", "override output mission in config")
 
 	flag.Parse()
 }
@@ -42,6 +49,15 @@ func init() {
 	}
 
 	log.Println("Using Real Weather " + ver)
+
+	// set config overrides
+	overrides := config.Overrideable{
+		APICustomEnable: enableCustom,
+		MissionInput:    inputMission,
+		MissionOutput:   outputMission,
+	}
+
+	config.Init(configName, overrides)
 }
 
 func main() {
@@ -117,12 +133,6 @@ func getWx() weather.WeatherData {
 	// get METAR report
 	var err error
 	var data weather.WeatherData
-
-	// use value from config if exists. CLI argument will override a false
-	// parameter in the config
-	if config.Get().API.Custom.Enable {
-		debugCheckWx = true
-	}
 
 	var icao string
 	if config.Get().Options.Weather.ICAO != "" {
