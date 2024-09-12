@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math/rand"
 	"net/http"
 	"slices"
 	"strings"
@@ -14,7 +15,7 @@ import (
 type aviationWeatherData struct {
 	Temp       *float64                `json:"temp,omitempty"`
 	Dew        *float64                `json:"dewp,omitempty"`
-	WindDir    *float64                `json:"wdir,omitempty"`
+	WindDir    *json.RawMessage        `json:"wdir,omitempty"`
 	WindSpeed  *float64                `json:"wspd,omitempty"`
 	WindGust   *float64                `json:"wgst,omitempty"`
 	Visibility *json.Number            `json:"visib,string,omitempty"`
@@ -149,7 +150,15 @@ func convertWind(out *WeatherData, data []aviationWeatherData) {
 	out.Data[0].Wind = &Wind{}
 
 	if data[0].WindDir != nil {
-		out.Data[0].Wind.Degrees = *data[0].WindDir
+		// winddir may be a number or text for variable, e.g. "VRB"
+		// if text, randomize direction, otherwise parse as float
+		var v float64
+		if err := json.Unmarshal([]byte(*data[0].WindDir), &v); err == nil {
+			out.Data[0].Wind.Degrees = v
+		} else {
+			log.Println("Converting variable winds to random direction")
+			out.Data[0].Wind.Degrees = float64(rand.Intn(36) * 10)
+		}
 	}
 
 	if data[0].WindSpeed != nil {
