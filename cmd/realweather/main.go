@@ -196,17 +196,18 @@ func getWx() weather.WeatherData {
 
 		if api.Enable {
 			data, err = weather.GetWeather(icao, api.Provider, meta)
+
+			if err == nil {
+				break
+			} else {
+				log.Printf("Error getting weather from %s: %v", api.Provider, err)
+			}
 		}
 
-		if err == nil {
-			break
-		} else {
-			log.Printf("Error getting weather from %s: %v", api.Provider, err)
-		}
 	}
 
 	if err != nil {
-		log.Printf("Error getting weather, using default: %v\n", err)
+		log.Println("Error getting weather, using default")
 		data = weather.DefaultWeather
 	}
 
