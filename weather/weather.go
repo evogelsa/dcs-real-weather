@@ -448,7 +448,7 @@ func ValidateWeather(data *WeatherData) error {
 	if len(data.Data[0].Observed) < 10 {
 		log.Println("Observation data may be missing date, defaulting to today's date")
 		t := time.Now()
-		data.Data[0].Observed = fmt.Sprintf("%04d-%02d-%02d", t.Year(), t.Month(), t.Day())
+		data.Data[0].Observed = t.Format("2006-01-02T15:04:05")
 	}
 
 	log.Println("Weather data validated successfully")

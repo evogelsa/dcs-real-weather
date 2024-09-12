@@ -28,13 +28,13 @@ func getWeatherCustom(filename string) (WeatherData, error) {
 	}
 	log.Println("Parsed custom weather data")
 
-	if err := ValidateWeather(&data); err != nil {
-		return data, fmt.Errorf("Error validating weather data: %v", err)
-	}
-
+	// if custom weather is provided by rw bot, then remove after done
+	// if custom weather not provided by rw bot, perform validation on wx
 	if err := os.Remove(".rwbot"); err == nil {
 		log.Println("Removing custom weather set by bot")
 		os.Remove(filename)
+	} else if err := ValidateWeather(&data); err != nil {
+		return data, fmt.Errorf("Error validating weather data: %v", err)
 	}
 
 	return data, nil

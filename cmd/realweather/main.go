@@ -223,6 +223,12 @@ func overrideWx(icao string, data *weather.WeatherData) {
 		return
 	}
 
+	// verify presence of .rwbot, if not exist, may have already been consumed
+	if _, err := os.Stat(".rwbot"); errors.Is(err, os.ErrNotExist) {
+		log.Println("Custom weather already used; overrides will not be applied")
+		return
+	}
+
 	log.Println("Overriding weather with custom data from file...")
 
 	temp, err := weather.GetWeather(icao, weather.APICustom, config.Get().API.Custom.File)
