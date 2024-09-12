@@ -4,10 +4,12 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
 	"math/rand"
+	"os"
 	"path/filepath"
 	"runtime"
 
@@ -20,6 +22,7 @@ import (
 // flag vars
 var (
 	enableCustom  bool
+	customFile    string
 	configName    string
 	inputMission  string
 	outputMission string
@@ -29,6 +32,7 @@ func init() {
 	flag.StringVar(&configName, "config", "config.toml", "override default config name to use")
 
 	flag.BoolVar(&enableCustom, "enable-custom", false, "forcibly enables the custom weather provider")
+	flag.StringVar(&customFile, "custom-file", "", "override file path for custom weather provider")
 	flag.StringVar(&inputMission, "input", "", "override input mission in config")
 	flag.StringVar(&outputMission, "output", "", "override output mission in config")
 
@@ -50,9 +54,18 @@ func init() {
 
 	log.Println("Using Real Weather " + ver)
 
+	// if .rwbot file exists, then override custom provider for this run only
+	// .rwbot files will be cleaned up (deleted) after using custom data
+	// provider
+	if _, err := os.Stat(".rwbot"); !errors.Is(err, os.ErrNotExist) {
+		enableCustom = true
+		customFile = ".rwbotwx.json"
+	}
+
 	// set config overrides
 	overrides := config.Overrideable{
 		APICustomEnable: enableCustom,
+		APICustomFile:   customFile,
 		MissionInput:    inputMission,
 		MissionOutput:   outputMission,
 	}

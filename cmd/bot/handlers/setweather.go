@@ -175,6 +175,8 @@ func SetWeather(s *dg.Session, i *dg.InteractionCreate) {
 		}
 	}
 
+	data.NumResults = 1
+
 	b, err := json.MarshalIndent(&data, "", "  ")
 	if err != nil {
 		log.Printf("error marshalling weather data: %v", err)
@@ -187,8 +189,8 @@ func SetWeather(s *dg.Session, i *dg.InteractionCreate) {
 			response = strings.Join([]string{response, "Unknown error, check bot logs."}, "\n")
 		}
 
-		// write checkwx.json
-		path = filepath.Join(rwPath, "checkwx.json")
+		// write .rwbotwx.json
+		path = filepath.Join(rwPath, ".rwbotwx.json")
 		if err := os.WriteFile(path, b, os.ModePerm); err != nil {
 			log.Printf("error writing weather data: %v", err)
 			response = strings.Join([]string{response, "Unknown error, check bot logs."}, "\n")

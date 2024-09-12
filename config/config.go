@@ -99,6 +99,7 @@ type Configuration struct {
 // command line interface
 type Overrideable struct {
 	APICustomEnable bool
+	APICustomFile   string
 	MissionInput    string
 	MissionOutput   string
 }
@@ -154,6 +155,10 @@ func Init(configName string, overrides Overrideable) {
 	// apply overrides
 	if overrides.APICustomEnable {
 		config.API.Custom.Enable = overrides.APICustomEnable
+	}
+
+	if overrides.APICustomFile != "" {
+		config.API.Custom.File = overrides.APICustomFile
 	}
 
 	if overrides.MissionInput != "" {

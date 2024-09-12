@@ -17,6 +17,7 @@ cmd/realweather/config.json
 cmd/realweather/config.toml
 cmd/realweather/checkwx.json
 cmd/realweather/.rwbot
+cmd/realweather/.rwbotwx.json
 cmd/bot/botconfig.json
 tmp/
 mission_unpacked/
