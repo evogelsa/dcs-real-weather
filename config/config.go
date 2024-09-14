@@ -98,10 +98,11 @@ type Configuration struct {
 // Overrideable defines values of the config which can be overridden through
 // command line interface
 type Overrideable struct {
-	APICustomEnable bool
-	APICustomFile   string
-	MissionInput    string
-	MissionOutput   string
+	APICustomEnable    bool
+	APICustomFile      string
+	MissionInput       string
+	MissionOutput      string
+	OptionsWeatherICAO string
 }
 
 // config stores the parsed configuration. Use Get() to retrieve it
@@ -167,6 +168,10 @@ func Init(configName string, overrides Overrideable) {
 
 	if overrides.MissionOutput != "" {
 		config.RealWeather.Mission.Output = overrides.MissionOutput
+	}
+
+	if overrides.OptionsWeatherICAO != "" {
+		config.Options.Weather.ICAO = overrides.OptionsWeatherICAO
 	}
 
 	// enforce configuration parameters

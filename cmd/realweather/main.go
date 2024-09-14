@@ -21,18 +21,23 @@ import (
 
 // flag vars
 var (
-	enableCustom  bool
-	customFile    string
+	enableCustom bool
+	version      bool
+
 	configName    string
+	customFile    string
+	icao          string
 	inputMission  string
 	outputMission string
 )
 
 func init() {
-	flag.StringVar(&configName, "config", "config.toml", "override default config name to use")
-
 	flag.BoolVar(&enableCustom, "enable-custom", false, "forcibly enables the custom weather provider")
+	flag.BoolVar(&version, "version", false, "prints out the real weather version and exits")
+
+	flag.StringVar(&configName, "config", "config.toml", "override default config name to use")
 	flag.StringVar(&customFile, "custom-file", "", "override file path for custom weather provider")
+	flag.StringVar(&icao, "icao", "", "override icao in config")
 	flag.StringVar(&inputMission, "input", "", "override input mission in config")
 	flag.StringVar(&outputMission, "output", "", "override output mission in config")
 
@@ -53,6 +58,9 @@ func init() {
 	}
 
 	log.Println("Using Real Weather " + ver)
+	if version {
+		os.Exit(0)
+	}
 
 	// if .rwbot file exists, then override custom provider for this run only
 	// .rwbot files will be cleaned up (deleted) after using custom data
@@ -64,10 +72,11 @@ func init() {
 
 	// set config overrides
 	overrides := config.Overrideable{
-		APICustomEnable: enableCustom,
-		APICustomFile:   customFile,
-		MissionInput:    inputMission,
-		MissionOutput:   outputMission,
+		APICustomEnable:    enableCustom,
+		APICustomFile:      customFile,
+		MissionInput:       inputMission,
+		MissionOutput:      outputMission,
+		OptionsWeatherICAO: icao,
 	}
 
 	config.Init(configName, overrides)
