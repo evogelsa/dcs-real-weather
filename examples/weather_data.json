@@ -6,6 +6,10 @@
       "barometer": {
         "hg": 30.15
       },
+      "ceiling": {
+        "code": "OVC",
+        "meters": 549
+      },
       "clouds": [
         {
           "code": "OVC",
@@ -14,6 +18,11 @@
         {
           "code": "BKN",
           "meters": 1372
+        }
+      ],
+      "conditions": [
+        {
+          "code": "RA"
         }
       ],
       "dewpoint": {

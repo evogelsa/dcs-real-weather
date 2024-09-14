@@ -18,7 +18,7 @@ time and a given offset if desired.
 ## Documentation and Setup
 
 If using the latest stable release, please see the [release documentation][1].
-If using the latest beta version, please see the [beta documentation][2].
+If using the latest beta version, please see the [development documentation][2].
 
 [1]: https://github.com/evogelsa/dcs-real-weather/blob/main/cmd/realweather/README.md
 [2]: https://github.com/evogelsa/dcs-real-weather/blob/dev/cmd/realweather/README.md
@@ -28,7 +28,7 @@ If using the latest beta version, please see the [beta documentation][2].
 For now, the bot does not have a separate release cycle. All new bot releases
 will be paired with Real Weather releases. Please see the bot directory for
 its documentation; here's a link for the [latest stable release][3] and
-here's a link for the [latest beta release][4].
+here's a link for the [latest development release][4].
 
 [3]: https://github.com/evogelsa/dcs-real-weather/blob/main/cmd/bot/README.md
 [4]: https://github.com/evogelsa/dcs-real-weather/blob/dev/cmd/bot/README.md
