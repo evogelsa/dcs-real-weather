@@ -191,4 +191,4 @@ visibility-maximum = 6000 # meters, max fog visibility (must be <= 6000)
 [options.weather.dust]
 enabled = true
 visibility-minimum = 300  # meters, min dust visibility (must be >= 300)
-visibility-maximum = 3000 # meters, max dust visibility (must be >= 3000)
+visibility-maximum = 3000 # meters, max dust visibility (must be <= 3000)
