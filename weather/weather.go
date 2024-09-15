@@ -376,6 +376,8 @@ func ValidateWeather(data *WeatherData) error {
 		return fmt.Errorf("no data to check")
 	}
 
+	log.Println("Validating weather data...")
+
 	if data.Data[0].Barometer == nil {
 		log.Println("No barometer data, defaulting to 760 mmHg")
 		data.Data[0].Barometer = &Barometer{

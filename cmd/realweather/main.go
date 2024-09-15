@@ -223,6 +223,10 @@ func getWx() weather.WeatherData {
 	// override with custom weather if enabled
 	overrideWx(icao, &data)
 
+	if err := weather.ValidateWeather(&data); err != nil {
+		log.Printf("Error validating weather: %v", err)
+	}
+
 	return data
 }
 

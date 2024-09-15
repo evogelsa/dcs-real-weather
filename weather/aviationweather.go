@@ -93,10 +93,6 @@ func getWeatherAviationWeather(icao string) (WeatherData, error) {
 
 	res.Data[0].ICAO = strings.ToUpper(icao)
 
-	if err := ValidateWeather(&res); err != nil {
-		return res, err
-	}
-
 	return res, nil
 }
 

@@ -156,10 +156,6 @@ func getWeatherCheckWX(icao, apiKey string) (WeatherData, error) {
 		return WeatherData{}, err
 	}
 
-	if err := ValidateWeather(&res); err != nil {
-		return res, err
-	}
-
 	log.Println("Parsed weather")
 
 	return res, nil
