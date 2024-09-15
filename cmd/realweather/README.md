@@ -2,28 +2,43 @@
 
 ## Usage
 
-1) Create an account at [checkwx](https://checkwxapi.com/).
-2) Find your API key from your account details and copy it.
-3) Download the
-[latest release](https://github.com/evogelsa/DCS-real-weather/releases/latest).
-4) Extract the files in the release zip.
-5) Open the provided `config.json` with a text editor of choice.
-6) Add your API key between the quotes and configure the other settings to your
-liking. A description of each of the settings is provided
-[below](#config-file).
-7) Save your changes and ensure the config file remains inside the same
-directory that the realweather.exe file is located.
-8) Create or configure the mission file you want to be updated with the real
+1) Optional: To use the CheckWX weather provider:
+   - Create an account at [checkwx](https://checkwxapi.com/).
+   - Find your API key from your account details and save it for later.
+2) [Download the latest Real Weather release][1].
+3) Extract the files in the release archive.
+4) Open the provided `config.toml` with a text editor of choice (Notepad++ or
+Sublime text editor are good choices for starting out).
+5) The config file comes with reasonable defaults provided for most options, but
+you'll need to configure at least the following settings:
+   - `realweather.mission.input`: this is the path to your input mission file to
+  edit the weather for.
+   - `realweather.mission.output`: this is the path to your output mission that
+  will have the new weather.
+   - Optional: `api.checkwx.key` and `api.checkwx.enable` if using the CheckWX
+  weather provider.
+6) Save your changes and ensure the config file remains inside the same
+directory as the Real Weather executable.
+7) Create or configure the mission file you want to be updated with the real
 weather.
-9) To run the utility you may either manually run the realweather.exe, or you
-can use a script to automate the process. Some examples are provided in
-[examples](/examples).
+8) Launch Real Weather manually by running the executable. If all is configured
+correctly, you should see some output in the console as Real Weather goes
+through the steps of updating your mission. If any errors are encountered, the
+console/log should help you figure out what went wrong, but if extra assistance
+is needed, feel free to reach out via [the discussions page][2] or [the
+discord][3].
+9) Optional: For more advanced configuration, it's recommended to incorporate
+Real Weather into your server restart scripts. A simple example is provided in
+[examples](/examples/starting_scripts). Even more advanced users may want to
+consider something like [DCS Server Bot][4]. DCS Server Bot is a separately
+maintained program, please see DCS SB resources for any related troubleshooting
+or questions.
 10) Enjoy automatic weather updates to your mission!
 
-Alternatively if you prefer a more feature-full and comprehensive DCS server
-experience, check out [DCS Server
-Bot](https://github.com/Special-K-s-Flightsim-Bots/DCSServerBot). Real Weather
-is a supported extension and can be integrated directly with the tool.
+[1]: https://github.com/evogelsa/DCS-real-weather/releases/latest
+[2]: https://github.com/evogelsa/dcs-real-weather/discussions
+[3]: https://discord.com/invite/mjr2SpFuqq
+[4]: https://github.com/Special-K-s-Flightsim-Bots/DCSServerBot
 
 > [!NOTE]
 > Generally your input file should be different from your output file. This will
@@ -31,260 +46,324 @@ is a supported extension and can be integrated directly with the tool.
 
 ## Config file
 
-An example configuration file can be found below along with an explanation of
-each parameter.
+The config file is the primary way to modify and tweak how Real Weather edits
+your mission. The default configuration can be viewed in
+[config/config.toml](/config/config.toml). This config contains comments with a
+basic explanation of each parameter, but for more details, see the config
+parameters section below. The config file uses the TOML specification. TOML is
+meant to be obvious enough to not need a guide, but [the full specification can
+be found here][5] if you want to learn more.
 
-### Example config file
-
-```json
-{
-  "api-key": "", // your api key from checkwx
-  "files": {
-    "input-mission": "mission.miz",      // path of mission file to be updated
-    "output-mission": "realweather.miz", // path of output mission file
-    "log": "logfile.log"                 // path of log file, "" disables
-  },
-  "metar": {
-    "icao": "KDLH",          // ICAO of the aiport to fetch METAR from
-    "icao-list": [],         // List of ICAOs to randomly choose from
-    "runway-elevation": 0,   // elevation of runway in meters MSL
-    "remarks": "",           // addtional remarks for METAR, customization only
-    "add-to-brief": true,    // add METAR text to bottom of mission brief
-    "use-custom-data": false,// use custom data from checkwx.json file
-    "use-aviation-weather": false // fetch data from aviationweather.gov
-  },
-  "options": {
-    "update-time": true,     // set to false to disable time being updated
-    "update-weather": true,  // set to false to disable weather being updated
-    "time-offset": "-5h30m", // time offset from system time
-    "wind": {
-      "minimum": 0,            // min allowed wind speed in m/s, at least 0
-      "maximum": 50,           // max allowed wind speed in m/s, at most 50
-      "gust-minimum": 0,       // min allowed gust speed in m/s, at least 0
-      "gust-maximum": 50,      // max allowed gust speed in m/s, at most 50
-      "open-meteo": true,      // use Open Meteo API for winds aloft
-      "stability": 0.143,      // atmospheric stability for wind calculations
-      "fixed-reference": false // use a fixed reference for wind calculations
-    },
-    "clouds": {
-      "disallowed-presets": [        // list of presets you do not want selected
-          "RainyPreset1",
-          "RainyPreset2",
-          "RainyPreset3"
-          ],
-      "fallback-to-no-preset": true, // use custom wx if no preset match found
-      "default-preset": "Preset7"    // default preset to use if no match found
-    },
-    "fog": {
-      "enabled": true,           // set to false to disable fog
-      "thickness-minimum": 0,    // min thickness of fog in meters, at least 0
-      "thickness-maximum": 1000, // max thickness of fog in meters, at most 1000
-      "visibility-minimum": 0,   // min vis through fog in meters, at least 0
-      "visibility-maximum": 6000 // max vis through fog in meters, at most 6000
-    },
-    "dust": {
-      "enabled": true,           // set to false to disable dust and smoke
-      "visibility-minimum": 300, // min vis through dust in meters, at least 300
-      "visibility-maximum": 3000 // max vis through dust in meters, at most 3000
-    }
-  }
-}
-```
+[5]: https://toml.io/en/v1.0.0
 
 ### Config Parameters
 
-* `api-key`: string
-  * Your API key from checkwx, should be a mix of letters and numbers.
-* `files`: string
-  * `input-mission`: string
-    * This is the path of the mission file that you want to apply real weather
-      to. This is typically a relative path from the Real Weather executable,
-      but it can be an absolute path too.
-  * `output-mission`: string
-    * This is the path that you want the modified mission to be output to. This
-      should generally be different from your input file.
-  * `log`: string
-    * This is the path that you want Real Weather to create its log at. If you
-      do not want logging, you can disable with "".
-* `metar`
-  * `icao`: string
-    * This is the ICAO of the airport you would like weather to be pulled from.
-      This option is mutually exclusive with `icao-list`; if both are supplied,
-      `icao` will be used. To use `icao-list`, set this to `""`.
-  * `icao-list`: string array
-    * This is a list of ICAOs to randomly choose to fetch weather data from.
-      This option is mutually exclusive with `icao`; if both are supplied,
-      `icao` will be used. Set `icao` to `""` to use `icao-list`.
-  * `runway-elevation`: integer
-    * The runway/airport elevation of the ICAO configured in meters. This is
-      used to convert cloud heights between MSL and AGL values for METAR
+* `realweather`: table
+  * This is a section for core configuration of Real Weather.
+  * `realweather.mission`: table
+    * This is a section for defining how Real Weather accesses your mission.
+    * `realweather.mission.input`: string
+      * This is a path to the mission you want Real Weather to edit. This should
+      generally differ from `realweather.mission.output`. While you can use the
+      same input and output files, it's not necessary or recommended.
+    * `realweather.mission.output`: string
+      * This is a path to the mission you want Real Weather to output.
+    * `realweather.mission.brief`: table
+      * The brief section details options for updating your mission brief.
+      * `realweather.mission.brief.add-metar`: boolean
+        * If true, Real Weather will add a METAR to your mission brief.
+      * `realweather.mission.brief.insert-key`: string
+        * This specifies where Real Weather will insert the METAR into your
+        brief (if enabled). This key should exist in your mission brief, and the
+        following line is where the METAR will be placed. It is important that
+        the key is valid when used in a PCRE. You can verify this by typing your
+        key into a website like [regex101](https://regex101.com/)
+      * `realweather.mission.brief.remarks`: string
+        * This will add a remarks section to your METAR. There is no functional
+        impact of this, and it is purely for you to customize your METAR with
+        extra information if your choose. Feel free to set it to an empty string
+        `""` if you don't want it.
+  * `realweather.log`: table
+    * This is a section for customizing the log behavior of Real Weather.
+    * `realweather.log.enable`: boolean
+      * Enables logging to a file. Real Weather will always log to the console.
+    * `realweather.log.file`: string
+      * Path of the file to write the log to
+* `api`: table
+  * The API section defines how Real Weather will get data to translate into
+  your mission.
+  * `api.provider-priority`: string array
+    * The provider priority array defines how to prioritize different sources of
+    METAR data. This array should always contain all the METAR providers
+    (currently `"aviationweather"`, `"checkwx"`, and `"custom"`). The first
+    source listed will be used first unless it is unreachable or there is an
+    error, then the second will be tried, etc. In most scenarios, only the first
+    provider listed here will be used.
+  * `api.aviationweather`: table
+    * This section is used for configuring
+    [aviationweather.gov](https://aviationweather.gov/) as a METAR data
+    provider.
+    * `api.aviationweather.enable`: boolean
+      * Enables or disables the aviationweather data provider.
+  * `api.checkwx`: table
+    * This section configures [checkwx.com](https://www.checkwx.com/) as a METAR
+    data provider.
+    * `api.checkwx.enable`: boolean
+      * Enables or disables checkwx as a data provider.
+    * `api.checkwx.key`: string
+      * CheckWX requires an API key to access its data. This can be obtained for
+        free at [checkwxapi.com](https://www.checkwxapi.com/).
+  * `api.custom`: table
+    * This defines the custom data provider. The custom provider allows you to
+    provide your own weather data to Real Weather through a .json file. An
+    example of this weather data can be found in
+    [examples/weather_data.json](/examples/weather_data.json). The data in this
+    file follows the same format as CheckWX data, so you can also reference
+    the [checkwx
+    documentation](https://www.checkwxapi.com/documentation/metar#metar-fields)
+    for more information. Some important notes regarding custom weather data:
+      * Only the fields supplied in the example file are currently supported.
+      * Custom weather need not supply every field, though anything omitted and
+      not supplied by another data provider will have some default value
+      applied. Custom weather is considered an advanced feature, so please ask
+      questions if needed via [discussions][2] or [Discord][3].
+      * The number of results must be at least 1 in the custom data in order for
+      it to be parsed.
+    * `api.custom.enable`: boolean
+      * Enables or disables the custom weather provider.
+    * `api.custom.file`: string
+      * Path to the file containing your custom data.
+    * `api.custom.override`: boolean
+      * This parameter changes how the custom provider is used. If `true`, the
+      custom provider will be used as a source of data that overrides anything
+      found from the other providers. For example if you only have a barometer
+      setting defined in the custom weather data, and CheckWX is your primary
+      provider (first in priority list), then all data from CheckWX will be
+      used, except the custom barometer setting will override anything CheckWX
+      supplies.
+  * `api.openmeteo`: table
+    * The Open Meteo API is currently the only non-METAR providing API. This API
+    is used for getting winds aloft data if enabled. If disabled, Real Weather
+    will instead estimate winds aloft using ground wind information (not as
+    accurate).
+* `options`: table
+  * The options section is used for configuring various behaviors of Real
+  Weather.
+  * `options.time`: table
+    * `options.time.enable`: boolean
+      * This setting enables or disables Real Weather's time updating. If
+      enabled, Real Weather will update the time of your mission.
+    * `options.time.system-time`: boolean
+      * If true, when Real Weather updates mission time, it will use the
+      server's system time instead of the METAR report time.
+    * `options.time.offset`: string
+      * This setting allows you to configure an offset from the system or METAR
+      time to use when applying to the mission file. The format of this offset
+      is a sequence of numbers, each a unit suffix, such as "-1.5h" or "2h45m".
+      Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+  * `options.weather`: table
+    * This section defines options for how Real Weather updates the weather.
+    * `options.weather.enable`: boolean
+      * This enables or disables Real Weather's weather updating. If enabled,
+      Real Weather will update the weather of your mission.
+    * `options.weather.icao`: string
+      * This is the ICAO of the airport you would like weather to be pulled
+      from. This option is mutually exclusive with `icao-list`; if both are
+      supplied, `icao` will be used. To use `icao-list`, set this to `""`.
+    * `options.weather.icao-list`: string array
+      * This is a list of ICAOs to randomly choose to fetch weather data from.
+        This option is mutually exclusive with `icao`; if both are supplied,
+        `icao` will be used. Set `icao` to `""` to use `icao-list`.
+    * `options.weather.runway-elevation`: number
+      * This is the runway/airport elevation of the ICAO configured in meters.
+      This is used to convert cloud heights between MSL and AGL values for METAR
       accuracy. Using this value the METAR will report the clouds in hundreds of
       feet AGL. Additionally the elevation is used to properly represent the QNH
       in DCS. This value will also be used for the reference height in wind
-      calculation if `open-meteo` and `fixed-reference` are false.
-  * `remarks`: string
-    * This adds a RMK section in the METAR string. There is not functional
-      impact of this setting. It's used for customization only.
-  * `add-to-brief`: boolean
-    * If true, Real Weather will add the generated METAR to your mission brief.
-      If your brief contains `==Real Weather METAR==` anywhere in the brief,
-      then the METAR will be inserted at the line immediately following,
-      replacing whatever is currently there. Otherwise, the METAR will be
-      appended to the end of your mission brief.
-  * `use-custom-data`: boolean
-    * If true, Real Weather will load METAR data from a checkwx.json file
-      and overwrite data from the CheckWX API. This data must be in the same
-      format CheckWX would provide. See
-      [examples/checkwx.json](examples/checkwx.json) and
-      [checkwxapi.com](https://www.checkwxapi.com/documentation/metar) for more
-      info. Only the parameters shown in the example are currently supported.
-      If not all parameters are given, the missing data will come from CheckWX.
-  * `use-aviation-weather`: boolean
-    * If true, Real Weather will fetch METAR data from
-    [aviationweather.gov](https://aviationweather.gov) instead of CheckWX.
-* `options`
-  * `update-time`: boolean
-    * Disable/enable Real Weather modifying your mission time.
-  * `update-weather`: boolean
-    * Disable/enable Real Weather modifying your mission weather.
-  * `time-offset`: string
-    * This is the offset from *system time* used when updating the mission time.
-      This value should be a string such as "1.5h" or "-2h45m". Supported units
-      are nanoseconds "ns", microseconds "us", milliseconds "ms", seconds "s",
-      minutes "m", and hours "h".
-  * `wind`
-    * `minimum`: integer
-      * This is the minimum wind speed in meters per second that Real Weather
-        will apply to your mission. This value must be at least 0.
-    * `maximum`: integer
-      * This is the maximum wind speed in meters per second that Real Weather
-        will apply to your mission. This value must be at most 50.
-    * `gust-minimum`: integer
-      * This is the minimum gust speed in meters per second that Real Weather
-        will apply to your mission. This value must be at least 0.
-    * `gust-maximum`: integer
-      * This is the maximum gust speed in meters per second that Real Weather
-        will apply to your mission. This value must be at most 50.
-    * `open-meteo`: boolean
-      * If true, Real Weather will use the Open Meteo API to get winds aloft
-        data. If false, Real Weather will use the wind profile power law to
-        estimate winds aloft.
-    * `stability`: float
-      * This is the atmospheric stability number used in the wind profile power
-        law. This is used when calculating wind speeds at altitudes other than
-        the airport elevation. 0.143 is generally a good setting for this, but
-        it can be configured to your liking. Larger values generally equate to
-        less stable atmosphere with bigger difference between ground winds and
-        winds aloft, and smaller values generally equate to more stable
-        atmospheres with ground winds being closer to winds aloft. See the
-        additional notes below for more information. This parameters only does
-        something if `open-meteo` is false or if the Open Meteo API is
-        unavailable.
-    * `fixed-reference`: boolean
-      * Disable/enable using a fixed reference point when calculating winds
-        aloft. If false, Real Weather will use the `runway-elevation` as the
-        wind reference point for calculting winds aloft. If true, Real Weather
-        will use 1 meter MSL as as the reference height for wind calculations.
-        Generally this should be set to false. This parameter only does
-        something if `open-meteo` is false or if the Open Meteo API is
-        unavailable.
-  * `clouds`
-    * `disallowed-presets`: string array
-      * This is a list of all the presets you do not want to be chosen. This
-        can be an empty list [] if you do not want to disable any presets.
-        Available preset options can be seen in the additional notes below.
-    * `fallback-to-no-preset`: boolean
-      * If this is true, Real Weather will use the legacy weather (no preset)
-        when a suitable weather preset is not found.
-    * `default-preset`: string
-      * This is the default preset that will be used if `fallback-to-no-preset`
-        is false and no suitable preset can be found in the allowed presets.
-        Leave this as "" to disable and use clear skies as the default.
-  * `fog`
-    * `enabled`: boolean
-      * Disable/enable fog when apply weather to your mission.
-    * `thickness-minimum`: integer
-      * This is the minimum fog thickness in meters that will be used when
-        applying fog to your mission. This must be at least 0 and less than
-        `thickness-maximum`.
-    * `thickness-maximum`: integer
-      * This is the maximum fog thickness in meters that will be used when
-        applying fog to your mission. This must be at most 1000 and greater than
-        `thickness-minimum`.
-    * `visibility-minimum`: integer
-      * This is the minimum visibility in meters that will be used when
-        applying fog to your mission. This must be at least 0 and less than
-        `visibility-maximum`.
-    * `visibility-maximum`: integer
-      * This is the maximum visibility in meters that will be used when
-        applying fog to your mission. This must be at most 6000 and greater than
-        `visibility-minimum`.
-  * `dust`
-    * `enabled`: boolean
-      * Disable/enable dust when applying weather to your mission.
-    * `visibility-minimum`: integer
-      * This is the minimum visibility in meters that will be used when
-        applying dust to your mission. This must be at least 300 and less than
-        `visibility-maximum`.
-    * `visibility-maximum`: integer
-      * This is the maximum visibility in meters that will be used when
-        applying dust to your mission. This must be at most 3000 and greater
-        than `visibility-minimum`.
+      calculation if the Open Meteo API is disabled and
+      `options.weather.wind.fixed-reference` is false.
+    * `options.weather.wind`: table
+      * This section defines wind specific weather options.
+      * `options.weather.wind.enable`: boolean
+        * This option enables updating the wind of the mission.
+      * `options.weather.wind.minimum`: number
+        * This defines the minimum wind speed in meters per second Real Weather
+        will set for any altitude. This must be at least 0.
+      * `options.weather.wind.maximum`: number
+        * This defines the maximum wind speed in meters per second Real Weather
+        will set for any altitude. This must be at most 50.
+      * `options.weather.wind.gust-minimum`: number
+        * This defines the minimum gust speed (also known as ground turbulence
+        in the mission editor) in meters per second Real Weather will set. This
+        must be at least 0.
+      * `options.weather.wind.gust-maximum`: number
+        * This defines the maximum gust speed (also known as ground turbulence
+        in the mission editor) in meters per second Real Weather will set. This
+        must be at most 50.
+      * `options.weather.wind.stability`: number
+        * This is an advanced configuration option to set the simulated
+        atmospheric stability for Real Weather. This value is used when
+        estimating wind aloft speeds if the Open Meteo provider is not enabled.
+        0.143 is considered neutrally stable, and is generally a reasonable
+        default. See the tip below for more information.
+      * `options.weather.wind.fixed-reference`: boolean
+        * This is an advanced configuration option that changes how Real Weather
+        estimates wind aloft speeds when not using Open Meteo for winds aloft.
+        If true, Real Weather will use a fixed reference point instead of the
+        runway elevation when calculating winds aloft.
+    * `options.weather.clouds`: table
+      * This section defines cloud specific weather options.
+      * `options.weather.clouds.enable`: boolean
+        * Enables or disables updating the clouds (and the precipitation) of the
+        mission.
+      * `options.weather.clouds.fallback-to-legacy`: boolean
+        * If this is true, Real Weather will use the legacy weather (no preset)
+          when a suitable weather preset is not found.
+      * `options.weather.clouds.presets`: table
+        * This section defines options for cloud presets.
+        * `options.weather.clouds.presets.default`: string
+          * This option defines the default cloud preset to use. This is used
+          when no preset that matches the METAR cloud conditions is found and
+          `fallback-to-legacy` is also false. This can be set to any one of the
+          presets in the [preset table](#preset-table), or it can also be set to
+          an empty string `""` to default to clear weather.
+        * `options.weather.clouds.presets.disallowed`: string array
+          * This option defines a list of any presets that you want to be
+          prohibited. Any preset in this list will not be a viable option for
+          Real Weather to choose. For example, you may want to disable rainy
+          presets. Any preset in the [preset table](#preset-table) can be
+          contained in this list, or there can be no presets if you want all
+          presets to be an option.
+    * `options.weather.fog`: table
+      * This section defines fog specific weather settings.
+      * `options.weather.fog.enable`: boolean
+        * This section enables or disables updating the mission fog.
+      * `options.weather.fog.thickness-minimum`: number
+        * This option defines the minimum fog thickness in meters Real Weather
+        will set when setting fog. This must be at least 0. Fog thickness is not
+        reported by a METAR, so the thickness set in the mission will be a
+        random value between your defined thickness minimum and maximum.
+      * `options.weather.fog.thickness-maximum`: number
+        * This option defines the maximum fog thickness in meters Real Weather
+        will set when setting fog. This must be at most 1000. Fog thickness is
+        not reported by a METAR, so the thickness set in the mission will be a
+        random value between your defined thickness minimum and maximum.
+      * `options.weather.fog.visibility-minimum`: number
+        * This option defines the minimum fog visibility in meters that will be
+        set when setting fog. This must be at least 0.
+      * `options.weather.fog.visibility-maximum`: number
+        * This option defines the maximum fog visibility in meters that will be
+        set when setting fog. This must be at most 6000.
+    * `options.weather.dust`: table
+      * This section defines dust specific weather settings.
+      * `options.weather.dust.enable`: boolean
+        * This option enables or disables updating the mission dust setting.
+      * `options.weather.dust.visibility-minimum`: number
+        * This option defines the minimum dust visibility in meters that will be
+        set when setting dust. This must be at least 300.
+      * `options.weather.dust.visibility-maximum`: number
+        * This option defines the maximum dust visibility in meters that will be
+        set when setting dust. This must be at most 3000.
+    * `options.weather.temperature`: table
+      * This section defines temperature specific settings.
+      * `options.weather.temperature.enable`: boolean
+        * This enables or disables setting the mission temperature.
+    * `options.weather.pressure`: table
+      * This section defines pressure specific settings.
+      * `options.weather.pressure.enable`: boolean
+        * This enables or disables setting the mission pressure.
+
+> [!IMPORTANT]
+> Windows, unlike every other operating system, tends to use backslashes
+> `\` in its file paths. If you choose to use backslashes for paths in your
+> config file, you must escape them with another backslash, so `C:\Users\myuser`
+> would become `C:\\Users\\myuser`. Alternatively, you can use a forward slash
+> without escaping it, e.g. `C:/Users/myuser`.
 
 > [!TIP]
-> For more info on stability, see these links: [1][1], [2][2], [3][3].
+> For more info on stability, consider referencing this Wikipedia article about
+> [the wind profile power law][6], [this page on wind shear][7], or the wind
+> turbines section of the Wikipedia article on [wind gradient][8].
 
-> [!NOTE]
-> Fog thickness is not reported by a METAR, so the thickness in DCS will be a
-> randomly chosen value between your configured min and max.
+[6]: https://en.wikipedia.org/wiki/Wind_profile_power_law
+[7]: https://www.engineeringtoolbox.com/wind-shear-d_1215.html
+[8]: https://en.wikipedia.org/wiki/Wind_gradient#Wind_turbines
 
 ### Preset table
 
-The DCS presets are shown in following table. These preset names are the same
-names that can be added to the `disallowed-presets` and `default-preset` config
-parameters.
+The supported DCS presets are shown in following table. These preset names are
+the same names that can be added to the disallowed presets and default preset
+config parameters.
 
-| Preset Name      | Cloud Layers         |
-|------------------|----------------------|
-| "Preset1"        | FEW070               |
-| "Preset2"        | FEW080 SCT230        |
-| "Preset3"        | SCT080 FEW210        |
-| "Preset4"        | SCT080 SCT240        |
-| "Preset5"        | SCT140 FEW270 BKN400 |
-| "Preset6"        | SCT080 FEW400        |
-| "Preset7"        | BKN075 SCT210 SCT400 |
-| "Preset8"        | SCT180 FEW360 FEW400 |
-| "Preset9"        | BKN075 SCT200 FEW410 |
-| "Preset10"       | SCT180 FEW360 FEW400 |
-| "Preset11"       | BKN180 BKN320 FEW410 |
-| "Preset12"       | BKN120 SCT220 FEW410 |
-| "Preset13"       | BKN120 BKN260 FEW410 |
-| "Preset14"       | BKN070 FEW410        |
-| "Preset15"       | SCT140 BKN240 FEW400 |
-| "Preset16"       | BKN140 BKN280 FEW400 |
-| "Preset17"       | BKN070 BKN200 BKN320 |
-| "Preset18"       | BKN130 BKN250 BKN380 |
-| "Preset19"       | OVC090 BKN230 BKN310 |
-| "Preset20"       | BKN130 BKN280 FEW380 |
-| "Preset21"       | BKN070 OVC170        |
-| "Preset22"       | OVC070 BKN170        |
-| "Preset23"       | OVC110 BKN180 SCT320 |
-| "Preset24"       | OVC030 OVC170 BKN340 |
-| "Preset25"       | OVC120 OVC220 OVC400 |
-| "Preset26"       | OVC090 BKN230 SCT320 |
-| "Preset27"       | OVC080 BKN250 BKN340 |
-| "RainyPreset1"   | OVC030 OVC280 FEW400 |
-| "RainyPreset2"   | OVC030 SCT180 FEW400 |
-| "RainyPreset3"   | OVC060 OVC190 SCT340 |
-| "RainyPreset4"   | SCT080 FEW360        |
-| "RainyPreset5"   | BKN070 BKN200 BKN320 |
-| "RainyPreset6"   | OVC090 BKN230 BKN310 |
-| "NEWRAINPRESET4" | SCT080 SCT120        |
+| Preset Name      | Cloud Layers         | Precipitation   |
+|------------------|----------------------|-----------------|
+| "Preset1"        | FEW070               | None            |
+| "Preset2"        | FEW080 SCT230        | None            |
+| "Preset3"        | SCT080 FEW210        | None            |
+| "Preset4"        | SCT080 SCT240        | None            |
+| "Preset5"        | SCT140 FEW270 BKN400 | None            |
+| "Preset6"        | SCT080 FEW400        | None            |
+| "Preset7"        | BKN075 SCT210 SCT400 | None            |
+| "Preset8"        | SCT180 FEW360 FEW400 | None            |
+| "Preset9"        | BKN075 SCT200 FEW410 | None            |
+| "Preset10"       | SCT180 FEW360 FEW400 | None            |
+| "Preset11"       | BKN180 BKN320 FEW410 | None            |
+| "Preset12"       | BKN120 SCT220 FEW410 | None            |
+| "Preset13"       | BKN120 BKN260 FEW410 | None            |
+| "Preset14"       | BKN070 FEW410        | None            |
+| "Preset15"       | SCT140 BKN240 FEW400 | None            |
+| "Preset16"       | BKN140 BKN280 FEW400 | None            |
+| "Preset17"       | BKN070 BKN200 BKN320 | None            |
+| "Preset18"       | BKN130 BKN250 BKN380 | None            |
+| "Preset19"       | OVC090 BKN230 BKN310 | None            |
+| "Preset20"       | BKN130 BKN280 FEW380 | None            |
+| "Preset21"       | BKN070 OVC170        | None            |
+| "Preset22"       | OVC070 BKN170        | None            |
+| "Preset23"       | OVC110 BKN180 SCT320 | None            |
+| "Preset24"       | OVC030 OVC170 BKN340 | None            |
+| "Preset25"       | OVC120 OVC220 OVC400 | None            |
+| "Preset26"       | OVC090 BKN230 SCT320 | None            |
+| "Preset27"       | OVC080 BKN250 BKN340 | None            |
+| "RainyPreset1"   | OVC030 OVC280 FEW400 | Rain/snow       |
+| "RainyPreset2"   | OVC030 SCT180 FEW400 | Rain/snow       |
+| "RainyPreset3"   | OVC060 OVC190 SCT340 | Rain/snow       |
+| "RainyPreset4"   | SCT080 FEW360        | Light rain/snow |
+| "RainyPreset5"   | BKN070 BKN200 BKN320 | Light rain/snow |
+| "RainyPreset6"   | OVC090 BKN230 BKN310 | Light rain/snow |
+| "NEWRAINPRESET4" | SCT080 SCT120        | Rain/snow       |
 
 > [!NOTE]
-> The lowest cloud layer's altitude may vary since Real Weather will try to
+> The lowest cloud layer's altitude will vary since Real Weather will try to
 > match it to the METAR as best as possible.
 
-[1]: https://en.wikipedia.org/wiki/Wind_profile_power_law
-[2]: https://www.engineeringtoolbox.com/wind-shear-d_1215.html
-[3]: https://en.wikipedia.org/wiki/Wind_gradient#Wind_turbines
+## Command line interface
+
+There are a few options that can be passed to Real Weather via a command line
+interface. Generally these are for advanced use, and they are not necessary in
+order to use Real Weather. Command line options can be passed with either a
+single `-` or two `--`. Boolean options can be set to true by simply passing the
+flag. For example, `-help` is equivalent to `-help=true`. Other types can be set
+with an equals or with a space, for example `-config="myconfig.toml"` is the
+same as `-config myconfig.toml`.
+
+### CLI Options
+
+```
+Usage of realweather:
+  -help
+    	prints out this help message
+  -config string
+    	override default config name to use (default "config.toml")
+  -custom-file string
+    	override file path for custom weather provider
+  -enable-custom
+    	forcibly enables the custom weather provider
+  -icao string
+    	override icao in config
+  -input string
+    	override input mission in config
+  -output string
+    	override output mission in config
+  -version
+    	prints out the real weather version and exits
+```
