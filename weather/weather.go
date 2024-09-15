@@ -354,14 +354,14 @@ func GetWindsAloft(location []float64) (WindsAloft, error) {
 
 // GetWeather calls the appropriate function to get weather from the desired
 // API.
-func GetWeather(icao string, api API, meta string) (WeatherData, error) {
+func GetWeather(icao string, api API, meta interface{}) (WeatherData, error) {
 	switch api {
 	case APIAviationWeather:
 		return getWeatherAviationWeather(icao)
 	case APICheckWX:
-		return getWeatherCheckWX(icao, meta)
+		return getWeatherCheckWX(icao, meta.(string))
 	case APICustom:
-		return getWeatherCustom(meta)
+		return getWeatherCustom(meta.(string))
 	default:
 		return WeatherData{}, fmt.Errorf("Invalid API provider")
 	}

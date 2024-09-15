@@ -193,7 +193,7 @@ func getWx() weather.WeatherData {
 
 	// use first enabled api that works (based on priority list)
 	for _, api := range apiList {
-		var meta string
+		var meta interface{}
 		switch api.Provider {
 		case weather.APIAviationWeather:
 			meta = ""
@@ -232,15 +232,11 @@ func overrideWx(icao string, data *weather.WeatherData) {
 		return
 	}
 
-	// verify presence of .rwbot, if not exist, may have already been consumed
-	if _, err := os.Stat(".rwbot"); errors.Is(err, os.ErrNotExist) {
-		log.Println("Custom weather already used; overrides will not be applied")
-		return
-	}
-
 	log.Println("Overriding weather with custom data from file...")
 
-	temp, err := weather.GetWeather(icao, weather.APICustom, config.Get().API.Custom.File)
+	meta := config.Get().API.Custom.File
+
+	temp, err := weather.GetWeather(icao, weather.APICustom, meta)
 	if err != nil {
 		log.Printf("Unable to get custom weather: %v", err)
 		return
