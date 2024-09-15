@@ -283,34 +283,46 @@ func Clean() {
 
 // updateWeather applies new weather to the given lua state using data
 func updateWeather(data *weather.WeatherData, windsAloft weather.WindsAloft, l *lua.LState) error {
-	if config.Get().API.OpenMeteo.Enable {
-		if err := updateWind(data, windsAloft, l); err != nil {
-			return fmt.Errorf("Error updating wind: %v", err)
+	if config.Get().Options.Weather.Wind.Enable {
+		if config.Get().API.OpenMeteo.Enable {
+			if err := updateWind(data, windsAloft, l); err != nil {
+				return fmt.Errorf("Error updating wind: %v", err)
+			}
+		} else {
+			if err := updateWindLegacy(data, l); err != nil {
+				return fmt.Errorf("Error updating wind: %v", err)
+			}
 		}
-	} else {
-		if err := updateWindLegacy(data, l); err != nil {
-			return fmt.Errorf("Error updating wind: %v", err)
+	}
+
+	if config.Get().Options.Weather.Temperature.Enable {
+		if err := updateTemperature(data, l); err != nil {
+			return fmt.Errorf("Error updating temperature: %v", err)
 		}
 	}
 
-	if err := updateTemperature(data, l); err != nil {
-		return fmt.Errorf("Error updating temperature: %v", err)
+	if config.Get().Options.Weather.Pressure.Enable {
+		if err := updatePressure(data, l); err != nil {
+			return fmt.Errorf("Error updating pressure: %v", err)
+		}
 	}
 
-	if err := updatePressure(data, l); err != nil {
-		return fmt.Errorf("Error updating pressure: %v", err)
+	if config.Get().Options.Weather.Fog.Enable {
+		if err := updateFog(data, l); err != nil {
+			return fmt.Errorf("Error updating fog: %v", err)
+		}
 	}
 
-	if err := updateFog(data, l); err != nil {
-		return fmt.Errorf("Error updating fog: %v", err)
+	if config.Get().Options.Weather.Dust.Enable {
+		if err := updateDust(data, l); err != nil {
+			return fmt.Errorf("Error updating dust: %v", err)
+		}
 	}
 
-	if err := updateDust(data, l); err != nil {
-		return fmt.Errorf("Error updating dust: %v", err)
-	}
-
-	if err := updateClouds(data, l); err != nil {
-		return fmt.Errorf("Error updating clouds: %v", err)
+	if config.Get().Options.Weather.Clouds.Enable {
+		if err := updateClouds(data, l); err != nil {
+			return fmt.Errorf("Error updating clouds: %v", err)
+		}
 	}
 
 	return nil
@@ -978,10 +990,6 @@ func presetAllowed(preset string) bool {
 // checkFog looks for either misty or foggy conditions and returns and integer
 // representing dcs visiblity scale
 func checkFog(data *weather.WeatherData) (visibility, thickness int) {
-	if !config.Get().Options.Weather.Fog.Enabled {
-		return
-	}
-
 	for _, condition := range data.Data[0].Conditions {
 		if slices.Contains(weather.FogCodes(), condition.Code) {
 			thickness = rand.Intn(
@@ -1005,10 +1013,6 @@ func checkFog(data *weather.WeatherData) (visibility, thickness int) {
 // checkDust looks for dust conditions and returns a number representing
 // visibility in meters
 func checkDust(data *weather.WeatherData) (visibility int) {
-	if !config.Get().Options.Weather.Dust.Enabled {
-		return
-	}
-
 	for _, condition := range data.Data[0].Conditions {
 		if slices.Contains(weather.DustCodes(), condition.Code) {
 			return int(util.Clamp(

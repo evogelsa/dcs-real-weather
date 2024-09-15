@@ -73,6 +73,7 @@ type Configuration struct {
 				FixedReference bool    `toml:"fixed-reference"`
 			} `toml:"wind"`
 			Clouds struct {
+				Enable           bool `toml:"enable"`
 				FallbackToLegacy bool `toml:"fallback-to-legacy"`
 				Presets          struct {
 					Default    string   `toml:"default"`
@@ -80,17 +81,23 @@ type Configuration struct {
 				} `toml:"presets"`
 			} `toml:"clouds"`
 			Fog struct {
-				Enabled           bool    `toml:"enabled"`
+				Enable            bool    `toml:"enable"`
 				ThicknessMinimum  float64 `toml:"thickness-minimum"`
 				ThicknessMaximum  float64 `toml:"thickness-maximum"`
 				VisibilityMinimum float64 `toml:"visibility-minimum"`
 				VisibilityMaximum float64 `toml:"visibility-maximum"`
 			} `toml:"fog"`
 			Dust struct {
-				Enabled           bool    `toml:"enabled"`
+				Enable            bool    `toml:"enable"`
 				VisibilityMinimum float64 `toml:"visibility-minimum"`
 				VisibilityMaximum float64 `toml:"visibility-maximum"`
 			}
+			Temperature struct {
+				Enable bool `toml:"enable"`
+			} `toml:"temperature"`
+			Pressure struct {
+				Enable bool `toml:"enable"`
+			} `toml:"pressure"`
 		}
 	}
 }
