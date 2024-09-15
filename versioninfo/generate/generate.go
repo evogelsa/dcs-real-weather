@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -98,7 +97,6 @@ func main() {
 	if len(os.Args) > 2 {
 		versionInfoOut = filepath.Join(os.Args[2], versionInfoOut)
 		metaOut = filepath.Join(os.Args[2], metaOut)
-		iconPath = path.Join(os.Args[2], iconPath)
 		versionOut = filepath.Join(os.Args[2], versionOut)
 	}
 
