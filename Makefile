@@ -59,7 +59,7 @@ windows-bot: generate
 	-@mkdir "bin"
 	-@mkdir "bin/windows"
 	cd "cmd/bot" && env GOOS=windows GOARCH=amd64 go build -o ../../bin/windows/rwbot.exe -trimpath
-	cp cmd/bot/config/config.json bin/windows/botconfig.json
+	cp cmd/bot/config/botconfig.json bin/windows/botconfig.json
 	cp oss-licenses.txt bin/windows/oss-licenses.txt
 	zip -j windows.zip bin/windows/rwbot.exe bin/windows/botconfig.json bin/windows/oss-licenses.txt
 	$(eval VERSION := $(shell cat versioninfo/version.txt))
@@ -74,7 +74,7 @@ linux-amd64-bot: generate
 	-@mkdir "bin/linux"
 	-rm resource.syso
 	env GOOS=linux GOARCH=amd64 go build -o bin/linux/rwbot -trimpath cmd/bot/main.go
-	cp cmd/bot/config/config.json bin/linux/botconfig.json
+	cp cmd/bot/config/botconfig.json bin/linux/botconfig.json
 	cp oss-licenses.txt bin/linux/oss-licenses.txt
 	$(eval VERSION := $(shell cat versioninfo/version.txt))
 	tar czf bin/linux/rwbot_linux_amd64_$(VERSION).tar.gz -C bin/linux/ rwbot botconfig.json oss-licenses.txt
@@ -88,7 +88,7 @@ linux-arm-bot: generate
 	-@mkdir "bin/linux"
 	-rm resource.syso
 	env GOOS=linux GOARCH=arm go build -o bin/linux/rwbot -trimpath cmd/bot/main.go
-	cp cmd/bot/config/config.json bin/linux/botconfig.json
+	cp cmd/bot/config/botconfig.json bin/linux/botconfig.json
 	cp oss-licenses.txt bin/linux/oss-licenses.txt
 	$(eval VERSION := $(shell cat versioninfo/version.txt))
 	tar czf bin/linux/rwbot_linux_arm_$(VERSION).tar.gz -C bin/linux/ rwbot botconfig.json oss-licenses.txt
