@@ -3,10 +3,10 @@
 package versioninfo
 
 const (
-	Major = 1
-	Minor = 14
+	Major = 2
+	Minor = 0
 	Patch = 0
-	CommitNum = 0
+	CommitNum = 1
 	Commit = ""
-	Pre = ""
+	Pre = "beta"
 )
