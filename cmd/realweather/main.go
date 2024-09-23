@@ -22,6 +22,7 @@ import (
 // flag vars
 var (
 	enableCustom bool
+	validate     bool
 	version      bool
 
 	configName    string
@@ -32,10 +33,34 @@ var (
 )
 
 func init() {
+	const usage = `Usage of %s:
+	Boolean Flags:
+		-enable-custom  forcibly enable the custom weather provider
+		-help           prints this help message
+		-validate       validates your config the exits
+		-version        prints the Real Weather version then exits
+
+	String Flags:
+		-config         override default config file name
+		-custom-file    override file path for custom weather provider
+		-icao           override icao
+		-input          override input mission
+		-output         override output mission
+`
+
+	flag.Usage = func() {
+		fmt.Fprintf(
+			flag.CommandLine.Output(),
+			usage,
+			os.Args[0],
+		)
+	}
+
 	flag.BoolVar(&enableCustom, "enable-custom", false, "forcibly enables the custom weather provider")
+	flag.BoolVar(&validate, "validate", false, "validates your config then exits")
 	flag.BoolVar(&version, "version", false, "prints out the real weather version and exits")
 
-	flag.StringVar(&configName, "config", "config.toml", "override default config name to use")
+	flag.StringVar(&configName, "config", "config.toml", "override default config file name")
 	flag.StringVar(&customFile, "custom-file", "", "override file path for custom weather provider")
 	flag.StringVar(&icao, "icao", "", "override icao in config")
 	flag.StringVar(&inputMission, "input", "", "override input mission in config")
@@ -80,6 +105,10 @@ func init() {
 	}
 
 	config.Init(configName, overrides)
+
+	if validate {
+		os.Exit(0)
+	}
 }
 
 func main() {
