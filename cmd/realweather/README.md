@@ -350,20 +350,16 @@ same as `-config myconfig.toml`.
 
 ```
 Usage of realweather:
-  -help
-    	prints out this help message
-  -config string
-    	override default config name to use (default "config.toml")
-  -custom-file string
-    	override file path for custom weather provider
-  -enable-custom
-    	forcibly enables the custom weather provider
-  -icao string
-    	override icao in config
-  -input string
-    	override input mission in config
-  -output string
-    	override output mission in config
-  -version
-    	prints out the real weather version and exits
+	Boolean Flags:
+		-enable-custom  forcibly enable the custom weather provider
+		-help           prints this help message
+		-validate       validates your config the exits
+		-version        prints the Real Weather version then exits
+
+	String Flags:
+		-config         override default config file name
+		-custom-file    override file path for custom weather provider
+		-icao           override icao
+		-input          override input mission
+		-output         override output mission
 ```
