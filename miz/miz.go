@@ -961,7 +961,14 @@ func selectPreset(kind string, base int, precip bool) (string, int) {
 				defaultPreset,
 			)
 
+			// get base in hundreds of feet
 			base, _ := strconv.Atoi(weather.DecodePreset[defaultPreset][0].Base)
+
+			// convert to feet
+			base *= 100
+
+			// convert to meters
+			base = int(float64(base)*weather.FeetToMeters + 0.5)
 
 			return defaultPreset, base
 		} else {
