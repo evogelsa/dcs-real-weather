@@ -219,6 +219,17 @@ be found here][5] if you want to learn more.
       * `options.weather.clouds.fallback-to-legacy`: boolean
         * If this is true, Real Weather will use the legacy weather (no preset)
           when a suitable weather preset is not found.
+      * `options.weather.clouds.base`: table
+        * This section defines options for cloud bases.
+          * `options.weather.clouds.base.minimum`: number
+            * This option sets the minimum cloud base in meters above ground
+            level that will be set when adding clouds to the mission. This
+            option should be at least 0.
+          * `options.weather.clouds.base.maximum`: number
+            * This option sets the maximum cloud base in meters above ground
+            level that will be set when adding clouds to the mission. This
+            option should be at most 15000. Currently there are no presets that
+            go above 6000.
       * `options.weather.clouds.presets`: table
         * This section defines options for cloud presets.
         * `options.weather.clouds.presets.default`: string
