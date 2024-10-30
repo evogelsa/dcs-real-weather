@@ -75,7 +75,11 @@ type Configuration struct {
 			Clouds struct {
 				Enable           bool `toml:"enable"`
 				FallbackToLegacy bool `toml:"fallback-to-legacy"`
-				Presets          struct {
+				Base             struct {
+					Minimum float64 `toml:"minimum"`
+					Maximum float64 `toml:"maximum"`
+				} `toml:"base"`
+				Presets struct {
 					Default    string   `toml:"default"`
 					Disallowed []string `toml:"disallowed"`
 				} `toml:"presets"`
@@ -368,7 +372,19 @@ func checkOptionsWind() {
 
 // checkOptionsClouds validates cloud options in the config
 func checkOptionsClouds() {
+	if config.Options.Weather.Clouds.Base.Minimum < 0 {
+		log.Printf("Minimum cloud base must be >=0; it will default to 0")
+		config.Options.Weather.Clouds.Base.Minimum = 0
+	}
+
+	if config.Options.Weather.Clouds.Base.Maximum > 15000 {
+		log.Printf("Maximum cloud base must be <=15000; it will default to 15000")
+		config.Options.Weather.Clouds.Base.Maximum = 15000
+	}
+
 	var presetFound bool
+	var presetMinBase int
+	var presetMaxBase int
 	if config.Options.Weather.Clouds.Presets.Default != "" {
 		for preset := range weather.DecodePreset {
 			if preset == `"`+config.Options.Weather.Clouds.Presets.Default+`"` {
@@ -376,8 +392,20 @@ func checkOptionsClouds() {
 				break
 			}
 		}
+
+		// search for default preset min and max base
+		for _, presetList := range weather.CloudPresets {
+			for _, preset := range presetList {
+				if preset.Name == config.Options.Weather.Clouds.Presets.Default {
+					presetMinBase = preset.MinBase
+					presetMaxBase = preset.MaxBase
+				}
+			}
+		}
 	} else {
 		presetFound = true
+		presetMinBase = int(config.Options.Weather.Clouds.Base.Minimum)
+		presetMaxBase = int(config.Options.Weather.Clouds.Base.Minimum)
 	}
 
 	if !presetFound {
@@ -386,6 +414,20 @@ func checkOptionsClouds() {
 			config.Options.Weather.Clouds.Presets.Default,
 		)
 		config.Options.Weather.Clouds.Presets.Default = ""
+	}
+
+	// check that default preset min/max base falls within config min/max
+	if config.Options.Weather.Clouds.Base.Minimum > float64(presetMaxBase) {
+		log.Print(
+			"The configured default preset has a max base lower than the configured min base." +
+				" This value may be ignored if the default preset is used.",
+		)
+	}
+	if config.Options.Weather.Clouds.Base.Maximum < float64(presetMinBase) {
+		log.Print(
+			"The configured default preset has a min base lower than the configured max base." +
+				" This value may be ignored if the default preset is used.",
+		)
 	}
 
 	for _, preset := range config.Options.Weather.Clouds.Presets.Disallowed {

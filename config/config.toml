@@ -132,6 +132,10 @@ fixed-reference = false # use a fixed referenced point for winds aloft
 enable = true
 fallback-to-legacy = true  # if no preset match is found, use legacy weather
 
+[options.weather.clouds.base]
+minimum = 0     # meters, lowest AGL altitude clouds will be set to (at least 0)
+maximum = 15000 # meters, max AGL altitude for cloud base (at most 15000)
+
 # Cloud preset specifc weather settings
 [options.weather.clouds.presets]
 # Default is the default preset to be used if no match found and

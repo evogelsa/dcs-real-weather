@@ -876,6 +876,13 @@ func checkClouds(data *weather.WeatherData) (string, int) {
 	base += int(data.Data[0].Clouds[baseLayer].Meters)
 	code := data.Data[0].Clouds[baseLayer].Code
 
+	// clamp base between configured min and max
+	base = util.Clamp(
+		base,
+		config.Get().Options.Weather.Clouds.Base.Minimum,
+		config.Get().Options.Weather.Clouds.Base.Maximum,
+	)
+
 	// updates base with selected in case of fallback to legacy
 	preset, base = selectPreset(code, base, precip > precipNone)
 
@@ -922,7 +929,13 @@ func selectPreset(kind string, base int, precip bool) (string, int) {
 		if presetAllowed(preset.Name) {
 			if util.Between(base, preset.MinBase, preset.MaxBase) {
 				validPresets = append(validPresets, preset)
-			} else {
+			} else if preset.MinBase < int(config.Get().Options.Weather.Clouds.Base.Maximum) &&
+				preset.MaxBase > int(config.Get().Options.Weather.Clouds.Base.Minimum) {
+				// we also construct a list of presets that don't have a cloud
+				// base range that allow for matching the METAR base; however,
+				// these presets must still be constrained by the configured
+				// min and max base. These are used if no preset match is made
+				// and the search must be expanded (and deviate from the METAR)
 				validPresetsIgnoreBase = append(validPresetsIgnoreBase, preset)
 			}
 		}
@@ -944,9 +957,10 @@ func selectPreset(kind string, base int, precip bool) (string, int) {
 
 	log.Printf("Fallback to no preset is disabled. Expanding search to only %s\n", kind)
 
-	// since fallback disabled and no preset available, use any preset that
-	// matches the desired cloud type and ignore desired base
-	validPresets = validPresetsIgnoreBase
+	// since fallback disabled and no preset available, expand valid presets to
+	// include those that matches the desired cloud type and ignore desired base
+	// (but base still falls within configured limits)
+	validPresets = append(validPresets, validPresetsIgnoreBase...)
 
 	// still no valid presets? use the configured default preset if there is
 	// one, otherwise default to clear
@@ -969,6 +983,16 @@ func selectPreset(kind string, base int, precip bool) (string, int) {
 
 			// convert to meters
 			base = int(float64(base)*weather.FeetToMeters + 0.5)
+
+			// clamp base between desired min and max base. DCS should clamp
+			// the value to the correct range for the preset, so the configured
+			// min and max base may be ignored if this happens. the user should
+			// have been warned of this possibility during the config validation
+			base = util.Clamp(
+				base,
+				config.Get().Options.Weather.Clouds.Base.Minimum,
+				config.Get().Options.Weather.Clouds.Base.Maximum,
+			)
 
 			return defaultPreset, base
 		} else {
