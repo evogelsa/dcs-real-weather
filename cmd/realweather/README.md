@@ -249,6 +249,12 @@ be found here][5] if you want to learn more.
       * This section defines fog specific weather settings.
       * `options.weather.fog.enable`: boolean
         * This section enables or disables updating the mission fog.
+      * `options.weather.fog.mode`: string
+        * This may be one of "auto", "manual", or "legacy". Auto and manual
+        modes are the new DCS fog options. Legacy is the old fog system which
+        seems to be automatically converted by DCS to the equivalent of manual.
+        Auto will likely give the best experience while manual may give a closer
+        representation to the METAR.
       * `options.weather.fog.thickness-minimum`: number
         * This option defines the minimum fog thickness in meters Real Weather
         will set when setting fog. This must be at least 0. Fog thickness is not
