@@ -10,21 +10,23 @@ import (
 	"slices"
 	"strings"
 	"time"
+
+	"github.com/goccy/go-yaml"
 )
 
 type aviationWeatherData struct {
-	Temp       *float64                `json:"temp,omitempty"`
-	Dew        *float64                `json:"dewp,omitempty"`
-	WindDir    *json.RawMessage        `json:"wdir,omitempty"`
-	WindSpeed  *float64                `json:"wspd,omitempty"`
-	WindGust   *float64                `json:"wgst,omitempty"`
-	Visibility *json.Number            `json:"visib,string,omitempty"`
-	Altimeter  *float64                `json:"altim,omitempty"`
-	Conditions *string                 `json:"wxString,omitempty"`
-	Clouds     []aviationWeatherClouds `json:"clouds,omitempty"`
-	Latitude   *float64                `json:"lat,omitempty"`
-	Longitude  *float64                `json:"lon,omitempty"`
-	ReportTime *string                 `json:"reportTime,omitempty"`
+	Temp       *float64                `yaml:"temp,omitempty"`
+	Dew        *float64                `yaml:"dewp,omitempty"`
+	WindDir    *string                 `yaml:"wdir,omitempty"`
+	WindSpeed  *float64                `yaml:"wspd,omitempty"`
+	WindGust   *float64                `yaml:"wgst,omitempty"`
+	Visibility *string                 `yaml:"visib,omitempty"`
+	Altimeter  *float64                `yaml:"altim,omitempty"`
+	Conditions *string                 `yaml:"wxString,omitempty"`
+	Clouds     []aviationWeatherClouds `yaml:"clouds,omitempty"`
+	Latitude   *float64                `yaml:"lat,omitempty"`
+	Longitude  *float64                `yaml:"lon,omitempty"`
+	ReportTime *string                 `yaml:"reportTime,omitempty"`
 }
 
 type aviationWeatherClouds struct {
@@ -77,7 +79,7 @@ func getWeatherAviationWeather(icao string) (WeatherData, error) {
 
 	// format json response into weatherdata struct
 	var intermediate []aviationWeatherData
-	err = json.Unmarshal(body, &intermediate)
+	err = yaml.Unmarshal(body, &intermediate)
 	if err != nil {
 		return WeatherData{}, err
 	}
@@ -171,11 +173,12 @@ func convertVisibility(out *WeatherData, data []aviationWeatherData) {
 	if data[0].Visibility != nil {
 		out.Data[0].Visibility = &Visibility{}
 
-		if v, err := data[0].Visibility.Float64(); err == nil {
-			out.Data[0].Visibility.MetersFloat = v * MilesToMeters
+		var vis int
+		n, err := fmt.Sscanf(*data[0].Visibility, "%d", &vis)
+		if n == 1 && err == nil {
+			out.Data[0].Visibility.MetersFloat = float64(vis) * MilesToMeters
 		} else {
-			var vis int
-			n, err := fmt.Sscanf(data[0].Visibility.String(), "%d+", &vis)
+			n, err := fmt.Sscanf(*data[0].Visibility, "%d+", &vis)
 			if n == 1 && err == nil {
 				out.Data[0].Visibility.MetersFloat = float64(vis) * MilesToMeters
 			} else {
