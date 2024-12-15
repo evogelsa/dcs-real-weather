@@ -86,6 +86,7 @@ type Configuration struct {
 			} `toml:"clouds"`
 			Fog struct {
 				Enable            bool    `toml:"enable"`
+				Mode              string  `toml:"mode"`
 				ThicknessMinimum  float64 `toml:"thickness-minimum"`
 				ThicknessMaximum  float64 `toml:"thickness-maximum"`
 				VisibilityMinimum float64 `toml:"visibility-minimum"`
@@ -449,6 +450,13 @@ func checkOptionsClouds() {
 
 // checkOptionsFog enforces fog configuration options
 func checkOptionsFog() {
+	if config.Options.Weather.Fog.Mode != string(weather.FogAuto) &&
+		config.Options.Weather.Fog.Mode != string(weather.FogManual) &&
+		config.Options.Weather.Fog.Mode != string(weather.FogLegacy) {
+		log.Println("Fog mode unrecognized (expecting \"auto\", \"manual\", or \"legacy\"); defaulting to auto")
+		config.Options.Weather.Fog.Mode = string(weather.FogAuto)
+	}
+
 	if config.Options.Weather.Fog.ThicknessMaximum > 1000 {
 		log.Println("Fog maximum thickness is set above max of 1000; defaulting to 1000")
 		config.Options.Weather.Fog.ThicknessMaximum = 1000

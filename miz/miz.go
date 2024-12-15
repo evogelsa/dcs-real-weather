@@ -504,33 +504,91 @@ func updateDust(data *weather.WeatherData, l *lua.LState) error {
 func updateFog(data *weather.WeatherData, l *lua.LState) error {
 	fogVis, fogThick := checkFog(data)
 
-	if fogVis > 0 {
+	if fogVis <= 0 {
 		if err := l.DoString(
-			// assume fog thickness 100 since not reported in metar
+			"mission.weather.enable_fog = false\n" +
+				"mission.weather.fog2 = nil\n",
+		); err != nil {
+			return fmt.Errorf("Error updating fog: %v", err)
+		}
+		log.Printf("Fog:\n" + "\tEnabled: false\n")
+		return nil
+	}
+
+	switch weather.Fog(config.Get().Options.Weather.Fog.Mode) {
+	case weather.FogLegacy:
+		if err := l.DoString(
 			fmt.Sprintf(
 				"mission.weather.enable_fog = true\n"+
 					"mission.weather.fog.thickness = %d\n"+
-					"mission.weather.fog.visibility = %d\n",
-				fogThick, fogVis,
+					"mission.weather.fog.visibility = %d\n"+
+					"mission.weather.fog2 = nil",
+				fogThick,
+				fogVis,
 			),
 		); err != nil {
 			return fmt.Errorf("Error updating fog: %v", err)
 		}
-	} else {
-		if err := l.DoString("mission.weather.enable_fog = false"); err != nil {
+
+		log.Printf(
+			"Fog:\n"+
+				"\tThickness:  %d meters (%d feet)\n"+
+				"\tVisibility: %d meters (%d feet)\n"+
+				"\tEnabled: true\n"+
+				"\tMode:    legacy\n",
+			fogThick, int(float64(fogThick)*weather.MetersToFeet),
+			fogVis, int(float64(fogThick)*weather.MetersToFeet),
+		)
+
+	case weather.FogManual:
+		if err := l.DoString(
+			fmt.Sprintf(
+				"mission.weather.enable_fog = false\n"+
+					"mission.weather.fog2 = { }\n"+
+					"mission.weather.fog2.mode = 4\n"+
+					"mission.weather.fog2.manual = { { thickness = %d, time = 0, visibility = %d } }",
+				fogThick,
+				fogVis,
+			),
+		); err != nil {
 			return fmt.Errorf("Error updating fog: %v", err)
 		}
-	}
 
-	log.Printf(
-		"Fog:\n"+
-			"\tThickness:  %d meters (%d feet)\n"+
-			"\tVisibility: %d meters (%d feet)\n"+
-			"\tEnabled: %t\n",
-		fogThick, int(float64(fogThick)*weather.MetersToFeet),
-		fogVis, int(float64(fogThick)*weather.MetersToFeet),
-		fogVis > 0,
-	)
+		log.Printf(
+			"Fog:\n"+
+				"\tThickness:  %d meters (%d feet)\n"+
+				"\tVisibility: %d meters (%d feet)\n"+
+				"\tEnabled: true\n"+
+				"\tMode:    manual\n",
+			fogThick, int(float64(fogThick)*weather.MetersToFeet),
+			fogVis, int(float64(fogThick)*weather.MetersToFeet),
+		)
+
+	default:
+		log.Printf(
+			"Unknown fog option \"%s\": defaulting to auto\n",
+			string(config.Get().Options.Weather.Fog.Mode),
+		)
+		fallthrough
+	case weather.FogAuto:
+		if err := l.DoString(
+			fmt.Sprintf(
+				"mission.weather.enable_fog = false\n" +
+					"mission.weather.fog2 = { }\n" +
+					"mission.weather.fog2.mode = 2\n",
+			),
+		); err != nil {
+			return fmt.Errorf("Error updating fog: %v", err)
+		}
+
+		log.Printf(
+			"Fog:\n" +
+				"\tThickness:  auto\n" +
+				"\tVisibility: auto\n" +
+				"\tEnabled: true\n" +
+				"\tMode:    auto\n",
+		)
+	}
 
 	return nil
 }

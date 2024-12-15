@@ -45,6 +45,14 @@ type WindsAloft struct {
 	WindDirection7200 int
 }
 
+type Fog string
+
+const (
+	FogAuto   Fog = "auto"
+	FogManual Fog = "manual"
+	FogLegacy Fog = "legacy"
+)
+
 type API string
 
 const (

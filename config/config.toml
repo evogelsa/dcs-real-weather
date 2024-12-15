@@ -187,6 +187,9 @@ disallowed = [
 # Fog specific weather settings
 [options.weather.fog]
 enable = true
+mode = "auto" # auto, manual, or legacy
+
+# These settings only apply in manual and legacy
 thickness-minimum = 0     # meters, min fog thickness (must be >=0)
 thickness-maximum = 1000  # meters, max fog thickness (must be <= 1000)
 visibility-minimum = 0    # meters, min fog visibility (must be >= 0)
