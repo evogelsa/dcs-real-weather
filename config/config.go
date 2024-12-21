@@ -14,6 +14,7 @@ import (
 
 	"github.com/pelletier/go-toml/v2"
 
+	"github.com/evogelsa/DCS-real-weather/util"
 	"github.com/evogelsa/DCS-real-weather/weather"
 )
 
@@ -298,6 +299,20 @@ func checkOptionsTime() {
 		)
 		log.Println("Time offset will default to zero")
 		config.Options.Time.Offset = "0"
+	}
+}
+
+// checkOptionsDate validates the date options in the config
+func checkOptionsDate() {
+	_, err := util.ParseDateDuration(config.Options.Date.Offset)
+	if err != nil {
+		log.Printf(
+			"Could not parse date offset of %s: %v",
+			config.Options.Date.Offset,
+			err,
+		)
+		log.Println("Date offset will default to zero")
+		config.Options.Date.Offset = "0"
 	}
 }
 
