@@ -150,6 +150,7 @@ be found here][5] if you want to learn more.
   * The options section is used for configuring various behaviors of Real
   Weather.
   * `options.time`: table
+    * These settings determine how Real Weather updates the mission time
     * `options.time.enable`: boolean
       * This setting enables or disables Real Weather's time updating. If
       enabled, Real Weather will update the time of your mission.
@@ -161,6 +162,20 @@ be found here][5] if you want to learn more.
       time to use when applying to the mission file. The format of this offset
       is a sequence of numbers, each a unit suffix, such as "-1.5h" or "2h45m".
       Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+  * `options.date`: table
+    * These settings determine how Real Weather updates the mission date
+    * `options.date.enable`: boolean
+      * This setting enables or disables Real Weather's date updating. If
+      enabled, Real Weather will update the date of your mission.
+    * `options.date.system-date`: boolean
+      * If true, when Real Weather updates mission date, it will use the
+      server's system date instead of the METAR report date.
+    * `options.date.offset`: string
+      * This setting allows you to configure an offset from the system or METAR
+      date to use when applying to the mission file. The format of this offset
+      is a sequence of numbers, each a unit suffix, such as "-1d" or "2m5d".
+      Valid date units are "d", "m", and "y" where days are 24 hours, months are
+      30 days, and years are 365 days.
   * `options.weather`: table
     * This section defines options for how Real Weather updates the weather.
     * `options.weather.enable`: boolean
