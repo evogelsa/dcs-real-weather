@@ -76,6 +76,13 @@ func Update(data *weather.WeatherData, windsAloft weather.WindsAloft) error {
 		}
 	}
 
+	// update date if enabled
+	if config.Get().Options.Date.Enable {
+		if err := updateDate(data, l); err != nil {
+			return fmt.Errorf("Error updating date: %v", err)
+		}
+	}
+
 	log.Println("Updated mission")
 	log.Println("Writing new mission file...")
 
@@ -786,7 +793,7 @@ func updateWindLegacy(data *weather.WeatherData, l *lua.LState) error {
 	return nil
 }
 
-// updateTime applies system time plus/minus configured offset to the mission
+// updateTime applies time plus/minus configured offset to the mission
 func updateTime(data *weather.WeatherData, l *lua.LState) error {
 	var t time.Time
 	var err error
@@ -816,11 +823,8 @@ func updateTime(data *weather.WeatherData, l *lua.LState) error {
 
 	if err := l.DoString(
 		fmt.Sprintf(
-			"mission.date.Year = %d\n"+
-				"mission.date.Month = %d\n"+
-				"mission.date.Day = %d\n"+
-				"mission.start_time = %d\n",
-			t.Year(), t.Month(), t.Day(), seconds,
+			"mission.start_time = %d\n",
+			seconds,
 		),
 	); err != nil {
 		return fmt.Errorf("Error updating time: %v", err)
@@ -828,11 +832,56 @@ func updateTime(data *weather.WeatherData, l *lua.LState) error {
 
 	log.Printf(
 		"Time:\n"+
+			"\tStart time: %d (%02d:%02d:%02d)\n",
+		seconds, t.Hour(), t.Minute(), t.Second(),
+	)
+
+	return nil
+}
+
+// updateDate applies date plus/minus configured offset to the mission
+func updateDate(data *weather.WeatherData, l *lua.LState) error {
+	var t time.Time
+	var err error
+	if config.Get().Options.Date.SystemDate {
+		t = time.Now()
+	} else {
+		t, err = time.Parse("2006-01-02T15:04:05", data.Data[0].Observed)
+		if err != nil {
+			t, err = time.Parse("2006-01-02T15:04:05Z", data.Data[0].Observed)
+			if err != nil {
+				log.Printf("Error parsing METAR date: %v", err)
+				log.Println("Using system date as fallback")
+				t = time.Now()
+			}
+		}
+	}
+
+	offset, err := util.ParseDateDuration(config.Get().Options.Date.Offset)
+	if err != nil {
+		log.Printf("Could not parse time-offset of %s: %v", config.Get().Options.Date.Offset, err)
+		log.Println("Using default offset of 0")
+		offset = 0
+	}
+	t = t.Add(offset)
+
+	if err := l.DoString(
+		fmt.Sprintf(
+			"mission.date.Year = %d\n"+
+				"mission.date.Month = %d\n"+
+				"mission.date.Day = %d\n",
+			t.Year(), t.Month(), t.Day(),
+		),
+	); err != nil {
+		return fmt.Errorf("Error updating date: %v", err)
+	}
+
+	log.Printf(
+		"Date:\n"+
 			"\tYear: %d\n"+
 			"\tMonth: %d\n"+
-			"\tDay: %d\n"+
-			"\tStart time: %d (%02d:%02d:%02d)\n",
-		t.Year(), t.Month(), t.Day(), seconds, t.Hour(), t.Minute(), t.Second(),
+			"\tDay: %d\n",
+		t.Year(), t.Month(), t.Day(),
 	)
 
 	return nil

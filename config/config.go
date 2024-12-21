@@ -58,6 +58,11 @@ type Configuration struct {
 			SystemTime bool   `toml:"system-time"`
 			Offset     string `toml:"offset"`
 		} `toml:"time"`
+		Date struct {
+			Enable     bool   `toml:"enable"`
+			SystemDate bool   `toml:"system-date"`
+			Offset     string `toml:"offset"`
+		} `toml:"date"`
 		Weather struct {
 			Enable          bool     `toml:"enable"`
 			ICAO            string   `toml:"icao"`

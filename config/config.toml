@@ -103,6 +103,12 @@ enable = true      # set to false to disable updating time
 system-time = true # set to false if you want to use the METAR time
 offset = "-4h"     # offset system or METAR time by this amount
 
+# These settings determine how Real Weather will update the mission date
+[options.date]
+enable = true      # set to false to disable updating the date
+system-date = true # set to false if you want to use the METAR date
+offset = "0"       # offset system or METAR date by this amount
+
 # These settings determine how Real Weather updates mission weather
 [options.weather]
 enable = true # set to false to disable updating all weather
