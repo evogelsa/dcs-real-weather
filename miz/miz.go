@@ -34,6 +34,9 @@ const (
 //go:embed datadumper.lua
 var dataDumper string
 
+// hacky fix for newlines that get double escaped after serializing the lua
+var newlineFix = regexp.MustCompile(`(^|[^\\])(\\\\(n|t))`)
+
 var l *lua.LState
 
 func init() {
@@ -98,7 +101,12 @@ func Update(data *weather.WeatherData, windsAloft weather.WindsAloft) error {
 
 	lv := l.GetGlobal("rw_miz")
 	if s, ok := lv.(lua.LString); ok {
-		os.WriteFile("mission_unpacked/mission", []byte(string(s)), 0666)
+		// use hack to fix newlines
+		str := string(s)
+		str = newlineFix.ReplaceAllString(str, `$1\\\\$3`)
+
+		// dump to file
+		os.WriteFile("mission_unpacked/mission", []byte(str), 0666)
 	} else {
 		return fmt.Errorf("Error dumping serialized state")
 	}
