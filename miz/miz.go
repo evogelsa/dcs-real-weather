@@ -2,7 +2,6 @@ package miz
 
 import (
 	"archive/zip"
-	_ "embed"
 	"fmt"
 	"io"
 	"log"
@@ -31,12 +30,6 @@ const (
 	precipStorm
 )
 
-//go:embed datadumper.lua
-var dataDumper string
-
-// hacky fix for newlines that get double escaped after serializing the lua
-var newlineFix = regexp.MustCompile(`(^|[^\\])(\\\\(n|t))`)
-
 var l *lua.LState
 
 func init() {
@@ -45,10 +38,6 @@ func init() {
 		RegistryMaxSize:  1024 * 1024,
 		RegistryGrowStep: 1024,
 	})
-
-	if err := l.DoString(dataDumper); err != nil {
-		log.Fatalf("Error loading data dumper: %v", err)
-	}
 }
 
 // Update applies weather and time updates to the unpacked mission file
@@ -95,18 +84,11 @@ func Update(data *weather.WeatherData, windsAloft weather.WindsAloft) error {
 		return fmt.Errorf("Error removing mission: %v", err)
 	}
 
-	if err := l.DoString(`rw_miz = DataDumper(mission, "mission", false, 0)`); err != nil {
-		return fmt.Errorf("Error serializing lua state: %v", err)
-	}
-
-	lv := l.GetGlobal("rw_miz")
-	if s, ok := lv.(lua.LString); ok {
-		// use hack to fix newlines
-		str := string(s)
-		str = newlineFix.ReplaceAllString(str, `$1\\\\$3`)
-
-		// dump to file
-		os.WriteFile("mission_unpacked/mission", []byte(str), 0666)
+	lv := l.GetGlobal("mission")
+	if tbl, ok := lv.(*lua.LTable); ok {
+		s := serializeTable(tbl, 0)
+		s = "mission = " + s
+		os.WriteFile("mission_unpacked/mission", []byte(s), 0666)
 	} else {
 		return fmt.Errorf("Error dumping serialized state")
 	}
@@ -138,11 +120,13 @@ func UpdateBrief(metar string) error {
 		if brief, ok := dict.RawGetString("DictKey_descriptionText_1").(lua.LString); ok {
 			// replace METAR after marker
 			if key != "" && metarRE.MatchString(brief.String()) {
-				newBrief = metarRE.ReplaceAllString(brief.String(), "==Real Weather METAR==\\\n"+metar+"\\\n")
+				newBrief = metarRE.ReplaceAllString(
+					brief.String(),
+					"==Real Weather METAR==\n"+metar+"\n",
+				)
 			} else {
 				log.Println("METAR will be appended to brief")
-				newBrief = brief.String() + "\n\n" + metar
-				newBrief = strings.ReplaceAll(newBrief, "\n", "\\\n")
+				newBrief = brief.String() + "\n\n==Real Weather METAR==\n" + metar + "\n"
 			}
 		} else {
 			log.Println("Unable to parse existing brief, new brief will be written")
@@ -157,7 +141,7 @@ func UpdateBrief(metar string) error {
 
 	// write new brief
 	if err := l.DoString(
-		`dictionary.DictKey_descriptionText_1 = "` + newBrief + `"`,
+		`dictionary.DictKey_descriptionText_1 = ` + fmt.Sprintf("%q", newBrief),
 	); err != nil {
 		return fmt.Errorf("Error updating mission brief: %v", err)
 	}
@@ -168,13 +152,11 @@ func UpdateBrief(metar string) error {
 		return fmt.Errorf("Error removing mission dictionary: %v", err)
 	}
 
-	if err := l.DoString(`rw_dict = DataDumper(dictionary, "dictionary", false, 0)`); err != nil {
-		return fmt.Errorf("Error serializing lua state: %v", err)
-	}
-
-	lv = l.GetGlobal("rw_dict")
-	if s, ok := lv.(lua.LString); ok {
-		os.WriteFile("mission_unpacked/l10n/DEFAULT/dictionary", []byte(string(s)), 0666)
+	lv = l.GetGlobal("dictionary")
+	if tbl, ok := lv.(*lua.LTable); ok {
+		s := serializeTable(tbl, 0)
+		s = "dictionary = " + s
+		os.WriteFile("mission_unpacked/l10n/DEFAULT/dictionary", []byte(s), 0666)
 	} else {
 		return fmt.Errorf("Error dumping serialized state")
 	}
