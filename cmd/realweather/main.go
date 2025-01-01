@@ -151,7 +151,7 @@ func main() {
 	}
 
 	// update mission file with weather data
-	if err = miz.Update(&data, windsAloft); err != nil {
+	if err = miz.UpdateMission(&data, windsAloft); err != nil {
 		log.Printf("Error updating mission: %v\n", err)
 	}
 
