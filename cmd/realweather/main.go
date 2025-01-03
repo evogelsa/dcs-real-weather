@@ -82,7 +82,7 @@ func init() {
 		ver += "+" + versioninfo.Commit
 	}
 
-	log.Println("Using Real Weather " + ver)
+	defer log.Println("Using Real Weather " + ver)
 	if version {
 		os.Exit(0)
 	}
