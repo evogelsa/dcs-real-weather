@@ -245,7 +245,8 @@ func convertClouds(out *WeatherData, data []aviationWeatherData) {
 					out.Data[0].Clouds,
 					Clouds{Code: *cloud.Cover, Meters: 0},
 				)
-			} else if cloud.Base != nil {
+			} else if cloud.Cover != nil && cloud.Base != nil {
+				// some other cloud, add to cloud list
 				out.Data[0].Clouds = append(
 					out.Data[0].Clouds,
 					Clouds{Code: *cloud.Cover, Meters: *cloud.Base * FeetToMeters},
