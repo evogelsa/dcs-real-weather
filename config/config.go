@@ -454,7 +454,7 @@ func checkOptionsClouds() {
 	for _, preset := range config.Options.Weather.Clouds.Presets.Disallowed {
 		presetFound = false
 		for valid := range weather.DecodePreset {
-			if valid == `"`+config.Options.Weather.Clouds.Presets.Default+`"` {
+			if valid == `"`+preset+`"` {
 				presetFound = true
 				break
 			}
