@@ -8,7 +8,7 @@
 2) [Download the latest Real Weather release][1].
 3) Extract the files in the release archive.
 4) Open the provided `config.toml` with a text editor of choice (Notepad++ or
-Sublime text editor are good choices for starting out).
+Sublime Text are good choices for starting out).
 5) The config file comes with reasonable defaults provided for most options, but
 you'll need to configure at least the following settings:
    - `realweather.mission.input`: this is the path to your input mission file to
@@ -17,6 +17,12 @@ you'll need to configure at least the following settings:
   will have the new weather.
    - Optional: `api.checkwx.key` and `api.checkwx.enable` if using the CheckWX
   weather provider.
+
+> [!NOTE]
+> Any fields not configured in your config.toml will default to whatever is in
+> the default configuration. Please either configure all parameters or review
+> the default config to ensure it meets your needs.
+
 6) Save your changes and ensure the config file remains inside the same
 directory as the Real Weather executable.
 7) Create or configure the mission file you want to be updated with the real
