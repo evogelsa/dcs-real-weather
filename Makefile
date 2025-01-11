@@ -16,7 +16,7 @@ windows: generate
 	@echo "--------------------------------"
 	-@mkdir "bin"
 	-@mkdir "bin/windows"
-	cd "cmd/realweather" && env GOOS=windows GOARCH=amd64 go build -o ../../bin/windows/realweather.exe -trimpath
+	cd "cmd/realweather" && env GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -o ../../bin/windows/realweather.exe -trimpath -ldflags=\"-s -w\"
 	cp config/config.toml bin/windows/config.toml
 	cp oss-licenses.txt bin/windows/oss-licenses.txt
 	zip -j windows.zip bin/windows/realweather.exe bin/windows/config.toml bin/windows/oss-licenses.txt
@@ -31,7 +31,7 @@ linux-amd64: generate
 	-@mkdir "bin"
 	-@mkdir "bin/linux"
 	-rm resource.syso
-	env GOOS=linux GOARCH=amd64 go build -o bin/linux/realweather -trimpath cmd/realweather/main.go
+	env GOOS=linux GOARCH=amd64 go build -o bin/linux/realweather -trimpath -ldflags=\"-s -w\" cmd/realweather/main.go
 	cp config/config.toml bin/linux/config.toml
 	cp oss-licenses.txt bin/linux/oss-licenses.txt
 	$(eval VERSION := $(shell cat versioninfo/version.txt))
@@ -45,7 +45,7 @@ linux-arm: generate
 	-@mkdir "bin"
 	-@mkdir "bin/linux"
 	-rm resource.syso
-	env GOOS=linux GOARCH=arm go build -o bin/linux/realweather -trimpath cmd/realweather/main.go
+	env GOOS=linux GOARCH=arm go build -o bin/linux/realweather -trimpath -ldflags=\"-s -w\" cmd/realweather/main.go
 	cp config/config.toml bin/linux/config.toml
 	cp oss-licenses.txt bin/linux/oss-licenses.txt
 	$(eval VERSION := $(shell cat versioninfo/version.txt))
@@ -58,7 +58,7 @@ windows-bot: generate
 	@echo "--------------------------------"
 	-@mkdir "bin"
 	-@mkdir "bin/windows"
-	cd "cmd/bot" && env GOOS=windows GOARCH=amd64 go build -o ../../bin/windows/rwbot.exe -trimpath
+	cd "cmd/bot" && env GOOS=windows GOARCH=amd64 go build -o ../../bin/windows/rwbot.exe -trimpath -ldflags=\"-s -w\"
 	cp cmd/bot/config/botconfig.json bin/windows/botconfig.json
 	cp oss-licenses.txt bin/windows/oss-licenses.txt
 	zip -j windows.zip bin/windows/rwbot.exe bin/windows/botconfig.json bin/windows/oss-licenses.txt
@@ -73,7 +73,7 @@ linux-amd64-bot: generate
 	-@mkdir "bin"
 	-@mkdir "bin/linux"
 	-rm resource.syso
-	env GOOS=linux GOARCH=amd64 go build -o bin/linux/rwbot -trimpath cmd/bot/main.go
+	env GOOS=linux GOARCH=amd64 go build -o bin/linux/rwbot -trimpath -ldflags=\"-s -w\" cmd/bot/main.go
 	cp cmd/bot/config/botconfig.json bin/linux/botconfig.json
 	cp oss-licenses.txt bin/linux/oss-licenses.txt
 	$(eval VERSION := $(shell cat versioninfo/version.txt))
@@ -87,7 +87,7 @@ linux-arm-bot: generate
 	-@mkdir "bin"
 	-@mkdir "bin/linux"
 	-rm resource.syso
-	env GOOS=linux GOARCH=arm go build -o bin/linux/rwbot -trimpath cmd/bot/main.go
+	env GOOS=linux GOARCH=arm go build -o bin/linux/rwbot -trimpath -ldflags=\"-s -w\" cmd/bot/main.go
 	cp cmd/bot/config/botconfig.json bin/linux/botconfig.json
 	cp oss-licenses.txt bin/linux/oss-licenses.txt
 	$(eval VERSION := $(shell cat versioninfo/version.txt))
