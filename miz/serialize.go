@@ -33,7 +33,11 @@ func serializeTable(tbl *lua.LTable, indentLevel uint) string {
 		// serialize value
 		switch value.Type() {
 		case lua.LTString:
-			buf.WriteString(fmt.Sprintf("%q", value.String()))
+			s := strings.ReplaceAll(value.String(), `\`, `\\`)
+			s = strings.ReplaceAll(s, "\n", "\\\n")
+			s = strings.ReplaceAll(s, "\"", "\\\"")
+			s = fmt.Sprintf("\"%s\"", s)
+			buf.WriteString(s)
 		case lua.LTNumber:
 			buf.WriteString(fmt.Sprintf("%v", lua.LVAsNumber(value)))
 		case lua.LTBool:
