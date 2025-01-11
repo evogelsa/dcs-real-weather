@@ -131,6 +131,11 @@ var defaultConfig string
 
 // Init reads config.toml and umarshals into config
 func Init(configName string, overrides Overrideable) {
+	err := toml.Unmarshal([]byte(defaultConfig), &config)
+	if err != nil {
+		log.Fatalf("Unable to read default config")
+	}
+
 	log.Printf("Reading %s", configName)
 
 	file, err := os.Open(configName)
@@ -340,8 +345,8 @@ func checkOptionsWeather() {
 
 	// validate an option for ICAO exists
 	if config.Options.Weather.ICAO == "" && len(config.Options.Weather.ICAOList) == 0 {
-		log.Println("ICAO or ICAO list must be supplied, defaulting to ICAO to DGAA")
-		config.Options.Weather.ICAO = "DGAA"
+		log.Println("ICAO or ICAO list must be supplied, defaulting to ICAO to UGKO")
+		config.Options.Weather.ICAO = "UGKO"
 	} else if config.Options.Weather.ICAO != "" && len(config.Options.Weather.ICAOList) > 0 {
 		log.Println("ICAO and ICAO list cannot be used at the same time, only ICAO will be used")
 	}
