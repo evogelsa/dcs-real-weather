@@ -6,7 +6,7 @@ const (
 	Major = 2
 	Minor = 0
 	Patch = 0
-	CommitNum = 5
+	CommitNum = 6
 	Commit = ""
 	Pre = "beta"
 )
