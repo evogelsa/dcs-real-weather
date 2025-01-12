@@ -18,7 +18,7 @@ you'll need to configure at least the following settings:
    - Optional: `api.checkwx.key` and `api.checkwx.enable` if using the CheckWX
   weather provider.
 
-> [!NOTE]
+> [!IMPORTANT]
 > Any fields not configured in your config.toml will default to whatever is in
 > the default configuration. Please either configure all parameters or review
 > the default config to ensure it meets your needs.
@@ -46,7 +46,7 @@ or questions.
 [3]: https://discord.com/invite/mjr2SpFuqq
 [4]: https://github.com/Special-K-s-Flightsim-Bots/DCSServerBot
 
-> [!NOTE]
+> [!TIP]
 > Generally your input file should be different from your output file. This will
 > leave your main mission template untouched.
 
