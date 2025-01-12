@@ -79,9 +79,8 @@ type Configuration struct {
 				FixedReference bool    `toml:"fixed-reference"`
 			} `toml:"wind"`
 			Clouds struct {
-				Enable           bool `toml:"enable"`
-				FallbackToLegacy bool `toml:"fallback-to-legacy"`
-				Base             struct {
+				Enable bool `toml:"enable"`
+				Base   struct {
 					Minimum float64 `toml:"minimum"`
 					Maximum float64 `toml:"maximum"`
 				} `toml:"base"`
@@ -89,6 +88,12 @@ type Configuration struct {
 					Default    string   `toml:"default"`
 					Disallowed []string `toml:"disallowed"`
 				} `toml:"presets"`
+				Custom struct {
+					Enable             bool    `toml:"enable"`
+					AllowPrecipitation bool    `toml:"allow-precipitation"`
+					DensityMinimum     float64 `toml:"density-minimum"`
+					DensityMaximum     float64 `toml:"density-maximum"`
+				} `toml:"custom"`
 			} `toml:"clouds"`
 			Fog struct {
 				Enable            bool    `toml:"enable"`
@@ -470,6 +475,24 @@ func checkOptionsClouds() {
 				preset,
 			)
 		}
+	}
+
+	if !util.Between(
+		config.Options.Weather.Clouds.Custom.DensityMinimum,
+		0,
+		config.Options.Weather.Clouds.Custom.DensityMaximum,
+	) {
+		log.Println("Cloud density minimum is not between 0 and cloud density maximum; defaulting to 0")
+		config.Options.Weather.Clouds.Custom.DensityMinimum = 0
+	}
+
+	if !util.Between(
+		config.Options.Weather.Clouds.Custom.DensityMaximum,
+		config.Options.Weather.Clouds.Custom.DensityMinimum,
+		10,
+	) {
+		log.Println("Cloud density maximum is not between 10 and cloud density minimum; defaulting to 10")
+		config.Options.Weather.Clouds.Custom.DensityMaximum = 10
 	}
 }
 

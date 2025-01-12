@@ -197,7 +197,7 @@ func handleCustomClouds(data *weather.WeatherData, l *lua.LState, preset string,
 	// only one kind possible when using custom
 	var thickness int = rand.Intn(1801) + 200 // 200 - 2000
 	var density int                           //   0 - 10
-	var precip precipitation                  //   0 - 2
+	precip := precipNone                      //   0 - 2
 	base = util.Clamp(base, 300, 5000)        // 300 - 5000
 
 	//  0 - clear
@@ -212,7 +212,10 @@ func handleCustomClouds(data *weather.WeatherData, l *lua.LState, preset string,
 	//  9 - bkn
 	// 10 - ovc
 
-	precip = checkPrecip(data)
+	if config.Get().Options.Weather.Clouds.Custom.AllowPrecipitation {
+		precip = checkPrecip(data)
+	}
+
 	var precipStr string
 	if precip == precipStorm {
 		// make thunderstorm clouds thicc
@@ -240,6 +243,12 @@ func handleCustomClouds(data *weather.WeatherData, l *lua.LState, preset string,
 	default:
 		density = 0
 	}
+
+	density = util.Clamp(
+		density,
+		config.Get().Options.Weather.Clouds.Custom.DensityMinimum,
+		config.Get().Options.Weather.Clouds.Custom.DensityMaximum,
+	)
 
 	// apply to lua state
 	if err := l.DoString(
@@ -815,9 +824,9 @@ func selectPreset(kind string, base int, precip bool) (string, int) {
 			kind = "BKN+RA"
 		} else if kind == "SCT" {
 			kind = "SCT+RA"
-		} else if config.Get().Options.Weather.Clouds.FallbackToLegacy {
+		} else if config.Get().Options.Weather.Clouds.Custom.Enable {
 			log.Printf("No suitable weather preset for code=%s and base=%d", kind, base)
-			log.Printf("Fallback to no preset is enabled, using custom weather")
+			log.Printf("Custom clouds are enabled, using custom weather")
 			return "CUSTOM " + kind[:3], base
 		} else {
 			log.Printf("No suitable preset for %s clouds with precip", kind)
@@ -853,8 +862,8 @@ func selectPreset(kind string, base int, precip bool) (string, int) {
 	log.Printf("No suitable weather preset for code=%s and base=%d", kind, base)
 
 	// no valid preset found, is use nonpreset weather enabled?
-	if config.Get().Options.Weather.Clouds.FallbackToLegacy {
-		log.Printf("Fallback to no preset is enabled, using custom weather")
+	if config.Get().Options.Weather.Clouds.Custom.Enable {
+		log.Printf("Custom clouds are enabled, using custom weather")
 		return "CUSTOM " + kind[:3], base
 	}
 

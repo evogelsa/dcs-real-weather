@@ -136,7 +136,6 @@ fixed-reference = false # use a fixed referenced point for winds aloft
 # Cloud specifc weather settings
 [options.weather.clouds]
 enable = true
-fallback-to-legacy = true  # if no preset match is found, use legacy weather
 
 [options.weather.clouds.base]
 minimum = 0     # meters, lowest AGL altitude clouds will be set to (at least 0)
@@ -189,6 +188,15 @@ disallowed = [
 #  "RainyPreset6",
 #  "NEWRAINPRESET4",
 ]
+
+# Settings specific to when custom clouds are being used (not a preset)
+[options.weather.clouds.custom]
+enable = true # enable using custom clouds when no matching preset is found
+
+allow-precipitation = true # allow precipitation when using custom clouds?
+
+density-minimum = 0  # at least 0, min cloud density to use with custom clouds
+density-maximum = 10 # at most 10, max cloud density to use with custom clouds
 
 # Fog specific weather settings
 [options.weather.fog]
