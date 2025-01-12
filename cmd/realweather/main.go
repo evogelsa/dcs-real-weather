@@ -3,8 +3,8 @@ package main
 //go:generate goversioninfo -o resource.syso ../../versioninfo/versioninfo.json
 
 import (
-	"bytes"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -21,11 +21,50 @@ import (
 
 // flag vars
 var (
-	debugCheckWx bool
+	enableCustom bool
+	validate     bool
+	version      bool
+
+	configName    string
+	customFile    string
+	icao          string
+	inputMission  string
+	outputMission string
 )
 
 func init() {
-	flag.BoolVar(&debugCheckWx, "debug-checkwx", false, "load checkwx data from checkwx.json")
+	const usage = `Usage of %s:
+	Boolean Flags:
+		-enable-custom  forcibly enable the custom weather provider
+		-help           prints this help message
+		-validate       validates your config the exits
+		-version        prints the Real Weather version then exits
+
+	String Flags:
+		-config         override default config file name
+		-custom-file    override file path for custom weather provider
+		-icao           override icao
+		-input          override input mission
+		-output         override output mission
+`
+
+	flag.Usage = func() {
+		fmt.Fprintf(
+			flag.CommandLine.Output(),
+			usage,
+			os.Args[0],
+		)
+	}
+
+	flag.BoolVar(&enableCustom, "enable-custom", false, "forcibly enables the custom weather provider")
+	flag.BoolVar(&validate, "validate", false, "validates your config then exits")
+	flag.BoolVar(&version, "version", false, "prints out the real weather version and exits")
+
+	flag.StringVar(&configName, "config", "config.toml", "override default config file name")
+	flag.StringVar(&customFile, "custom-file", "", "override file path for custom weather provider")
+	flag.StringVar(&icao, "icao", "", "override icao in config")
+	flag.StringVar(&inputMission, "input", "", "override input mission in config")
+	flag.StringVar(&outputMission, "output", "", "override output mission in config")
 
 	flag.Parse()
 }
@@ -43,7 +82,33 @@ func init() {
 		ver += "+" + versioninfo.Commit
 	}
 
-	log.Println("Using Real Weather " + ver)
+	defer log.Println("Using Real Weather " + ver)
+	if version {
+		os.Exit(0)
+	}
+
+	// if .rwbot file exists, then override custom provider for this run only
+	// .rwbot files will be cleaned up (deleted) after using custom data
+	// provider
+	if _, err := os.Stat(".rwbot"); !errors.Is(err, os.ErrNotExist) {
+		enableCustom = true
+		customFile = ".rwbotwx.json"
+	}
+
+	// set config overrides
+	overrides := config.Overrideable{
+		APICustomEnable:    enableCustom,
+		APICustomFile:      customFile,
+		MissionInput:       inputMission,
+		MissionOutput:      outputMission,
+		OptionsWeatherICAO: icao,
+	}
+
+	config.Init(configName, overrides)
+
+	if validate {
+		os.Exit(0)
+	}
 }
 
 func main() {
@@ -86,13 +151,13 @@ func main() {
 	}
 
 	// update mission file with weather data
-	if err = miz.Update(&data, windsAloft); err != nil {
+	if err = miz.UpdateMission(&data, windsAloft); err != nil {
 		log.Printf("Error updating mission: %v\n", err)
 	}
 
 	// generate the METAR text
 	var metar string
-	if metar, err = weather.GenerateMETAR(data, config.Get().METAR.Remarks); err == nil {
+	if metar, err = weather.GenerateMETAR(data, config.Get().RealWeather.Mission.Brief.Remarks); err == nil {
 		// make metar last thing to be print
 		defer log.Println("METAR: " + metar)
 	} else {
@@ -100,7 +165,7 @@ func main() {
 	}
 
 	// add METAR to mission brief if enabled
-	if config.Get().METAR.AddToBrief {
+	if config.Get().RealWeather.Mission.Brief.AddMETAR {
 		if err = miz.UpdateBrief(metar); err != nil {
 			log.Printf("Error adding METAR to brief: %v", err)
 		}
@@ -120,58 +185,106 @@ func getWx() weather.WeatherData {
 	var err error
 	var data weather.WeatherData
 
-	// use value from config if exists. CLI argument will override a false
-	// parameter in the config
-	if config.Get().METAR.UseCustomData {
-		debugCheckWx = true
-	}
-
 	var icao string
-	if config.Get().METAR.ICAO != "" {
-		icao = config.Get().METAR.ICAO
-	} else if len(config.Get().METAR.ICAOList) > 0 {
-		icao = config.Get().METAR.ICAOList[rand.Intn(len(config.Get().METAR.ICAOList))]
+	if config.Get().Options.Weather.ICAO != "" {
+		icao = config.Get().Options.Weather.ICAO
+	} else if len(config.Get().Options.Weather.ICAOList) > 0 {
+		icao = config.Get().Options.Weather.ICAOList[rand.Intn(len(config.Get().Options.Weather.ICAOList))]
 	} else {
 		// Should never reach this code if config validation is working properly
+		log.Println("ICAO config validation error, using DGAA. Please report this as a bug :-)")
 		icao = "DGAA"
 	}
 
-	data, err = weather.GetWeather(icao, config.Get().APIKey)
+	// construct usable api priority list from config
+	apiList := make([]struct {
+		Provider weather.API
+		Enable   bool
+	}, len(config.Get().API.ProviderPriority))
+	for i, provider := range config.Get().API.ProviderPriority {
+		switch weather.API(provider) {
+		case weather.APICheckWX:
+			apiList[i].Provider = weather.APICheckWX
+			apiList[i].Enable = config.Get().API.CheckWX.Enable
+
+		case weather.APIAviationWeather:
+			apiList[i].Provider = weather.APIAviationWeather
+			apiList[i].Enable = config.Get().API.AviationWeather.Enable
+
+		case weather.APICustom:
+			apiList[i].Provider = weather.APICustom
+			apiList[i].Enable = config.Get().API.Custom.Enable
+
+		default:
+			log.Printf("Unrecognized API provider %s, ignoring", provider)
+		}
+	}
+
+	// use first enabled api that works (based on priority list)
+	for _, api := range apiList {
+		var meta interface{}
+		switch api.Provider {
+		case weather.APIAviationWeather:
+			meta = ""
+		case weather.APICheckWX:
+			meta = config.Get().API.CheckWX.Key
+		case weather.APICustom:
+			meta = config.Get().API.Custom.File
+		}
+
+		if api.Enable {
+			data, err = weather.GetWeather(icao, api.Provider, meta)
+
+			if err == nil {
+				break
+			} else {
+				log.Printf("Error getting weather from %s: %v", api.Provider, err)
+			}
+		}
+
+	}
+
 	if err != nil {
-		log.Printf("Error getting weather, using default: %v\n", err)
+		log.Println("Error getting weather, using default")
 		data = weather.DefaultWeather
 	}
 
-	if debugCheckWx {
-		log.Println("Overriding weather with custom data from file...")
-		b, err := os.ReadFile("checkwx.json")
-		if err != nil {
-			log.Printf("Could not read custom override weather, no overrides applied")
-			return data
-		}
+	// override with custom weather if enabled
+	overrideWx(icao, &data)
 
-		var minify bytes.Buffer
-		if err := json.Compact(&minify, b); err == nil {
-			log.Println("Read weather data: ", minify.String())
-		} else {
-			log.Println("Couldn't minify custom weather data:", err)
-		}
-
-		err = json.Unmarshal(b, &data)
-		if err != nil {
-			log.Fatalf("Could not parse checkwx.json: %v", err)
-		}
-		log.Println("Parsed weather data")
-
-		if err := weather.ValidateWeather(&data); err != nil {
-			log.Fatalf("Error validating weather data: %v", err)
-		}
-
-		if err := os.Remove(".rwbot"); err == nil {
-			log.Println("Removing custom weather set by bot")
-			os.Remove("checkwx.json")
-		}
+	if err := weather.ValidateWeather(&data); err != nil {
+		log.Printf("Error validating weather: %v", err)
 	}
 
 	return data
+}
+
+// overrideWx handles overriding weather if enabled
+func overrideWx(icao string, data *weather.WeatherData) {
+	if !config.Get().API.Custom.Enable || !config.Get().API.Custom.Override {
+		return
+	}
+
+	log.Println("Overriding weather with custom data from file...")
+
+	meta := config.Get().API.Custom.File
+
+	temp, err := weather.GetWeather(icao, weather.APICustom, meta)
+	if err != nil {
+		log.Printf("Unable to get custom weather: %v", err)
+		return
+	}
+
+	marshalled, err := json.Marshal(temp)
+	if err != nil {
+		log.Printf("Unable to marshal custom weather: %v", err)
+		return
+	}
+
+	if err := json.Unmarshal(marshalled, data); err != nil {
+		log.Printf("Unable to unmarshal overrides: %v", err)
+		return
+	}
+
+	log.Println("Weather overrides applied")
 }

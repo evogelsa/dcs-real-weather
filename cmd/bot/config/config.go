@@ -21,7 +21,7 @@ type Configuration struct {
 	} `json:"instances"`
 }
 
-//go:embed config.json
+//go:embed botconfig.json
 var defaultConfig string
 
 const configName = "botconfig.json"

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -61,7 +60,7 @@ const (
 )
 `
 
-var re = regexp.MustCompile(`v(?P<Major>\d+)\.(?P<Minor>\d+)\.(?P<Patch>\d+)-?(?P<Pre>(?:alpha)|(?:beta)|(?:rc\d*))?-?(?P<CommitNum>\d*)?.*(?:-g(?P<Commit>\w*))?`)
+var re = regexp.MustCompile(`v(?P<Major>\d+)\.(?P<Minor>\d+)\.(?P<Patch>\d+)-?(?P<Pre>(?:alpha)|(?:beta)|(?:rc\d*))?-?(?P<CommitNum>\d*)\+?(?:(?P<Commit>\w*))?`)
 
 func main() {
 	if !(len(os.Args) > 1) {
@@ -98,7 +97,6 @@ func main() {
 	if len(os.Args) > 2 {
 		versionInfoOut = filepath.Join(os.Args[2], versionInfoOut)
 		metaOut = filepath.Join(os.Args[2], metaOut)
-		iconPath = path.Join(os.Args[2], iconPath)
 		versionOut = filepath.Join(os.Args[2], versionOut)
 	}
 
