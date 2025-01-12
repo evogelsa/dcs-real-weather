@@ -82,8 +82,8 @@ be found here][5] if you want to learn more.
         * This specifies where Real Weather will insert the METAR into your
         brief (if enabled). This key should exist in your mission brief, and the
         following line is where the METAR will be placed. It is important that
-        the key is valid when used in a PCRE. You can verify this by typing your
-        key into a website like [regex101](https://regex101.com/)
+        the key is valid when used in a golang regex. You can verify this by
+        typing your key into a website like [regex101](https://regex101.com/)
       * `realweather.mission.brief.remarks`: string
         * This will add a remarks section to your METAR. There is no functional
         impact of this, and it is purely for you to customize your METAR with
