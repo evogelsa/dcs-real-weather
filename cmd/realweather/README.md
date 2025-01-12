@@ -237,9 +237,6 @@ be found here][5] if you want to learn more.
       * `options.weather.clouds.enable`: boolean
         * Enables or disables updating the clouds (and the precipitation) of the
         mission.
-      * `options.weather.clouds.fallback-to-legacy`: boolean
-        * If this is true, Real Weather will use the legacy weather (no preset)
-          when a suitable weather preset is not found.
       * `options.weather.clouds.base`: table
         * This section defines options for cloud bases.
           * `options.weather.clouds.base.minimum`: number
@@ -256,9 +253,9 @@ be found here][5] if you want to learn more.
         * `options.weather.clouds.presets.default`: string
           * This option defines the default cloud preset to use. This is used
           when no preset that matches the METAR cloud conditions is found and
-          `fallback-to-legacy` is also false. This can be set to any one of the
-          presets in the [preset table](#preset-table), or it can also be set to
-          an empty string `""` to default to clear weather.
+          `options.weather.clouds.custom.enable` is also false. This can be set
+          to any one of the presets in the [preset table](#preset-table), or it
+          can also be set to an empty string `""` to default to clear weather.
         * `options.weather.clouds.presets.disallowed`: string array
           * This option defines a list of any presets that you want to be
           prohibited. Any preset in this list will not be a viable option for
@@ -266,6 +263,19 @@ be found here][5] if you want to learn more.
           presets. Any preset in the [preset table](#preset-table) can be
           contained in this list, or there can be no presets if you want all
           presets to be an option.
+      * `options.weather.clouds.custom`: table
+        * `options.weather.clouds.custom.enable`: boolean
+          * If this is true, Real Weather will use custom weather (no preset)
+            when a suitable weather preset is not found.
+        * `options.weather.clouds.custom.allow-precipitation`: boolean
+          * If this is true, when using custom weather, Real Weather will be
+            allowed to add precipitation if its in the METAR.
+        * `options.weather.clouds.custom.density-minimum`: number
+          * This is the minimum cloud density Real Weather will use when making
+            custom clouds. This must be at least 0 and less than the maximum.
+        * `options.weather.clouds.custom.density-maximum`: number
+          * This is the maximum cloud density Real Weather will use when making
+            custom clouds. This must be at most 10 and greater than the minimum.
     * `options.weather.fog`: table
       * This section defines fog specific weather settings.
       * `options.weather.fog.enable`: boolean
