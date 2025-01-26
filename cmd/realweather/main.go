@@ -7,13 +7,15 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"log"
 	"math/rand"
 	"os"
 	"path/filepath"
 	"runtime"
 
+	"go.uber.org/zap/zapcore"
+
 	"github.com/evogelsa/DCS-real-weather/config"
+	"github.com/evogelsa/DCS-real-weather/logger"
 	"github.com/evogelsa/DCS-real-weather/miz"
 	"github.com/evogelsa/DCS-real-weather/versioninfo"
 	"github.com/evogelsa/DCS-real-weather/weather"
@@ -70,23 +72,6 @@ func init() {
 }
 
 func init() {
-	// log version
-	var ver string
-
-	ver += fmt.Sprintf("v%d.%d.%d", versioninfo.Major, versioninfo.Minor, versioninfo.Patch)
-	if versioninfo.Pre != "" {
-		ver += fmt.Sprintf("-%s-%d", versioninfo.Pre, versioninfo.CommitNum)
-	}
-
-	if versioninfo.Commit != "" {
-		ver += "+" + versioninfo.Commit
-	}
-
-	defer log.Println("Using Real Weather " + ver)
-	if version {
-		os.Exit(0)
-	}
-
 	// if .rwbot file exists, then override custom provider for this run only
 	// .rwbot files will be cleaned up (deleted) after using custom data
 	// provider
@@ -106,6 +91,53 @@ func init() {
 
 	config.Init(configName, overrides)
 
+	var logfile string
+	if config.Get().RealWeather.Log.Enable {
+		logfile = config.Get().RealWeather.Log.File
+	}
+
+	var level zapcore.Level
+	switch config.Get().RealWeather.Log.Level {
+	case "debug":
+		level = zapcore.DebugLevel
+	case "info":
+		level = zapcore.InfoLevel
+	case "warn":
+		level = zapcore.WarnLevel
+	case "error":
+		level = zapcore.ErrorLevel
+	default:
+		level = zapcore.InfoLevel
+	}
+
+	logger.Init(
+		logfile,
+		config.Get().RealWeather.Log.MaxSize,
+		config.Get().RealWeather.Log.MaxBackups,
+		config.Get().RealWeather.Log.MaxAge,
+		config.Get().RealWeather.Log.Compress,
+		level,
+	)
+
+	// log version
+	var ver string
+
+	ver += fmt.Sprintf("v%d.%d.%d", versioninfo.Major, versioninfo.Minor, versioninfo.Patch)
+	if versioninfo.Pre != "" {
+		ver += fmt.Sprintf("-%s-%d", versioninfo.Pre, versioninfo.CommitNum)
+	}
+
+	if versioninfo.Commit != "" {
+		ver += "+" + versioninfo.Commit
+	}
+
+	defer logger.Infof("using real weather %s", ver)
+	if version {
+		os.Exit(0)
+	}
+
+	config.Validate()
+
 	if validate {
 		os.Exit(0)
 	}
@@ -119,12 +151,10 @@ func main() {
 			_, fn, line, ok := runtime.Caller(4)
 			if ok {
 				base := filepath.Base(fn)
-				ext := filepath.Ext(fn)
-				trim := base[:len(base)-len(ext)]
-				e := fmt.Sprintf("%s:%d", trim, line)
-				log.Printf("Unexpected error encountered: %s %v", e, r)
+				e := fmt.Sprintf("%s:%d", base, line)
+				logger.Fatalf("unexpected error encountered: %s %v", e, r)
 			} else {
-				log.Printf("Unexpected error encountered: %v", r)
+				logger.Fatalf("unexpected error encountered: %v", r)
 			}
 		}
 	}()
@@ -133,47 +163,48 @@ func main() {
 
 	// confirm there is data before updating
 	if data.NumResults <= 0 {
-		log.Fatalf("Incorrect weather data. No weather applied to mission file.")
+		logger.Fatalf("no weather data received")
 	}
 
 	// get winds aloft
 	var windsAloft weather.WindsAloft
 	windsAloft, err = weather.GetWindsAloft(data.Data[0].Station.Geometry.Coordinates)
 	if err != nil {
-		log.Printf("Error getting winds aloft, using legacy winds aloft: %v", err)
+		logger.Errorf("error getting winds aloft: %v", err)
 		config.Set("open-meteo", false)
+		logger.Warnln("continuing with legacy winds")
 	}
 
 	// unzip mission file
 	_, err = miz.Unzip()
 	if err != nil {
-		log.Fatalf("Error unzipping mission file: %v\n", err)
+		logger.Fatalf("error unpacking mission file: %v\n", err)
 	}
 
 	// update mission file with weather data
 	if err = miz.UpdateMission(&data, windsAloft); err != nil {
-		log.Printf("Error updating mission: %v\n", err)
+		logger.Errorf("error updating mission: %v\n", err)
 	}
 
 	// generate the METAR text
 	var metar string
 	if metar, err = weather.GenerateMETAR(data, config.Get().RealWeather.Mission.Brief.Remarks); err == nil {
 		// make metar last thing to be print
-		defer log.Println("METAR: " + metar)
+		defer logger.Infof("METAR: %s", metar)
 	} else {
-		log.Printf("Error creating DCS METAR: %v", err)
+		logger.Errorf("error creating METAR: %v", err)
 	}
 
 	// add METAR to mission brief if enabled
 	if config.Get().RealWeather.Mission.Brief.AddMETAR {
 		if err = miz.UpdateBrief(metar); err != nil {
-			log.Printf("Error adding METAR to brief: %v", err)
+			logger.Errorf("error adding METAR to brief: %v", err)
 		}
 	}
 
 	// repack mission file contents and form realweather.miz output
 	if err := miz.Zip(); err != nil {
-		log.Fatalf("Error repacking mission file: %v", err)
+		logger.Fatalf("error repacking mission file: %v", err)
 	}
 
 	// remove unpacked contents from directory
@@ -192,8 +223,9 @@ func getWx() weather.WeatherData {
 		icao = config.Get().Options.Weather.ICAOList[rand.Intn(len(config.Get().Options.Weather.ICAOList))]
 	} else {
 		// Should never reach this code if config validation is working properly
-		log.Println("ICAO config validation error, using DGAA. Please report this as a bug :-)")
-		icao = "DGAA"
+		logger.Errorf("icao config validation failed, please report this as a bug :-)")
+		icao = "UGKO"
+		logger.Warnln("icao defaulted to UGKO")
 	}
 
 	// construct usable api priority list from config
@@ -216,7 +248,7 @@ func getWx() weather.WeatherData {
 			apiList[i].Enable = config.Get().API.Custom.Enable
 
 		default:
-			log.Printf("Unrecognized API provider %s, ignoring", provider)
+			logger.Warnln("ignoring unrecognized provider \"%s\"", provider)
 		}
 	}
 
@@ -238,22 +270,23 @@ func getWx() weather.WeatherData {
 			if err == nil {
 				break
 			} else {
-				log.Printf("Error getting weather from %s: %v", api.Provider, err)
+				logger.Errorf("error getting weather from %s: %v", api.Provider, err)
 			}
 		}
 
 	}
 
 	if err != nil {
-		log.Println("Error getting weather, using default")
+		logger.Errorf("could not get any weather data") // don't reprint error
 		data = weather.DefaultWeather
+		logger.Warnln("using default weather")
 	}
 
 	// override with custom weather if enabled
 	overrideWx(icao, &data)
 
 	if err := weather.ValidateWeather(&data); err != nil {
-		log.Printf("Error validating weather: %v", err)
+		logger.Errorf("error validating weather: %v", err)
 	}
 
 	return data
@@ -265,26 +298,26 @@ func overrideWx(icao string, data *weather.WeatherData) {
 		return
 	}
 
-	log.Println("Overriding weather with custom data from file...")
+	logger.Infoln("overriding weather with custom data from file...")
 
 	meta := config.Get().API.Custom.File
 
 	temp, err := weather.GetWeather(icao, weather.APICustom, meta)
 	if err != nil {
-		log.Printf("Unable to get custom weather: %v", err)
+		logger.Errorf("unable to get custom weather: %v", err)
 		return
 	}
 
 	marshalled, err := json.Marshal(temp)
 	if err != nil {
-		log.Printf("Unable to marshal custom weather: %v", err)
+		logger.Errorf("unable to marshal custom weather: %v", err)
 		return
 	}
 
 	if err := json.Unmarshal(marshalled, data); err != nil {
-		log.Printf("Unable to unmarshal overrides: %v", err)
+		logger.Errorf("unable to unmarshal overrides: %v", err)
 		return
 	}
 
-	log.Println("Weather overrides applied")
+	logger.Infoln("weather overrides applied")
 }

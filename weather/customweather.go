@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
+
+	"github.com/evogelsa/DCS-real-weather/logger"
 )
 
 func getWeatherCustom(filename string) (WeatherData, error) {
@@ -13,24 +14,24 @@ func getWeatherCustom(filename string) (WeatherData, error) {
 
 	b, err := os.ReadFile(filename)
 	if err != nil {
-		return data, fmt.Errorf("Unable to read custom weather: %v", err)
+		return data, fmt.Errorf("unable to read custom weather: %v", err)
 	}
 
 	var minify bytes.Buffer
 	if err := json.Compact(&minify, b); err == nil {
-		log.Printf("Read weather data: %s", minify.String())
+		logger.Infoln("read weather data: %s", minify.String())
 	} else {
-		log.Printf("Couldn't minify custom weather data: %v", err)
+		logger.Infoln("couldn't minify custom weather data: %v", err)
 	}
 
 	if err := json.Unmarshal(b, &data); err != nil {
-		return data, fmt.Errorf("Could not parse custom weather: %v", err)
+		return data, fmt.Errorf("could not parse custom weather: %v", err)
 	}
-	log.Println("Parsed custom weather data")
+	logger.Infoln("parsed custom weather data")
 
 	// if custom weather is provided by rw bot, then remove after done
 	if err := os.Remove(".rwbot"); err == nil {
-		log.Println("Removing custom weather set by bot")
+		logger.Infoln("removing custom weather set by bot")
 		os.Remove(filename)
 	}
 

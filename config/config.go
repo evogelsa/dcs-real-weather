@@ -4,7 +4,6 @@ import (
 	_ "embed"
 	"errors"
 	"fmt"
-	"io"
 	"io/fs"
 	"log"
 	"os"
@@ -14,6 +13,7 @@ import (
 
 	"github.com/pelletier/go-toml/v2"
 
+	"github.com/evogelsa/DCS-real-weather/logger"
 	"github.com/evogelsa/DCS-real-weather/util"
 	"github.com/evogelsa/DCS-real-weather/weather"
 )
@@ -31,8 +31,13 @@ type Configuration struct {
 			} `toml:"brief"`
 		} `toml:"mission"`
 		Log struct {
-			Enable bool   `toml:"enable"`
-			File   string `toml:"file"`
+			Enable     bool   `toml:"enable"`
+			File       string `toml:"file"`
+			MaxSize    int    `toml:"max-size"`
+			MaxBackups int    `toml:"max-backups"`
+			MaxAge     int    `toml:"max-age"`
+			Compress   bool   `toml:"compress"`
+			Level      string `toml:"level"`
 		} `toml:"log"`
 	} `toml:"realweather"`
 	API struct {
@@ -138,23 +143,24 @@ var defaultConfig string
 func Init(configName string, overrides Overrideable) {
 	err := toml.Unmarshal([]byte(defaultConfig), &config)
 	if err != nil {
-		log.Fatalf("Unable to read default config")
+		log.Fatalf("unable to read default config")
 	}
-
-	log.Printf("Reading %s", configName)
 
 	file, err := os.Open(configName)
 	if err != nil {
 		// if config.toml does not exist, create it and exit
 		if errors.Is(err, fs.ErrNotExist) {
-			log.Println("Config does not exist, creating one...")
+			log.Println("config does not exist, creating one...")
 			err := os.WriteFile(configName, []byte(defaultConfig), 0666)
 			if err != nil {
-				log.Fatalf("Unable to create %s: %v", configName, err)
+				log.Fatalf("unable to create %s: %v", configName, err)
 			}
-			log.Fatalf("Default config created. Please configure with your desired settings, then rerun.")
+			log.Println("default config created")
+			log.Println("please configure with your desired settings then rerun real weather")
+			log.Println("see https://github.com/evogelsa/dcs-real-weather for more information")
+			os.Exit(0)
 		} else {
-			log.Fatalf("Error opening %s: %v\n", configName, err)
+			log.Fatalf("error opening %s: %v", configName, err)
 		}
 	}
 
@@ -162,23 +168,7 @@ func Init(configName string, overrides Overrideable) {
 	decoder := toml.NewDecoder(file)
 	err = decoder.Decode(&config)
 	if err != nil {
-		log.Fatalf("Error decoding %s: %v\n", configName, err)
-	}
-
-	if config.RealWeather.Log.Enable {
-		f, err := os.OpenFile(
-			config.RealWeather.Log.File,
-			os.O_WRONLY|os.O_CREATE|os.O_APPEND,
-			0644,
-		)
-		if err != nil {
-			log.Printf("Error opening log file %s: %v\n", config.RealWeather.Log.File, err)
-		}
-		// defer f.Close()
-
-		mw := io.MultiWriter(os.Stdout, f)
-
-		log.SetOutput(mw)
+		log.Fatalf("error decoding %s: %v", configName, err)
 	}
 
 	// apply overrides
@@ -201,11 +191,6 @@ func Init(configName string, overrides Overrideable) {
 	if overrides.OptionsWeatherICAO != "" {
 		config.Options.Weather.ICAO = overrides.OptionsWeatherICAO
 	}
-
-	// enforce configuration parameters
-	log.Println("Validating configuration")
-	checkParams()
-	log.Println("Configuration validated")
 }
 
 func Get() Configuration {
@@ -224,13 +209,14 @@ func Set(param string, value interface{}) error {
 		v := value.(string)
 		config.RealWeather.Mission.Output = v
 	default:
-		return fmt.Errorf("Unsupported parameter")
+		return fmt.Errorf("unsupported parameter")
 	}
 	return nil
 }
 
-// checkParams calls the config checking functions
-func checkParams() {
+// Validate calls the config checking functions
+func Validate() {
+	logger.Infoln("validating configuration")
 	checkRealWeather()
 	checkAPI()
 	checkOptionsTime()
@@ -239,25 +225,58 @@ func checkParams() {
 	checkOptionsClouds()
 	checkOptionsFog()
 	checkOptionsDust()
+	logger.Infoln("configuration validated")
 }
 
 // checkRealWeather validates the realweather section of the config
 func checkRealWeather() {
 	var fatal bool
+
 	if config.RealWeather.Mission.Input == "" {
-		log.Println("No input mission configured, one must be supplied")
+		logger.Errorln("no input mission configured")
 		fatal = true
 	}
+
 	if config.RealWeather.Mission.Output == "" {
-		log.Println("No output mission configured, one must be supplied")
+		logger.Errorln("no output mission configured")
 		fatal = true
 	}
+
 	if _, err := regexp.Compile(config.RealWeather.Mission.Brief.InsertKey); err != nil {
-		log.Printf("Brief insert key must be valid when used in a PCRE regular expression: %v", err)
+		logger.Errorf("brief insert key must be a valid go regexp: %v", err)
 		fatal = true
 	}
+
+	if config.RealWeather.Log.MaxSize < 0 {
+		logger.Errorf("log max size is <0")
+		config.RealWeather.Log.MaxSize = 0
+		logger.Warnln("log max size defaulted to 0 (disabled)")
+	}
+
+	if config.RealWeather.Log.MaxBackups < 0 {
+		logger.Errorf("log max backups is <0")
+		config.RealWeather.Log.MaxBackups = 0
+		logger.Warnln("log max backups defaulted to 0 (disabled)")
+	}
+
+	if config.RealWeather.Log.MaxAge < 0 {
+		logger.Errorf("log max age is <0")
+		config.RealWeather.Log.MaxAge = 0
+		logger.Warnln("log max age defaulted to 0 (disabled)")
+	}
+
+	if config.RealWeather.Log.Level != "debug" &&
+		config.RealWeather.Log.Level != "info" &&
+		config.RealWeather.Log.Level != "warn" &&
+		config.RealWeather.Log.Level != "error" {
+		// log level validation happens before logger.Init is called, just show
+		// the error here (so we can use the logger)
+		logger.Errorf("log level \"%s\" is unrecognized", config.RealWeather.Log.Level)
+		logger.Warnln("log level defaulted to \"info\"")
+	}
+
 	if fatal {
-		log.Fatalln("Irrecoverable errors found in config, please correct these and try again.")
+		logger.Fatalln("irrecoverable errors found in config")
 	}
 }
 
@@ -265,16 +284,18 @@ func checkRealWeather() {
 func checkAPI() {
 	// if checkwx is enabled, validate that a key is present
 	if config.API.CheckWX.Enable && config.API.CheckWX.Key == "" {
-		log.Println("API key for CheckWX is missing. CheckWX will be disabled")
+		logger.Errorln("checkwx enabled but missing api key")
 		config.API.CheckWX.Enable = false
+		logger.Warnln("checkwx disabled")
 	}
 
 	// validate at least one provider is enabled
 	if !config.API.AviationWeather.Enable &&
 		!config.API.CheckWX.Enable &&
 		!config.API.Custom.Enable {
-		log.Println("All providers are disabled, aviationweather will be enabled by default")
+		logger.Errorln("all providers are disabled")
 		config.API.AviationWeather.Enable = true
+		logger.Warnln("aviationweather enabled by default")
 	}
 
 	// verify providers are valid
@@ -285,15 +306,16 @@ func checkAPI() {
 	}
 	for _, provider := range config.API.ProviderPriority {
 		if !slices.Contains(knownProviders, weather.API(provider)) {
-			log.Printf("Provider %s is not a recognized API; it will be ignored", provider)
+			logger.Warnf("provider \"%s\" not recognized: ignored", provider)
 		}
 	}
 
 	// ensure each provider is in priority list
 	for _, provider := range knownProviders {
 		if !slices.Contains(config.API.ProviderPriority, string(provider)) {
-			log.Printf("Provider %s missing from priority list, adding to end", provider)
+			logger.Errorf("provider \"%s\" missing from priority list", provider)
 			config.API.ProviderPriority = append(config.API.ProviderPriority, string(provider))
+			logger.Warnf("provider \"%s\" added to end of priority list", provider)
 		}
 	}
 }
@@ -302,13 +324,13 @@ func checkAPI() {
 func checkOptionsTime() {
 	_, err := time.ParseDuration(config.Options.Time.Offset)
 	if err != nil {
-		log.Printf(
-			"Could not parse time offset of %s: %v",
+		logger.Errorf(
+			"could not parse time offset \"%s\": %v",
 			config.Options.Time.Offset,
 			err,
 		)
-		log.Println("Time offset will default to zero")
 		config.Options.Time.Offset = "0"
+		logger.Warnln("time offset defaulted to \"0\"")
 	}
 }
 
@@ -316,13 +338,13 @@ func checkOptionsTime() {
 func checkOptionsDate() {
 	_, err := util.ParseDateDuration(config.Options.Date.Offset)
 	if err != nil {
-		log.Printf(
-			"Could not parse date offset of %s: %v",
+		logger.Errorf(
+			"could not parse date offset \"%s\": %v",
 			config.Options.Date.Offset,
 			err,
 		)
-		log.Println("Date offset will default to zero")
 		config.Options.Date.Offset = "0"
+		logger.Warnln("date offset defaulted to \"0\"")
 	}
 }
 
@@ -332,85 +354,93 @@ func checkOptionsWeather() {
 	re := regexp.MustCompile("^[A-Z]{4}$")
 	for i, icao := range config.Options.Weather.ICAOList {
 		if !re.MatchString(icao) {
-			log.Printf("ICAO %s in ICAO list is not a valid ICAO and will not be used", icao)
+			logger.Errorf("\"%s\" is not a valid airport code", icao)
 			config.Options.Weather.ICAOList = slices.Delete(
 				config.Options.Weather.ICAOList,
 				i,
 				i+1,
 			)
+			logger.Warnln("ignoring \"%s\" in icao-list")
 		}
 	}
 
 	if config.Options.Weather.ICAO != "" {
 		if !re.MatchString(config.Options.Weather.ICAO) {
-			log.Printf("ICAO %s is not a valid ICAO and will not be used", config.Options.Weather.ICAO)
+			logger.Errorf("\"%s\" is not a valid airport code", config.Options.Weather.ICAO)
 			config.Options.Weather.ICAO = ""
 		}
 	}
 
 	// validate an option for ICAO exists
 	if config.Options.Weather.ICAO == "" && len(config.Options.Weather.ICAOList) == 0 {
-		log.Println("ICAO or ICAO list must be supplied, defaulting to ICAO to UGKO")
+		logger.Errorln("icao or icao-list must be supplied")
 		config.Options.Weather.ICAO = "UGKO"
+		logger.Warnln("using UGKO as icao by default")
 	} else if config.Options.Weather.ICAO != "" && len(config.Options.Weather.ICAOList) > 0 {
-		log.Println("ICAO and ICAO list cannot be used at the same time, only ICAO will be used")
+		logger.Warnln("icao and icao-list cannot be used simultaneously (only icao will be used)")
 	}
 }
 
 // checkOptionsWind validates wind options in the config
 func checkOptionsWind() {
 	if config.Options.Weather.Wind.Minimum < 0 {
-		log.Println("Wind minimum is set below min of 0; defaulting to 0")
+		logger.Errorf("wind minimum %f is below 0", config.Options.Weather.Wind.Minimum)
 		config.Options.Weather.Wind.Minimum = 0
+		logger.Warnln("wind minimum defaulted to 0")
 	}
 
 	if config.Options.Weather.Wind.Maximum > 50 {
-		log.Println("Wind maximum is set above max of 50; defaulting to 50")
+		logger.Errorf("wind maximum %f is above 50", config.Options.Weather.Wind.Maximum)
 		config.Options.Weather.Wind.Maximum = 50
+		logger.Warnln("wind maximum defaulted to 50")
 	}
 
 	if config.Options.Weather.Wind.Minimum > config.Options.Weather.Wind.Maximum {
-		log.Println("Wind minimum is set above wind maximum; defaulting to 0 and 50")
+		logger.Errorf("wind minimum %f is greater than wind maximum %f", config.Options.Weather.Wind.Minimum, config.Options.Weather.Wind.Maximum)
 		config.Options.Weather.Wind.Minimum = 50
 		config.Options.Weather.Wind.Maximum = 0
+		logger.Warnln("wind minimum defaulted to 0")
+		logger.Warnln("wind maximum defaulted to 50")
 	}
 
 	if config.Options.Weather.Wind.GustMinimum < 0 {
-		log.Println("Gust minimum is set below min of 0; defaulting to 0")
+		logger.Errorf("gust minimum %f is below 0", config.Options.Weather.Wind.GustMinimum)
 		config.Options.Weather.Wind.GustMinimum = 0
+		logger.Warnln("gust minimum defaulted to 0")
 	}
 
 	if config.Options.Weather.Wind.GustMaximum > 50 {
-		log.Println("Gust maximum is set above max of 50; defaulting to 50")
+		logger.Errorf("gust maximum %f is above 50")
 		config.Options.Weather.Wind.GustMaximum = 50
+		logger.Warnln("gust maximum defaulted to 50")
 	}
 
 	if config.Options.Weather.Wind.GustMinimum > config.Options.Weather.Wind.GustMaximum {
-		log.Println("Gust minimum is set above gust maximum; defaulting to 0 and 50")
-		config.Options.Weather.Wind.Maximum = 50
+		logger.Errorf("gust minimum %f is greater than gust maximum %f", config.Options.Weather.Wind.GustMinimum, config.Options.Weather.Wind.GustMaximum)
 		config.Options.Weather.Wind.Minimum = 0
+		logger.Warnln("gust minimum defaulted to 0")
+		logger.Warnln("gust maximum defaulted to 50")
 	}
 
 	if config.Options.Weather.Wind.Stability <= 0 {
-		log.Printf(
-			"Parsed stability of %0.3f from config file, but stability must be greater than 0.\n",
-			config.Options.Weather.Wind.Stability,
-		)
-		log.Println("Stability will default to neutral stability of 0.143.")
+		logger.Errorf("stability %f must be >0", config.Options.Weather.Wind.Stability)
 		config.Options.Weather.Wind.Stability = 0.143
+		logger.Warnln("stability defaulted to 0.143")
 	}
 }
 
 // checkOptionsClouds validates cloud options in the config
 func checkOptionsClouds() {
 	if config.Options.Weather.Clouds.Base.Minimum < 0 {
-		log.Printf("Minimum cloud base must be >=0; it will default to 0")
+		logger.Errorf("minimum cloud base %f must be >=0", config.Options.Weather.Clouds.Base.Minimum)
 		config.Options.Weather.Clouds.Base.Minimum = 0
+		logger.Warnln("minimum cloud base defaulted to 0")
 	}
 
 	if config.Options.Weather.Clouds.Base.Maximum > 15000 {
-		log.Printf("Maximum cloud base must be <=15000; it will default to 15000")
+		logger.Errorf("maximum cloud base %f must be <=15000", config.Options.Weather.Clouds.Base.Maximum)
 		config.Options.Weather.Clouds.Base.Maximum = 15000
+		logger.Warnln("maximum cloud base defaulted to 15000")
 	}
 
 	var presetFound bool
@@ -440,25 +470,20 @@ func checkOptionsClouds() {
 	}
 
 	if !presetFound {
-		log.Printf(
-			"Default preset %s is not a valid preset. Using clear instead",
+		logger.Errorf(
+			"default preset \"%s\" is not a valid preset",
 			config.Options.Weather.Clouds.Presets.Default,
 		)
 		config.Options.Weather.Clouds.Presets.Default = ""
+		logger.Warnln("default preset defaulted to clear")
 	}
 
 	// check that default preset min/max base falls within config min/max
 	if config.Options.Weather.Clouds.Base.Minimum > float64(presetMaxBase) {
-		log.Print(
-			"The configured default preset has a max base lower than the configured min base." +
-				" This value may be ignored if the default preset is used.",
-		)
+		logger.Warnln("configured min base is higher than default preset's max base and may be ignored")
 	}
 	if config.Options.Weather.Clouds.Base.Maximum < float64(presetMinBase) {
-		log.Print(
-			"The configured default preset has a min base lower than the configured max base." +
-				" This value may be ignored if the default preset is used.",
-		)
+		logger.Warnln("configured max base is lower than default preset's min base and may be ignored")
 	}
 
 	for _, preset := range config.Options.Weather.Clouds.Presets.Disallowed {
@@ -470,10 +495,8 @@ func checkOptionsClouds() {
 			}
 		}
 		if !presetFound {
-			log.Printf(
-				"Preset %s in disallowed list is not a valid preset; it'll be ignored",
-				preset,
-			)
+			logger.Errorf("disallowed preset \"%s\" is not a valid preset", preset)
+			logger.Warnln("ignoring disallowed preset \"%s\"", preset)
 		}
 	}
 
@@ -482,8 +505,9 @@ func checkOptionsClouds() {
 		0,
 		config.Options.Weather.Clouds.Custom.DensityMaximum,
 	) {
-		log.Println("Cloud density minimum is not between 0 and cloud density maximum; defaulting to 0")
+		logger.Errorf("cloud density minimum %f is not between 0 and cloud density maximum", config.Options.Weather.Clouds.Custom.DensityMinimum)
 		config.Options.Weather.Clouds.Custom.DensityMinimum = 0
+		logger.Warnln("cloud density minimum defaulted to 0")
 	}
 
 	if !util.Between(
@@ -491,8 +515,9 @@ func checkOptionsClouds() {
 		config.Options.Weather.Clouds.Custom.DensityMinimum,
 		10,
 	) {
-		log.Println("Cloud density maximum is not between 10 and cloud density minimum; defaulting to 10")
+		logger.Errorf("cloud density maximum %f is not between 10 and cloud density minimum", config.Options.Weather.Clouds.Custom.DensityMaximum)
 		config.Options.Weather.Clouds.Custom.DensityMaximum = 10
+		logger.Warnln("cloud density maximum defaulted to 10")
 	}
 }
 
@@ -501,58 +526,71 @@ func checkOptionsFog() {
 	if config.Options.Weather.Fog.Mode != string(weather.FogAuto) &&
 		config.Options.Weather.Fog.Mode != string(weather.FogManual) &&
 		config.Options.Weather.Fog.Mode != string(weather.FogLegacy) {
-		log.Println("Fog mode unrecognized (expecting \"auto\", \"manual\", or \"legacy\"); defaulting to auto")
+		logger.Errorf("fog mode \"%s\" unrecognized (expecting \"auto\", \"manual\", or \"legacy\")", config.Options.Weather.Fog.Mode)
 		config.Options.Weather.Fog.Mode = string(weather.FogAuto)
-	}
-
-	if config.Options.Weather.Fog.ThicknessMaximum > 1000 {
-		log.Println("Fog maximum thickness is set above max of 1000; defaulting to 1000")
-		config.Options.Weather.Fog.ThicknessMaximum = 1000
+		logger.Warnln("fog mode defaulted to auto")
 	}
 
 	if config.Options.Weather.Fog.ThicknessMinimum < 0 {
-		log.Println("Fog minimum thickness is set below min of 0; defaulting to 0")
+		logger.Errorf("fog minimum thickness %f is <0", config.Options.Weather.Fog.ThicknessMinimum)
 		config.Options.Weather.Fog.ThicknessMinimum = 0
+		logger.Warnln("fog minimum thickness defaulted to 0")
+	}
+
+	if config.Options.Weather.Fog.ThicknessMaximum > 1000 {
+		logger.Errorf("fog maximum thickness %f is >1000", config.Options.Weather.Fog.ThicknessMaximum)
+		config.Options.Weather.Fog.ThicknessMaximum = 1000
+		logger.Warnln("fog maxmimum thickness defaulted to 1000")
 	}
 
 	if config.Options.Weather.Fog.ThicknessMinimum > config.Options.Weather.Fog.ThicknessMaximum {
-		log.Println("Fog minimum thickness is set above fog maximum thickness; defaulting to 0 and 1000")
+		logger.Errorf("fog minimum thickness is greater than fog maximum thickness")
 		config.Options.Weather.Fog.ThicknessMaximum = 1000
 		config.Options.Weather.Fog.ThicknessMinimum = 0
-	}
-
-	if config.Options.Weather.Fog.VisibilityMaximum > 6000 {
-		log.Println("Fog maximum visibility is set above max of 6000; defaulting to 6000")
-		config.Options.Weather.Fog.VisibilityMaximum = 6000
+		logger.Warnln("fog minimum thickness defaulted to 0")
+		logger.Warnln("fog maxmimum thickness defaulted to 1000")
 	}
 
 	if config.Options.Weather.Fog.VisibilityMinimum < 0 {
-		log.Println("Fog minimum visibility is set below min of 0; defaulting to 0")
+		logger.Errorf("fog minimum visibility %f is <0", config.Options.Weather.Fog.VisibilityMinimum)
 		config.Options.Weather.Fog.VisibilityMinimum = 0
+		logger.Warnln("fog minimum visibility defaulted to 0")
+	}
+
+	if config.Options.Weather.Fog.VisibilityMaximum > 6000 {
+		logger.Errorf("fog maximum visibility %f is >6000", config.Options.Weather.Fog.VisibilityMaximum)
+		config.Options.Weather.Fog.VisibilityMaximum = 6000
+		logger.Warnln("fog maximum visibility defaulted to 6000")
 	}
 
 	if config.Options.Weather.Fog.VisibilityMinimum > config.Options.Weather.Fog.VisibilityMaximum {
-		log.Println("Fog minimum visibility is set above fog maximum visibility; defaulting to 0 and 6000")
+		logger.Errorf("fog minimum visibility is greater than fog maximum visibility")
 		config.Options.Weather.Fog.VisibilityMaximum = 6000
 		config.Options.Weather.Fog.VisibilityMinimum = 0
+		logger.Warnln("fog minimum visibility defaulted to 0")
+		logger.Warnln("fog maximum visibility defaulted to 6000")
 	}
 }
 
 // checkOptionsDust enforces dust configuration options
 func checkOptionsDust() {
 	if config.Options.Weather.Dust.VisibilityMinimum < 300 {
-		log.Println("Dust visibility minimum is set below min of 300; defaulting to 300")
+		logger.Errorf("dust visibility minimum %f is <300", config.Options.Weather.Dust.VisibilityMinimum)
 		config.Options.Weather.Dust.VisibilityMinimum = 300
+		logger.Warnln("dust visibility minimum defaulted to 300")
 	}
 
 	if config.Options.Weather.Dust.VisibilityMaximum > 3000 {
-		log.Println("Dust visibility maximum is set above max of 3000; defaulting to 3000")
+		logger.Errorf("dust visibility maximum %f is >3000", config.Options.Weather.Dust.VisibilityMaximum)
 		config.Options.Weather.Dust.VisibilityMaximum = 3000
+		logger.Warnln("dust visibility maximum defaulted to 3000")
 	}
 
 	if config.Options.Weather.Dust.VisibilityMinimum > config.Options.Weather.Fog.VisibilityMaximum {
-		log.Println("Dust minimum visibility is set above dust maximum visibility; defaulting to 300 and 3000")
+		logger.Errorf("dust minimum visibility is greater than dust maximum visibility")
 		config.Options.Weather.Dust.VisibilityMaximum = 3000
 		config.Options.Weather.Dust.VisibilityMinimum = 300
+		logger.Warnln("dust visibility minimum defaulted to 300")
+		logger.Warnln("dust visibility maximum defaulted to 3000")
 	}
 }

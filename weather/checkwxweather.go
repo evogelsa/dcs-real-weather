@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"time"
+
+	"github.com/evogelsa/DCS-real-weather/logger"
 )
 
 type WeatherData struct {
@@ -90,7 +91,7 @@ type Wind struct {
 }
 
 func getWeatherCheckWX(icao, apiKey string) (WeatherData, error) {
-	log.Println("Getting weather from CheckWX...")
+	logger.Infoln("getting weather from CheckWX...")
 
 	// create http client to fetch weather data, timeout after 5 sec
 	timeout := time.Duration(5 * time.Second)
@@ -110,7 +111,7 @@ func getWeatherCheckWX(icao, apiKey string) (WeatherData, error) {
 	resp, err := client.Do(request)
 	if err != nil {
 		return WeatherData{}, fmt.Errorf(
-			"Error making request to CheckWX: %v",
+			"error making request to CheckWX: %v",
 			err,
 		)
 	}
@@ -125,13 +126,13 @@ func getWeatherCheckWX(icao, apiKey string) (WeatherData, error) {
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return WeatherData{}, fmt.Errorf(
-			"Error parsing CheckWX response: %v",
+			"error parsing CheckWX response: %v",
 			err,
 		)
 	}
 
-	log.Println("Got weather data:", string(body))
-	log.Println("Parsing weather...")
+	logger.Infoln("got weather data:", string(body))
+	logger.Infoln("parsing weather...")
 
 	// format json resposne into weatherdata struct
 	var res WeatherData
@@ -140,7 +141,7 @@ func getWeatherCheckWX(icao, apiKey string) (WeatherData, error) {
 		return WeatherData{}, err
 	}
 
-	log.Println("Parsed weather")
+	logger.Infoln("parsed weather")
 
 	return res, nil
 }

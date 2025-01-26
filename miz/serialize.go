@@ -3,10 +3,11 @@ package miz
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"strings"
 
 	lua "github.com/yuin/gopher-lua"
+
+	"github.com/evogelsa/DCS-real-weather/logger"
 )
 
 func serializeTable(tbl *lua.LTable, indentLevel uint) string {
@@ -27,7 +28,7 @@ func serializeTable(tbl *lua.LTable, indentLevel uint) string {
 		case lua.LTNumber:
 			buf.WriteString(fmt.Sprintf("[%v] = ", lua.LVAsNumber(key)))
 		default:
-			log.Printf("Error serializing mission: unsupported key %v with type %s", key, key.Type().String())
+			logger.Errorf("error serializing mission: unsupported key %v with type %s", key, key.Type().String())
 		}
 
 		// serialize value
@@ -46,7 +47,7 @@ func serializeTable(tbl *lua.LTable, indentLevel uint) string {
 			// recursively serialize any tables
 			buf.WriteString(serializeTable(value.(*lua.LTable), indentLevel+1))
 		default:
-			log.Printf("Error serializing mission: unsupported value %v with type %s", value, value.Type().String())
+			logger.Errorf("error serializing mission: unsupported value %v with type %s", value, value.Type().String())
 		}
 
 		buf.WriteString(",\n")
