@@ -4,7 +4,7 @@ package versioninfo
 
 const (
 	Major = 2
-	Minor = 0
+	Minor = 1
 	Patch = 0
 	CommitNum = 0
 	Commit = ""
