@@ -417,7 +417,8 @@ func checkOptionsWind() {
 
 	if config.Options.Weather.Wind.GustMinimum > config.Options.Weather.Wind.GustMaximum {
 		logger.Errorf("gust minimum %f is greater than gust maximum %f", config.Options.Weather.Wind.GustMinimum, config.Options.Weather.Wind.GustMaximum)
-		config.Options.Weather.Wind.Minimum = 0
+		config.Options.Weather.Wind.GustMinimum = 0
+		config.Options.Weather.Wind.GustMaximum = 50
 		logger.Warnln("gust minimum defaulted to 0")
 		logger.Warnln("gust maximum defaulted to 50")
 	}
