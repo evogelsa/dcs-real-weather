@@ -16,11 +16,9 @@ type WeatherData struct {
 
 type Data struct {
 	Barometer      *Barometer   `json:"barometer,omitempty"`
-	Ceiling        *Ceiling     `json:"ceiling,omitempty"`
 	Clouds         []Clouds     `json:"clouds,omitempty"`
 	Conditions     []Conditions `json:"conditions,omitempty"`
 	Dewpoint       *Dewpoint    `json:"dewpoint,omitempty"`
-	Elevation      *Elevation   `json:"elevation,omitempty"`
 	FlightCategory string       `json:"flight_category,omitempty"`
 	ICAO           string       `json:"icao,omitempty"`
 	ID             string       `json:"id,omitempty"`
@@ -37,15 +35,6 @@ type Barometer struct {
 	// HPa float64 `json:"hpa,omitempty"`
 	// KPa float64 `json:"kpa,omitempty"`
 	// MB  float64 `json:"mb,omitempty"`
-}
-
-type Ceiling struct {
-	// BaseFeetAGL   float64 `json:"base_feet_agl,omitempty"`
-	// BaseMetersAGL float64 `json:"base_meters_agl,omitempty"`
-	Code string `json:"code,omitempty"`
-	// Feet   float64 `json:"feet,omitempty"`
-	Meters float64 `json:"meters,omitempty"`
-	// Text   string  `json:"text,omitempty"`
 }
 
 type Clouds struct {
@@ -65,11 +54,6 @@ type Conditions struct {
 type Dewpoint struct {
 	Celsius float64 `json:"celsius,omitempty"`
 	// Fahrenheit float64 `json:"fahrenheit,omitempty"`
-}
-
-type Elevation struct {
-	// Feet   float64 `json:"feet,omitempty"`
-	Meters float64 `json:"meters,omitempty"`
 }
 
 type Station struct {

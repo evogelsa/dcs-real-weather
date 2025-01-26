@@ -393,29 +393,11 @@ func ValidateWeather(data *WeatherData) error {
 		}
 	}
 
-	if data.Data[0].Ceiling == nil {
-		log.Println("No ceiling data, defaulting to clear")
-		data.Data[0].Ceiling = &Ceiling{
-			Code: "CLR",
-			// Feet:   0,
-			Meters: 0,
-			// Text:   "Clear",
-		}
-	}
-
 	if data.Data[0].Dewpoint == nil {
 		log.Println("No dewpoint data, defaulting to 0 Celsius")
 		data.Data[0].Dewpoint = &Dewpoint{
 			Celsius: 0,
 			// Fahrenheit: 32,
-		}
-	}
-
-	if data.Data[0].Elevation == nil {
-		log.Println("No elevation data, defaulting to 0 meters")
-		data.Data[0].Elevation = &Elevation{
-			// Feet:   0,
-			Meters: 0,
 		}
 	}
 
