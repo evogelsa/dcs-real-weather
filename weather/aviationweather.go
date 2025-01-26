@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"math/rand"
 	"net/http"
 	"slices"
@@ -12,6 +11,8 @@ import (
 	"time"
 
 	"github.com/goccy/go-yaml"
+
+	"github.com/evogelsa/DCS-real-weather/logger"
 )
 
 type aviationWeatherData struct {
@@ -35,7 +36,7 @@ type aviationWeatherClouds struct {
 }
 
 func getWeatherAviationWeather(icao string) (WeatherData, error) {
-	log.Println("Getting weather from Aviation Weather...")
+	logger.Infoln("getting weather from aviation weather...")
 
 	// create http client to fetch weather data, timeout after 5 sec
 	timeout := time.Duration(5 * time.Second)
@@ -54,14 +55,14 @@ func getWeatherAviationWeather(icao string) (WeatherData, error) {
 	resp, err := client.Do(request)
 	if err != nil {
 		return WeatherData{}, fmt.Errorf(
-			"Error making request to Aviation Weather: %v",
+			"error making request to Aviation Weather: %v",
 			err,
 		)
 	}
 
 	// verify response OK
 	if resp.StatusCode != http.StatusOK {
-		return WeatherData{}, fmt.Errorf("Aviation Weather bad status: %v", resp.Status)
+		return WeatherData{}, fmt.Errorf("aviation weather bad status: %v", resp.Status)
 	}
 	defer resp.Body.Close()
 
@@ -69,13 +70,13 @@ func getWeatherAviationWeather(icao string) (WeatherData, error) {
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return WeatherData{}, fmt.Errorf(
-			"Error parsing Aviation Weather response: %v",
+			"error parsing aviation weather response: %v",
 			err,
 		)
 	}
 
-	log.Println("Got weather data:", string(body))
-	log.Println("Parsing weather...")
+	logger.Infoln("got weather data:", string(body))
+	logger.Infoln("parsing weather...")
 
 	// format json response into weatherdata struct
 	var intermediate []aviationWeatherData
@@ -86,7 +87,7 @@ func getWeatherAviationWeather(icao string) (WeatherData, error) {
 
 	if len(intermediate) < 1 {
 		return WeatherData{}, fmt.Errorf(
-			"Aviation Weather returned no results for ICAO %s",
+			"aviation weather returned no results for icao \"%s\"",
 			icao,
 		)
 	}
@@ -124,7 +125,7 @@ func convertAviationWeather(data []aviationWeatherData) WeatherData {
 
 	convertTime(&res, data)
 
-	log.Println("Parsed weather")
+	logger.Infoln("parsed weather")
 
 	return res
 }
@@ -154,7 +155,7 @@ func convertWind(out *WeatherData, data []aviationWeatherData) {
 		if err := json.Unmarshal([]byte(*data[0].WindDir), &v); err == nil {
 			out.Data[0].Wind.Degrees = v
 		} else {
-			log.Println("Converting variable winds to random direction")
+			logger.Infoln("converting variable winds to random direction")
 			out.Data[0].Wind.Degrees = float64(rand.Intn(36) * 10)
 		}
 	}
@@ -182,8 +183,9 @@ func convertVisibility(out *WeatherData, data []aviationWeatherData) {
 			if n == 1 && err == nil {
 				out.Data[0].Visibility.MetersFloat = float64(vis) * MilesToMeters
 			} else {
-				log.Printf("Failed to parse visibility from Aviation Weather: %v", err)
+				logger.Errorf("failed to parse visibility from aviation weather: %v", err)
 				out.Data[0].Visibility.MetersFloat = 9000
+				logger.Warnln("defaulting visibility to 9000 meters")
 			}
 		}
 	}

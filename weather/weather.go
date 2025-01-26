@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"math"
 	"net/http"
 	"time"
+
+	"github.com/evogelsa/DCS-real-weather/logger"
 )
 
 type CloudPreset struct {
@@ -284,7 +285,7 @@ func QNHToQFF(qnh, elevation, temperature, latitude float64) float64 {
 }
 
 func GetWindsAloft(location []float64) (WindsAloft, error) {
-	log.Println("Getting winds aloft data from Open Meteo...")
+	logger.Infoln("getting winds aloft data from open meteo...")
 
 	// create http client to fetch weather data, timeout after 5 sec
 	timeout := time.Duration(5 * time.Second)
@@ -316,17 +317,17 @@ func GetWindsAloft(location []float64) (WindsAloft, error) {
 
 	// verify response
 	if resp.StatusCode != http.StatusOK {
-		return WindsAloft{}, fmt.Errorf("Open Meteo bad status: %v", resp.Status)
+		return WindsAloft{}, fmt.Errorf("open meteo bad status: %v", resp.Status)
 	}
 
 	// parse response
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return WindsAloft{}, fmt.Errorf("Error parsing Open Meteo response: %v", err)
+		return WindsAloft{}, fmt.Errorf("error parsing open meteo response: %v", err)
 	}
 
-	log.Println("Got winds aloft data")
-	log.Println("Parsing winds aloft data...")
+	logger.Infoln("got winds aloft data")
+	logger.Infoln("parsing winds aloft data...")
 
 	// format response into winds aloft struct
 	var res OpenMeteoData
@@ -355,7 +356,7 @@ func GetWindsAloft(location []float64) (WindsAloft, error) {
 		WindDirection7200: res.Hourly.WindDirection7200[i],
 	}
 
-	log.Printf("Parsed winds aloft data: %v", data)
+	logger.Infoln("parsed winds aloft data: %v", data)
 
 	return data, nil
 }
@@ -371,7 +372,7 @@ func GetWeather(icao string, api API, meta interface{}) (WeatherData, error) {
 	case APICustom:
 		return getWeatherCustom(meta.(string))
 	default:
-		return WeatherData{}, fmt.Errorf("Invalid API provider")
+		return WeatherData{}, fmt.Errorf("invalid API provider")
 	}
 }
 
@@ -384,43 +385,25 @@ func ValidateWeather(data *WeatherData) error {
 		return fmt.Errorf("no data to check")
 	}
 
-	log.Println("Validating weather data...")
+	logger.Infoln("validating weather data...")
 
 	if data.Data[0].Barometer == nil {
-		log.Println("No barometer data, defaulting to 760 mmHg")
+		logger.Warnln("no barometer data, defaulting to 760 mmHg")
 		data.Data[0].Barometer = &Barometer{
 			Hg: 29.92,
 		}
 	}
 
-	if data.Data[0].Ceiling == nil {
-		log.Println("No ceiling data, defaulting to clear")
-		data.Data[0].Ceiling = &Ceiling{
-			Code: "CLR",
-			// Feet:   0,
-			Meters: 0,
-			// Text:   "Clear",
-		}
-	}
-
 	if data.Data[0].Dewpoint == nil {
-		log.Println("No dewpoint data, defaulting to 0 Celsius")
+		logger.Warnln("no dewpoint data, defaulting to 0 Celsius")
 		data.Data[0].Dewpoint = &Dewpoint{
 			Celsius: 0,
 			// Fahrenheit: 32,
 		}
 	}
 
-	if data.Data[0].Elevation == nil {
-		log.Println("No elevation data, defaulting to 0 meters")
-		data.Data[0].Elevation = &Elevation{
-			// Feet:   0,
-			Meters: 0,
-		}
-	}
-
 	if data.Data[0].Temperature == nil {
-		log.Println("No temperature data, defaulting to 15 Celsius")
+		logger.Warnln("no temperature data, defaulting to 15 Celsius")
 		data.Data[0].Temperature = &Temperature{
 			Celsius: 15,
 			// Fahrenheit: 59,
@@ -428,7 +411,7 @@ func ValidateWeather(data *WeatherData) error {
 	}
 
 	if data.Data[0].Visibility == nil {
-		log.Println("No visibility data, defaulting to 10+ SM")
+		logger.Warnln("no visibility data, defaulting to 10+ SM")
 		data.Data[0].Visibility = &Visibility{
 			// Miles:       "Greater than 10 miles",
 			// MilesFloat:  10,
@@ -438,7 +421,7 @@ func ValidateWeather(data *WeatherData) error {
 	}
 
 	if data.Data[0].Wind == nil {
-		log.Println("No wind data, defaulting to calm")
+		logger.Warnln("no wind data, defaulting to calm")
 		data.Data[0].Wind = &Wind{
 			Degrees:  0,
 			SpeedMPS: 0,
@@ -447,7 +430,7 @@ func ValidateWeather(data *WeatherData) error {
 	}
 
 	if data.Data[0].Station == nil {
-		log.Println("No station data, defaulting to (0, 0)")
+		logger.Warnln("no station data, defaulting to (0, 0)")
 		data.Data[0].Station = &Station{
 			Geometry: &Geometry{
 				Coordinates: []float64{0, 0},
@@ -456,12 +439,12 @@ func ValidateWeather(data *WeatherData) error {
 	}
 
 	if len(data.Data[0].Observed) < 10 {
-		log.Println("Observation data may be missing date, defaulting to today's date")
+		logger.Warnln("observation data may be missing date, defaulting to today's date")
 		t := time.Now()
 		data.Data[0].Observed = t.Format("2006-01-02T15:04:05")
 	}
 
-	log.Println("Weather data validated successfully")
+	logger.Infoln("weather data validated successfully")
 
 	return nil
 }
@@ -486,7 +469,7 @@ func GenerateMETAR(wx WeatherData, rmk string) (string, error) {
 	if err != nil {
 		t, err = time.Parse("2006-01-02T15:04:05Z", data.Observed)
 		if err != nil {
-			return "", fmt.Errorf("Error parsing METAR time: %v", err)
+			return "", fmt.Errorf("error parsing METAR time: %v", err)
 		}
 	}
 	// want format DDHHMMZ

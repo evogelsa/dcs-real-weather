@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"time"
+
+	"github.com/evogelsa/DCS-real-weather/logger"
 )
 
 type WeatherData struct {
@@ -16,11 +17,9 @@ type WeatherData struct {
 
 type Data struct {
 	Barometer      *Barometer   `json:"barometer,omitempty"`
-	Ceiling        *Ceiling     `json:"ceiling,omitempty"`
 	Clouds         []Clouds     `json:"clouds,omitempty"`
 	Conditions     []Conditions `json:"conditions,omitempty"`
 	Dewpoint       *Dewpoint    `json:"dewpoint,omitempty"`
-	Elevation      *Elevation   `json:"elevation,omitempty"`
 	FlightCategory string       `json:"flight_category,omitempty"`
 	ICAO           string       `json:"icao,omitempty"`
 	ID             string       `json:"id,omitempty"`
@@ -37,15 +36,6 @@ type Barometer struct {
 	// HPa float64 `json:"hpa,omitempty"`
 	// KPa float64 `json:"kpa,omitempty"`
 	// MB  float64 `json:"mb,omitempty"`
-}
-
-type Ceiling struct {
-	// BaseFeetAGL   float64 `json:"base_feet_agl,omitempty"`
-	// BaseMetersAGL float64 `json:"base_meters_agl,omitempty"`
-	Code string `json:"code,omitempty"`
-	// Feet   float64 `json:"feet,omitempty"`
-	Meters float64 `json:"meters,omitempty"`
-	// Text   string  `json:"text,omitempty"`
 }
 
 type Clouds struct {
@@ -65,11 +55,6 @@ type Conditions struct {
 type Dewpoint struct {
 	Celsius float64 `json:"celsius,omitempty"`
 	// Fahrenheit float64 `json:"fahrenheit,omitempty"`
-}
-
-type Elevation struct {
-	// Feet   float64 `json:"feet,omitempty"`
-	Meters float64 `json:"meters,omitempty"`
 }
 
 type Station struct {
@@ -106,7 +91,7 @@ type Wind struct {
 }
 
 func getWeatherCheckWX(icao, apiKey string) (WeatherData, error) {
-	log.Println("Getting weather from CheckWX...")
+	logger.Infoln("getting weather from CheckWX...")
 
 	// create http client to fetch weather data, timeout after 5 sec
 	timeout := time.Duration(5 * time.Second)
@@ -126,7 +111,7 @@ func getWeatherCheckWX(icao, apiKey string) (WeatherData, error) {
 	resp, err := client.Do(request)
 	if err != nil {
 		return WeatherData{}, fmt.Errorf(
-			"Error making request to CheckWX: %v",
+			"error making request to CheckWX: %v",
 			err,
 		)
 	}
@@ -141,13 +126,13 @@ func getWeatherCheckWX(icao, apiKey string) (WeatherData, error) {
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return WeatherData{}, fmt.Errorf(
-			"Error parsing CheckWX response: %v",
+			"error parsing CheckWX response: %v",
 			err,
 		)
 	}
 
-	log.Println("Got weather data:", string(body))
-	log.Println("Parsing weather...")
+	logger.Infoln("got weather data:", string(body))
+	logger.Infoln("parsing weather...")
 
 	// format json resposne into weatherdata struct
 	var res WeatherData
@@ -156,7 +141,7 @@ func getWeatherCheckWX(icao, apiKey string) (WeatherData, error) {
 		return WeatherData{}, err
 	}
 
-	log.Println("Parsed weather")
+	logger.Infoln("parsed weather")
 
 	return res, nil
 }
