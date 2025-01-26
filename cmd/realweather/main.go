@@ -131,7 +131,7 @@ func init() {
 		ver += "+" + versioninfo.Commit
 	}
 
-	defer logger.Infof("using real weather %s", ver)
+	logger.Infof("using real weather %s", ver)
 	if version {
 		os.Exit(0)
 	}
