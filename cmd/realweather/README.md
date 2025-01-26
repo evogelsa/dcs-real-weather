@@ -95,6 +95,22 @@ be found here][5] if you want to learn more.
       * Enables logging to a file. Real Weather will always log to the console.
     * `realweather.log.file`: string
       * Path of the file to write the log to
+    * `realweather.log.max-size`: integer
+      * Max size of log files in megabytes. Logs will be rolled when they become
+      larger than this. Set to 0 to disable rolling due to size.
+    * `realweather.log.max-backups`: integer
+      * Max number of log backups to keep. If rolling the current log would
+      exceed this value, the oldest log will be deleted. Set to 0 for unlimited
+      backups.
+    * `realweather.log.max-age`: integer
+      * Max age in days of log backups to keep. If logs are older than this
+      when Real Weather is run, they will be deleted. Set to 0 to disable
+      deleting logs due to age.
+    * `realweather.log.compress`: boolean
+      * Set to true to compress old logs and false to keep them uncompressed.
+    * `realweather.log.level`: string
+      * What log level to show. Must be either `"debug"`, `"info"`, `"warn"`, or
+      `"error"`.
 * `api`: table
   * The API section defines how Real Weather will get data to translate into
   your mission.
