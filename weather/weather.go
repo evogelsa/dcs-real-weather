@@ -356,7 +356,17 @@ func GetWindsAloft(location []float64) (WindsAloft, error) {
 		WindDirection7200: res.Hourly.WindDirection7200[i],
 	}
 
-	logger.Infoln("parsed winds aloft data: %v", data)
+	logger.Infow(
+		"parsed winds aloft:",
+		"1900-meters", map[string]interface{}{
+			"mps": res.Hourly.WindSpeed1900[i],
+			"dir": res.Hourly.WindDirection1900[i],
+		},
+		"7200-meters", map[string]interface{}{
+			"mps": res.Hourly.WindSpeed7200[i],
+			"dir": res.Hourly.WindDirection7200[i],
+		},
+	)
 
 	return data, nil
 }
