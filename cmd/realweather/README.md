@@ -435,7 +435,7 @@ conditions with the weather it creates for DCS. A perfect match is usually not
 possible for a few reasons, but mostly because DCS currently only allows control
 of the base cloud layer.
 
-The goal primary goal of Real Weather is to provide a means to have automated,
+The primary goal of Real Weather is to provide a means to have automated,
 dynamic weather in DCS, and the secondary goal is to match the METAR conditions
 as closely as possible. To accomplish the latter, Real Weather will prioritize
 matching the conditions which are determined to be most impactful. For example,
