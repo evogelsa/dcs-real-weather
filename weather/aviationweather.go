@@ -12,7 +12,7 @@ import (
 
 	"github.com/goccy/go-yaml"
 
-	"github.com/evogelsa/DCS-real-weather/logger"
+	"github.com/evogelsa/DCS-real-weather/v2/logger"
 )
 
 type aviationWeatherData struct {

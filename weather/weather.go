@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/evogelsa/DCS-real-weather/logger"
+	"github.com/evogelsa/DCS-real-weather/v2/logger"
 )
 
 type CloudPreset struct {

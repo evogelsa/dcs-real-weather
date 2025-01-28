@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/evogelsa/DCS-real-weather/logger"
+	"github.com/evogelsa/DCS-real-weather/v2/logger"
 )
 
 func getWeatherCustom(filename string) (WeatherData, error) {

@@ -7,8 +7,8 @@ import (
 
 	lua "github.com/yuin/gopher-lua"
 
-	"github.com/evogelsa/DCS-real-weather/config"
-	"github.com/evogelsa/DCS-real-weather/logger"
+	"github.com/evogelsa/DCS-real-weather/v2/config"
+	"github.com/evogelsa/DCS-real-weather/v2/logger"
 )
 
 // UpdateBrief updates the unpacked mission brief with the generated METAR

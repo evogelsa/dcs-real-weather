@@ -11,8 +11,8 @@ import (
 
 	dg "github.com/bwmarrin/discordgo"
 
-	"github.com/evogelsa/DCS-real-weather/cmd/bot/config"
-	"github.com/evogelsa/DCS-real-weather/weather"
+	"github.com/evogelsa/DCS-real-weather/v2/cmd/bot/config"
+	"github.com/evogelsa/DCS-real-weather/v2/weather"
 )
 
 var isICAO = regexp.MustCompile(`^[A-Z]{4}$`).MatchString
