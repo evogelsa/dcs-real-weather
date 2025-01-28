@@ -14,11 +14,11 @@ import (
 
 	"go.uber.org/zap/zapcore"
 
-	"github.com/evogelsa/DCS-real-weather/config"
-	"github.com/evogelsa/DCS-real-weather/logger"
-	"github.com/evogelsa/DCS-real-weather/miz"
-	"github.com/evogelsa/DCS-real-weather/versioninfo"
-	"github.com/evogelsa/DCS-real-weather/weather"
+	"github.com/evogelsa/dcs-real-weather/v2/config"
+	"github.com/evogelsa/dcs-real-weather/v2/logger"
+	"github.com/evogelsa/dcs-real-weather/v2/miz"
+	"github.com/evogelsa/dcs-real-weather/v2/versioninfo"
+	"github.com/evogelsa/dcs-real-weather/v2/weather"
 )
 
 // flag vars

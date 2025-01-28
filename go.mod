@@ -1,4 +1,4 @@
-module github.com/evogelsa/DCS-real-weather
+module github.com/evogelsa/dcs-real-weather/v2
 
 go 1.21.0
 

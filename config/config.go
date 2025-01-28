@@ -13,9 +13,9 @@ import (
 
 	"github.com/pelletier/go-toml/v2"
 
-	"github.com/evogelsa/DCS-real-weather/logger"
-	"github.com/evogelsa/DCS-real-weather/util"
-	"github.com/evogelsa/DCS-real-weather/weather"
+	"github.com/evogelsa/dcs-real-weather/v2/logger"
+	"github.com/evogelsa/dcs-real-weather/v2/util"
+	"github.com/evogelsa/dcs-real-weather/v2/weather"
 )
 
 // Configuration is the structure of config.json to be parsed
