@@ -7,7 +7,7 @@ import (
 
 	lua "github.com/yuin/gopher-lua"
 
-	"github.com/evogelsa/dcs-real-weather/v2/logger"
+	"github.com/evogelsa/DCS-real-weather/v2/logger"
 )
 
 func serializeTable(tbl *lua.LTable, indentLevel uint) string {

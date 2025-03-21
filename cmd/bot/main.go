@@ -8,8 +8,8 @@ import (
 
 	dg "github.com/bwmarrin/discordgo"
 
-	"github.com/evogelsa/DCS-real-weather/cmd/bot/config"
-	"github.com/evogelsa/DCS-real-weather/cmd/bot/handlers"
+	"github.com/evogelsa/DCS-real-weather/v2/cmd/bot/config"
+	"github.com/evogelsa/DCS-real-weather/v2/cmd/bot/handlers"
 )
 
 // bot config

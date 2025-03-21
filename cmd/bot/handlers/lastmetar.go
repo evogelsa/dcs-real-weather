@@ -8,7 +8,7 @@ import (
 
 	dg "github.com/bwmarrin/discordgo"
 
-	"github.com/evogelsa/DCS-real-weather/cmd/bot/config"
+	"github.com/evogelsa/DCS-real-weather/v2/cmd/bot/config"
 )
 
 var reMETAR = regexp.MustCompile(`^\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2} METAR: (?P<metar>.*)`)

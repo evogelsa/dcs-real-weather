@@ -41,7 +41,7 @@ maintained program, please see DCS SB resources for any related troubleshooting
 or questions.
 10) Enjoy automatic weather updates to your mission!
 
-[1]: https://github.com/evogelsa/DCS-real-weather/releases/latest
+[1]: https://github.com/evogelsa/dcs-real-weather/releases/latest
 [2]: https://github.com/evogelsa/dcs-real-weather/discussions
 [3]: https://discord.com/invite/mjr2SpFuqq
 [4]: https://github.com/Special-K-s-Flightsim-Bots/DCSServerBot

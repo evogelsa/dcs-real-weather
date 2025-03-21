@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/evogelsa/dcs-real-weather/v2/logger"
+	"github.com/evogelsa/DCS-real-weather/v2/logger"
 )
 
 type WeatherData struct {

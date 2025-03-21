@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/evogelsa/dcs-real-weather/v2/config"
-	"github.com/evogelsa/dcs-real-weather/v2/logger"
+	"github.com/evogelsa/DCS-real-weather/v2/config"
+	"github.com/evogelsa/DCS-real-weather/v2/logger"
 )
 
 // Unzip will decompress a zip archive, moving all files and folders

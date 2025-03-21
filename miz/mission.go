@@ -12,10 +12,10 @@ import (
 
 	lua "github.com/yuin/gopher-lua"
 
-	"github.com/evogelsa/dcs-real-weather/v2/config"
-	"github.com/evogelsa/dcs-real-weather/v2/logger"
-	"github.com/evogelsa/dcs-real-weather/v2/util"
-	"github.com/evogelsa/dcs-real-weather/v2/weather"
+	"github.com/evogelsa/DCS-real-weather/v2/config"
+	"github.com/evogelsa/DCS-real-weather/v2/logger"
+	"github.com/evogelsa/DCS-real-weather/v2/util"
+	"github.com/evogelsa/DCS-real-weather/v2/weather"
 )
 
 type precipitation int
