@@ -3,13 +3,13 @@
 	  "FileVersion": {
 		"Major": 2,
 		"Minor": 1,
-		"Patch": 0,
+		"Patch": 1,
 		"Build": 0
 	  },
 	  "ProductVersion": {
 		"Major": 2,
 		"Minor": 1,
-		"Patch": 0,
+		"Patch": 1,
 		"Build": 0
 	  }
 	},
@@ -17,12 +17,12 @@
 		"Comments": "",
 		"CompanyName": "github.com/evogelsa",
 		"FileDescription": "DCS Real Weather Updater",
-		"FileVersion": "2.1.0",
+		"FileVersion": "2.1.1",
 		"InternalName": "DCS Real Weather",
 		"LegalCopyright": "Copyright 2020 evogelsa",
 		"OriginalFilename": "realweather.exe",
 		"ProductName": "DCS Real Weather",
-		"ProductVersion": "2.1.0.0"
+		"ProductVersion": "2.1.1.0"
 	},
 	"VarFileInfo": {
 	  "Translation": {
