@@ -168,11 +168,13 @@ func main() {
 
 	// get winds aloft
 	var windsAloft weather.WindsAloft
-	windsAloft, err = weather.GetWindsAloft(data.Data[0].Station.Geometry.Coordinates)
-	if err != nil {
-		logger.Errorf("error getting winds aloft: %v", err)
-		config.Set("open-meteo", false)
-		logger.Warnln("continuing with legacy winds")
+	if config.Get().API.OpenMeteo.Enable {
+		windsAloft, err = weather.GetWindsAloft(data.Data[0].Station.Geometry.Coordinates)
+		if err != nil {
+			logger.Errorf("error getting winds aloft: %v", err)
+			config.Set("open-meteo", false)
+			logger.Warnln("continuing with legacy winds")
+		}
 	}
 
 	// unzip mission file
