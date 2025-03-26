@@ -138,7 +138,7 @@ func updateClouds(data *weather.WeatherData, l *lua.LState) error {
 
 	// set state in weather so it can be used for generating METAR
 	weather.SelectedPreset = preset
-	weather.SelectedBase = base
+	weather.SelectedBase = base - int(config.Get().Options.Weather.RunwayElevation+0.5)
 
 	// check clouds returns custom, use data to construct custom weather
 	if strings.Contains(preset, "CUSTOM") {

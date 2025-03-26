@@ -517,7 +517,7 @@ func GenerateMETAR(wx WeatherData, rmk string) (string, error) {
 		for i, cld := range clouds {
 			if i == 0 {
 				// convert base to hundreds of feet
-				base := int(float64(SelectedBase)*3.28+50) / 100
+				base := int(float64(SelectedBase)*MetersToFeet+50) / 100
 				metar += fmt.Sprintf("%s%03d ", cld.Name, base)
 			} else {
 				metar += fmt.Sprintf("%s%s ", cld.Name, cld.Base)
