@@ -65,6 +65,7 @@ const (
 const (
 	MPSToKT       = 1.944
 	KtToMPS       = 0.5144
+	MPSToEDUnits  = 10.0194
 	MetersToFeet  = 3.281
 	FeetToMeters  = 0.3048
 	HPaToInHg     = 0.02953

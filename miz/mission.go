@@ -524,6 +524,9 @@ func updateWind(data *weather.WeatherData, windsAloft weather.WindsAloft, l *lua
 	// update data out
 	data.Data[1].Wind.GustMPS = gust
 
+	// convert to ED gust units (whatever those are?)
+	gust *= weather.MPSToEDUnits
+
 	if err := l.DoString(
 		fmt.Sprintf("mission.weather.groundTurbulence = %0.4f\n", gust),
 	); err != nil {
