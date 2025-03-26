@@ -3,7 +3,7 @@
 [![Downloads](https://img.shields.io/github/downloads/evogelsa/dcs-real-weather/total?logo=GitHub)](https://github.com/evogelsa/dcs-real-weather/releases/latest)
 [![Latest Release](https://img.shields.io/github/v/release/evogelsa/dcs-real-weather?logo=GitHub)](https://github.com/evogelsa/dcs-real-weather/releases/latest)
 [![Discord](https://img.shields.io/discord/1148739727990722751?logo=Discord)](https://discord.com/invite/mjr2SpFuqq)
-[![Go Report Card](https://goreportcard.com/badge/github.com/evogelsa/dcs-real-weather)](https://goreportcard.com/report/github.com/evogelsa/dcs-real-weather)
+[![Go Report Card](https://goreportcard.com/badge/github.com/evogelsa/dcs-real-weather)](https://goreportcard.com/report/github.com/evogelsa/DCS-real-weather/v2)
 
 <img align="right" alt="Real Weather logo" src="docs/img/dcs_real_weather_icon.png" width="200">
 
