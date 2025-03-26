@@ -377,7 +377,8 @@ func checkOptionsWeather() {
 		config.Options.Weather.ICAO = "UGKO"
 		logger.Warnln("using UGKO as icao by default")
 	} else if config.Options.Weather.ICAO != "" && len(config.Options.Weather.ICAOList) > 0 {
-		logger.Warnln("icao and icao-list cannot be used simultaneously (only icao will be used)")
+		logger.Errorln("icao and icao-list cannot both be set")
+		logger.Warnln("using icao, ensure icao is set to \"\" if icao-list is desired")
 	}
 }
 
