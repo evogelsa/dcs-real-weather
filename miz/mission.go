@@ -498,17 +498,17 @@ func updateWind(data *weather.WeatherData, windsAloft weather.WindsAloft, l *lua
 
 	logger.Infow(
 		"winds:",
-		"8000-meters", map[string]interface{}{
+		"8000-meters", map[string]any{
 			"mps": speed8000,
 			"kt":  speed8000 * weather.MPSToKT,
 			"dir": (dir8000 + 180) % 360,
 		},
-		"2000-meters", map[string]interface{}{
+		"2000-meters", map[string]any{
 			"mps": speed2000,
 			"kt":  speed2000 * weather.MPSToKT,
 			"dir": (dir2000 + 180) % 360,
 		},
-		"ground", map[string]interface{}{
+		"ground", map[string]any{
 			"mps": speedGround,
 			"kt":  speedGround * weather.MPSToKT,
 			"dir": (dirGround + 180) % 360,
@@ -582,17 +582,17 @@ func updateWindLegacy(data *weather.WeatherData, l *lua.LState) error {
 
 	logger.Infow(
 		"winds:",
-		"8000-meters", map[string]interface{}{
+		"8000-meters", map[string]any{
 			"mps": speed8000,
 			"kt":  speed8000 * weather.MPSToKT,
 			"dir": (dir8000 + 180) % 360,
 		},
-		"2000-meters", map[string]interface{}{
+		"2000-meters", map[string]any{
 			"mps": speed2000,
 			"kt":  speed2000 * weather.MPSToKT,
 			"dir": (dir2000 + 180) % 360,
 		},
-		"ground", map[string]interface{}{
+		"ground", map[string]any{
 			"mps": speedGround,
 			"kt":  speedGround * weather.MPSToKT,
 			"dir": (dirGround + 180) % 360,

@@ -76,46 +76,46 @@ func Init(
 	}
 }
 
-func Debugf(template string, args ...interface{}) {
+func Debugf(template string, args ...any) {
 	log.Debugf(template, args...)
 }
 
-func Debugln(args ...interface{}) {
+func Debugln(args ...any) {
 	log.Debugln(args...)
 }
 
-func Infof(template string, args ...interface{}) {
+func Infof(template string, args ...any) {
 	log.Infof(template, args...)
 }
 
-func Infoln(args ...interface{}) {
+func Infoln(args ...any) {
 	log.Infoln(args...)
 }
 
-func Infow(msg string, keysAndValues ...interface{}) {
+func Infow(msg string, keysAndValues ...any) {
 	log.Infow(msg, keysAndValues...)
 }
 
-func Warnf(template string, args ...interface{}) {
+func Warnf(template string, args ...any) {
 	log.Warnf(template, args...)
 }
 
-func Warnln(args ...interface{}) {
+func Warnln(args ...any) {
 	log.Warnln(args...)
 }
 
-func Errorf(template string, args ...interface{}) {
+func Errorf(template string, args ...any) {
 	log.Errorf(template, args...)
 }
 
-func Errorln(args ...interface{}) {
+func Errorln(args ...any) {
 	log.Errorln(args...)
 }
 
-func Fatalf(template string, args ...interface{}) {
+func Fatalf(template string, args ...any) {
 	log.Fatalf(template, args...)
 }
 
-func Fatalln(args ...interface{}) {
+func Fatalln(args ...any) {
 	log.Fatalln(args...)
 }

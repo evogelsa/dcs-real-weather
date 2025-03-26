@@ -358,11 +358,11 @@ func GetWindsAloft(location []float64) (WindsAloft, error) {
 
 	logger.Infow(
 		"parsed winds aloft:",
-		"1900-meters", map[string]interface{}{
+		"1900-meters", map[string]any{
 			"mps": res.Hourly.WindSpeed1900[i],
 			"dir": res.Hourly.WindDirection1900[i],
 		},
-		"7200-meters", map[string]interface{}{
+		"7200-meters", map[string]any{
 			"mps": res.Hourly.WindSpeed7200[i],
 			"dir": res.Hourly.WindDirection7200[i],
 		},
@@ -373,7 +373,7 @@ func GetWindsAloft(location []float64) (WindsAloft, error) {
 
 // GetWeather calls the appropriate function to get weather from the desired
 // API.
-func GetWeather(icao string, api API, meta interface{}) (WeatherData, error) {
+func GetWeather(icao string, api API, meta any) (WeatherData, error) {
 	switch api {
 	case APIAviationWeather:
 		return getWeatherAviationWeather(icao)

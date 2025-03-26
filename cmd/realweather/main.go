@@ -256,7 +256,7 @@ func getWx() weather.WeatherData {
 
 	// use first enabled api that works (based on priority list)
 	for _, api := range apiList {
-		var meta interface{}
+		var meta any
 		switch api.Provider {
 		case weather.APIAviationWeather:
 			meta = ""

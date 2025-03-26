@@ -197,7 +197,7 @@ func Get() Configuration {
 	return config
 }
 
-func Set(param string, value interface{}) error {
+func Set(param string, value any) error {
 	switch param {
 	case "open-meteo":
 		v := value.(bool)
