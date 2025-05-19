@@ -75,10 +75,10 @@ type Temperature struct {
 }
 
 type Visibility struct {
-	// Meters      string  `json:"meters,omitempty"`
-	MetersFloat float64 `json:"meters_float,omitempty"`
-	// Miles       string  `json:"miles,omitempty"`
-	// MilesFloat  float64 `json:"miles_float,omitempty"`
+	// Meters      string  `json:"meters_text,omitempty"`
+	MetersFloat float64 `json:"meters,omitempty"`
+	// Miles       string  `json:"miles_text,omitempty"`
+	// MilesFloat  float64 `json:"miles,omitempty"`
 }
 
 type Wind struct {
