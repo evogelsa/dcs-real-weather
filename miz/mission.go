@@ -475,11 +475,25 @@ func updateWind(data *weather.WeatherData, windsAloft weather.WindsAloft, l *lua
 	// set speed to data out
 	data.Data[1].Wind.SpeedMPS = speedGround
 
-	// note DCS expects winds TO direction, but standard everywhere else is
-	// winds from direction, hence to +180 % 360
-	dirGround := int(data.Data[0].Wind.Degrees+180) % 360
-	dir2000 := (windsAloft.WindDirection1900 + 180) % 360
-	dir8000 := (windsAloft.WindDirection7200 + 180) % 360
+	dirGround := int(data.Data[0].Wind.Degrees)
+	dir2000 := windsAloft.WindDirection1900
+	dir8000 := windsAloft.WindDirection7200
+
+	// clamp wind directions to configured values
+	minDir := config.Get().Options.Weather.Wind.DirectionMinimum
+	maxDir := config.Get().Options.Weather.Wind.DirectionMaximum
+	dirGround = util.Clamp(dirGround, minDir, maxDir)
+	dir2000 = util.Clamp(dir2000, minDir, maxDir)
+	dir8000 = util.Clamp(dir8000, minDir, maxDir)
+
+	// DCS expects winds TO direction, but standard everywhere else is
+	// winds from direction. convert here with + 180 % 360
+	dirGround = (dirGround + 180) % 360
+	dir2000 = (dir2000 + 180) % 360
+	dir8000 = (dir8000 + 180) % 360
+
+	// set direction to data out
+	data.Data[1].Wind.Degrees = float64((dirGround + 180) % 360)
 
 	// apply to mission state
 	if err := l.DoString(
