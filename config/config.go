@@ -75,13 +75,15 @@ type Configuration struct {
 			ICAOList        []string `toml:"icao-list"`
 			RunwayElevation float64  `toml:"runway-elevation"`
 			Wind            struct {
-				Enable         bool    `toml:"enable"`
-				Minimum        float64 `toml:"minimum"`
-				Maximum        float64 `toml:"maximum"`
-				GustMinimum    float64 `toml:"gust-minimum"`
-				GustMaximum    float64 `toml:"gust-maximum"`
-				Stability      float64 `toml:"stability"`
-				FixedReference bool    `toml:"fixed-reference"`
+				Enable           bool    `toml:"enable"`
+				Minimum          float64 `toml:"minimum"`
+				Maximum          float64 `toml:"maximum"`
+				GustMinimum      float64 `toml:"gust-minimum"`
+				GustMaximum      float64 `toml:"gust-maximum"`
+				DirectionMinimum float64 `toml:"direction-minimum"`
+				DirectionMaximum float64 `toml:"direction-maximum"`
+				Stability        float64 `toml:"stability"`
+				FixedReference   bool    `toml:"fixed-reference"`
 			} `toml:"wind"`
 			Clouds struct {
 				Enable bool `toml:"enable"`
@@ -422,6 +424,26 @@ func checkOptionsWind() {
 		config.Options.Weather.Wind.GustMaximum = 50
 		logger.Warnln("gust minimum defaulted to 0")
 		logger.Warnln("gust maximum defaulted to 50")
+	}
+
+	if config.Options.Weather.Wind.DirectionMinimum < 0 {
+		logger.Errorf("wind direction minimum %f is below 0", config.Options.Weather.Wind.DirectionMinimum)
+		config.Options.Weather.Wind.DirectionMinimum = 0
+		logger.Warnln("wind direction minimum defaulted to 0")
+	}
+
+	if config.Options.Weather.Wind.DirectionMaximum > 359 {
+		logger.Errorf("wind direction maximum %f is above 359")
+		config.Options.Weather.Wind.DirectionMaximum = 359
+		logger.Warnln("wind direction maximum defaulted to 359")
+	}
+
+	if config.Options.Weather.Wind.DirectionMinimum > config.Options.Weather.Wind.DirectionMaximum {
+		logger.Errorf("wind direction minimum %f is greater than wind direction maximum %f", config.Options.Weather.Wind.DirectionMinimum, config.Options.Weather.Wind.DirectionMaximum)
+		config.Options.Weather.Wind.DirectionMinimum = 0
+		config.Options.Weather.Wind.DirectionMaximum = 359
+		logger.Warnln("wind direction minimum defaulted to 0")
+		logger.Warnln("wind direction maximum defaulted to 359")
 	}
 
 	if config.Options.Weather.Wind.Stability <= 0 {

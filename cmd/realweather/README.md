@@ -237,6 +237,14 @@ be found here][5] if you want to learn more.
         * This defines the maximum gust speed (also known as ground turbulence
         in the mission editor) in meters per second Real Weather will set. This
         must be at most 50.
+      * `options.weather.wind.direction-minimum`: number
+        * This defines the minimum direction the wind will come from in degrees.
+        If the wind is coming from a direction less than this it will be clamped
+        to the defined value.
+      * `options.weather.wind.direction-maximum`: number
+        * This defines the maximum direction the wind will come from in degrees.
+        If the wind is coming from a direction greater than this, it will be
+        clamped to the defined value.
       * `options.weather.wind.stability`: number
         * This is an advanced configuration option to set the simulated
         atmospheric stability for Real Weather. This value is used when

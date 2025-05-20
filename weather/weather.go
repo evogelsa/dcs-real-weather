@@ -504,7 +504,17 @@ func GenerateMETAR(wx WeatherData, rmk string) (string, error) {
 
 	// visibility
 	vis := data.Visibility.MetersFloat * MetersToMiles
-	metar += fmt.Sprintf("%dSM ", int(vis))
+	if vis > 10 {
+		metar += "10SM "
+	} else if vis <= 0.25 {
+		metar += "1/4SM "
+	} else if vis <= 0.5 {
+		metar += "1/2SM "
+	} else if vis <= 0.75 {
+		metar += "3/4SM "
+	} else {
+		metar += fmt.Sprintf("%dSM ", int(vis+0.5))
+	}
 
 	// conditions
 	for _, cond := range data.Conditions {
