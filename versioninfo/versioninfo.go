@@ -4,8 +4,8 @@ package versioninfo
 
 const (
 	Major = 2
-	Minor = 1
-	Patch = 1
+	Minor = 2
+	Patch = 0
 	CommitNum = 0
 	Commit = ""
 	Pre = ""
