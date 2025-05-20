@@ -431,7 +431,7 @@ func checkOptionsWind() {
 		config.Options.Weather.Wind.DirectionMinimum = 0
 		logger.Warnln("wind direction minimum defaulted to 0")
 	} else if config.Options.Weather.Wind.DirectionMinimum > 359 {
-		logger.Errorf("wind direction minimum %f is above 359")
+		logger.Errorf("wind direction minimum %f is above 359", config.Options.Weather.Wind.DirectionMinimum)
 		config.Options.Weather.Wind.DirectionMinimum = 359
 		logger.Warnln("wind direction minimum defaulted to 359")
 	}
@@ -441,7 +441,7 @@ func checkOptionsWind() {
 		config.Options.Weather.Wind.DirectionMaximum = 0
 		logger.Warnln("wind direction maximum defaulted to 0")
 	} else if config.Options.Weather.Wind.DirectionMaximum > 359 {
-		logger.Errorf("wind direction maximum %f is above 359")
+		logger.Errorf("wind direction maximum %f is above 359", config.Options.Weather.Wind.DirectionMaximum)
 		config.Options.Weather.Wind.DirectionMaximum = 359
 		logger.Warnln("wind direction maximum defaulted to 359")
 	}
