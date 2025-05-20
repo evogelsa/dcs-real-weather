@@ -129,11 +129,11 @@ runway-elevation = 160 # meters, used for adjusting cloud heights and wind calc
 [options.weather.wind]
 enable = true           # set to false to disable wind updates
 minimum = 0             # m/s minimum wind value to set (must be >= 0)
-maximum = 50            # m/m maximum wind value to set (must be <= 50)
+maximum = 50            # m/s maximum wind value to set (must be <= 50)
 gust-minimum = 0        # m/s minimum gust to set (must be >=0)
 gust-maximum = 50       # m/s maximum gust to set (must be <= 50)
-direction-minimum = 0   # degrees, direction wind comes from, >=0 and <= 359
-direction-maximum = 359 # degrees, direction wind comes from, >=0 and <= 359
+direction-minimum = 0   # degrees, min direction wind comes from, >=0 and <= 359
+direction-maximum = 359 # degrees, max direction wind comes from, >=0 and <= 359
 
 # advanced options, used for calculating winds aloft if api.openmeteo.enable is
 # set to false, otherwise these are unused.

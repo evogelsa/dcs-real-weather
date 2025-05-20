@@ -576,11 +576,22 @@ func updateWindLegacy(data *weather.WeatherData, l *lua.LState) error {
 
 	// apply wind shift to winds aloft layers
 	// this is not really realistic but it adds variety to wind calculation
-	// note DCS expects winds TO direction, but standard everywhere else is
-	// winds from direction, hence to +180 % 360
-	dirGround := int(data.Data[0].Wind.Degrees+180) % 360
-	dir2000 := (rand.Intn(45) + dirGround) % 360
-	dir8000 := (rand.Intn(45) + dir2000) % 360
+	dirGround := int(data.Data[0].Wind.Degrees)
+	dir2000 := rand.Intn(45) + dirGround
+	dir8000 := rand.Intn(45) + dir2000
+
+	// clamp wind directions to configured values
+	minDir := config.Get().Options.Weather.Wind.DirectionMinimum
+	maxDir := config.Get().Options.Weather.Wind.DirectionMaximum
+	dirGround = util.Clamp(dirGround, minDir, maxDir)
+	dir2000 = util.Clamp(dir2000, minDir, maxDir)
+	dir8000 = util.Clamp(dir8000, minDir, maxDir)
+
+	// DCS expects winds TO direction, but standard everywhere else is
+	// winds from direction. convert here with + 180 % 360
+	dirGround = (dirGround + 180) % 360
+	dir2000 = (dir2000 + 180) % 360
+	dir8000 = (dir8000 + 180) % 360
 
 	// apply to mission state
 	if err := l.DoString(

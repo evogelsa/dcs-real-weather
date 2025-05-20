@@ -430,20 +430,27 @@ func checkOptionsWind() {
 		logger.Errorf("wind direction minimum %f is below 0", config.Options.Weather.Wind.DirectionMinimum)
 		config.Options.Weather.Wind.DirectionMinimum = 0
 		logger.Warnln("wind direction minimum defaulted to 0")
+	} else if config.Options.Weather.Wind.DirectionMinimum > 359 {
+		logger.Errorf("wind direction minimum %f is above 359")
+		config.Options.Weather.Wind.DirectionMinimum = 359
+		logger.Warnln("wind direction minimum defaulted to 359")
 	}
 
-	if config.Options.Weather.Wind.DirectionMaximum > 359 {
+	if config.Options.Weather.Wind.DirectionMaximum < 0 {
+		logger.Errorf("wind direction maximum %f is below 0", config.Options.Weather.Wind.DirectionMaximum)
+		config.Options.Weather.Wind.DirectionMaximum = 0
+		logger.Warnln("wind direction maximum defaulted to 0")
+	} else if config.Options.Weather.Wind.DirectionMaximum > 359 {
 		logger.Errorf("wind direction maximum %f is above 359")
 		config.Options.Weather.Wind.DirectionMaximum = 359
 		logger.Warnln("wind direction maximum defaulted to 359")
 	}
 
+	// add 360 to minimum to cover case where its desired to have min/max
+	// crossing north, e.g. between 330 and 30, 330 is min and 30 is max
+	// so 30 must be 390 to work with clamping. this gets fixed when % 360 later
 	if config.Options.Weather.Wind.DirectionMinimum > config.Options.Weather.Wind.DirectionMaximum {
-		logger.Errorf("wind direction minimum %f is greater than wind direction maximum %f", config.Options.Weather.Wind.DirectionMinimum, config.Options.Weather.Wind.DirectionMaximum)
-		config.Options.Weather.Wind.DirectionMinimum = 0
-		config.Options.Weather.Wind.DirectionMaximum = 359
-		logger.Warnln("wind direction minimum defaulted to 0")
-		logger.Warnln("wind direction maximum defaulted to 359")
+		config.Options.Weather.Wind.DirectionMaximum += 360
 	}
 
 	if config.Options.Weather.Wind.Stability <= 0 {
