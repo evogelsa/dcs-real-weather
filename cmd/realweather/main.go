@@ -182,6 +182,8 @@ func main() {
 	if err != nil {
 		logger.Fatalf("error unpacking mission file: %v\n", err)
 	}
+	// remove unpacked contents when done
+	defer miz.Clean()
 
 	// update mission file with weather data
 	if err = miz.UpdateMission(&data, windsAloft); err != nil {
@@ -208,9 +210,6 @@ func main() {
 	if err := miz.Zip(); err != nil {
 		logger.Fatalf("error repacking mission file: %v", err)
 	}
-
-	// remove unpacked contents from directory
-	miz.Clean()
 }
 
 func getWx() weather.WeatherData {
