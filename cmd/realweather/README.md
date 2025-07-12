@@ -111,6 +111,13 @@ be found here][5] if you want to learn more.
     * `realweather.log.level`: string
       * What log level to show. Must be either `"debug"`, `"info"`, `"warn"`, or
       `"error"`.
+  * `realweather.other`: table
+    * This is a section for general settings regarding Real Weather's operation
+    * `realweather.other.clean-on-start`: boolean
+      * If true, Real Weather will try to clean up old temporary files from
+      previous runs. Warning: Enabling this will prevent you from recovering
+      previous missions that Real Weather was working on when it was interrupted
+      or killed.
 * `api`: table
   * The API section defines how Real Weather will get data to translate into
   your mission.
