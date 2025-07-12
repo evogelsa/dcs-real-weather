@@ -53,9 +53,10 @@ following information:
 - What did you do?
 - What did you expect to happen?
 - What actually happened?
-- Please upload any relevant files to the issue (e.g. your mission file, log
-file created by real weather, screenshots, etc. -- Do NOT upload your
-config.json unless you remove your API key first).
+- Please upload any relevant files to the issue. At minimum your mission file,
+log file created by real weather, and config are most useful. Be sure to remove
+any API keys from the config. Feel free to also include screenshots, video, etc
+if you feel it would be helpful.
 
 For feature requests, please layout your request with sufficient detail and
 take the time to explain why you believe your feature would improve the tool.
@@ -74,3 +75,26 @@ requests](#bug-reports-and-feature-requests) if you are opening a PR to fix a
 bug or add a new feature. Additionally if your changes are large in scope, it
 may be best to open an issue first to discuss what you plan to change prior to
 doing the work.
+
+Real Weather tries to follow common practices for Go development, so if you have
+some experience with Go, it should be straightforward to jump in. All code
+documentation is done in comments within each module. To build the project, see
+the different options inside the Makefile. There is some code generation
+necessary with `go generate ./...`, and the versioninfo module also contains a
+helper program to generate versioning information. The version number can be
+bumped with `go run versioninfo/generate/generate.go <version> <versioninfo
+path>`, for example: `go run versioninfo/generate/generate.go v1.2.3
+./versioninfo`.
+
+Feel free to reach out in the [Discord](https://discord.com/invite/mjr2SpFuqq)
+for additional help getting setup.
+
+### Sponsoring
+
+Financial contributions are never expected, so I do not offer any incentives for
+donating. However, if you choose to do so, please know that I greatly appreciate
+it. There are a couple options available via the sponsor buttons on the project
+page. Donations through GitHub directly are preferred as BMAC does take a small
+cut of your donation.
+
+![sponsor options](/docs/img/sponsor_options.png)
