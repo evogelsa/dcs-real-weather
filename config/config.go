@@ -39,6 +39,9 @@ type Configuration struct {
 			Compress   bool   `toml:"compress"`
 			Level      string `toml:"level"`
 		} `toml:"log"`
+		Other struct {
+			CleanOnStart bool `toml:"clean-on-start"`
+		} `toml:"other"`
 	} `toml:"realweather"`
 	API struct {
 		ProviderPriority []string `toml:"provider-priority"`

@@ -41,6 +41,10 @@ max-age = 30    # how many days to keep old log files
 compress = true # compress old log files?
 level = "info"  # log level, one of "debug", "info", "warn", or "error"
 
+# This section contains other general settings about how Real Weather operates
+[realweather.other]
+clean-on-start = false # attempt to clean lingering temp files before running?
+
 
 #
 # API Configuration

@@ -143,6 +143,13 @@ func init() {
 	}
 }
 
+func init() {
+	// Clean up old temporary files if clean-on-start is enabled
+	if config.Get().RealWeather.Other.CleanOnStart {
+		miz.Clean()
+	}
+}
+
 func main() {
 	var err error
 
