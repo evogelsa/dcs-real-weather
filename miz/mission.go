@@ -514,17 +514,17 @@ func updateWind(data *weather.WeatherData, windsAloft weather.WindsAloft, l *lua
 		"winds:",
 		"8000-meters", map[string]any{
 			"mps": speed8000,
-			"kt":  speed8000 * weather.MPSToKT,
+			"kt":  speed8000 * weather.MPSToKt,
 			"dir": (dir8000 + 180) % 360,
 		},
 		"2000-meters", map[string]any{
 			"mps": speed2000,
-			"kt":  speed2000 * weather.MPSToKT,
+			"kt":  speed2000 * weather.MPSToKt,
 			"dir": (dir2000 + 180) % 360,
 		},
 		"ground", map[string]any{
 			"mps": speedGround,
-			"kt":  speedGround * weather.MPSToKT,
+			"kt":  speedGround * weather.MPSToKt,
 			"dir": (dirGround + 180) % 360,
 		},
 	)
@@ -538,11 +538,9 @@ func updateWind(data *weather.WeatherData, windsAloft weather.WindsAloft, l *lua
 	// update data out
 	data.Data[1].Wind.GustMPS = gust
 
-	// convert to ED gust units (whatever those are?)
-	gust *= weather.MPSToEDUnits
-
 	if err := l.DoString(
-		fmt.Sprintf("mission.weather.groundTurbulence = %0.4f\n", gust),
+		// convert to ED gust units (whatever those are?)
+		fmt.Sprintf("mission.weather.groundTurbulence = %0.4f\n", gust*weather.MPSToEDUnits),
 	); err != nil {
 		return fmt.Errorf("error updating turbulence: %v", err)
 	}
@@ -550,7 +548,7 @@ func updateWind(data *weather.WeatherData, windsAloft weather.WindsAloft, l *lua
 	logger.Infow(
 		"gusts:",
 		"mps", gust,
-		"kt", gust*weather.MPSToKT,
+		"kt", gust*weather.MPSToKt,
 	)
 
 	return nil
@@ -612,17 +610,17 @@ func updateWindLegacy(data *weather.WeatherData, l *lua.LState) error {
 		"winds:",
 		"8000-meters", map[string]any{
 			"mps": speed8000,
-			"kt":  speed8000 * weather.MPSToKT,
+			"kt":  speed8000 * weather.MPSToKt,
 			"dir": (dir8000 + 180) % 360,
 		},
 		"2000-meters", map[string]any{
 			"mps": speed2000,
-			"kt":  speed2000 * weather.MPSToKT,
+			"kt":  speed2000 * weather.MPSToKt,
 			"dir": (dir2000 + 180) % 360,
 		},
 		"ground", map[string]any{
 			"mps": speedGround,
-			"kt":  speedGround * weather.MPSToKT,
+			"kt":  speedGround * weather.MPSToKt,
 			"dir": (dirGround + 180) % 360,
 		},
 	)
@@ -645,7 +643,7 @@ func updateWindLegacy(data *weather.WeatherData, l *lua.LState) error {
 	logger.Infow(
 		"gusts:",
 		"mps", gust,
-		"kt", gust*weather.MPSToKT,
+		"kt", gust*weather.MPSToKt,
 	)
 
 	return nil

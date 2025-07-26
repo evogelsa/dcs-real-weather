@@ -63,7 +63,7 @@ const (
 )
 
 const (
-	MPSToKT       = 1.944
+	MPSToKt       = 1.944
 	KtToMPS       = 0.5144
 	MPSToEDUnits  = 10.0194
 	MetersToFeet  = 3.281
@@ -491,14 +491,14 @@ func GenerateMETAR(wx WeatherData, rmk string) (string, error) {
 		metar += fmt.Sprintf(
 			"%03d%02dG%02dKT ",
 			int(data.Wind.Degrees),
-			int(data.Wind.SpeedMPS*MPSToKT+0.5),
-			int(data.Wind.GustMPS*MPSToKT+0.5),
+			int(data.Wind.SpeedMPS*MPSToKt+0.5),
+			int(data.Wind.GustMPS*MPSToKt+0.5),
 		)
 	} else {
 		metar += fmt.Sprintf(
 			"%03d%02dKT ",
 			int(data.Wind.Degrees),
-			int(data.Wind.SpeedMPS*MPSToKT),
+			int(data.Wind.SpeedMPS*MPSToKt),
 		)
 	}
 
