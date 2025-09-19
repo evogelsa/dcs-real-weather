@@ -44,7 +44,7 @@ func getWeatherAviationWeather(icao string) (WeatherData, error) {
 
 	request, err := http.NewRequest(
 		"GET",
-		"https://aviationweather.gov/cgi-bin/data/metar.php?ids="+icao+"&format=json",
+		"https://aviationweather.gov/api/data/metar?ids="+icao+"&format=json",
 		nil,
 	)
 	if err != nil {
