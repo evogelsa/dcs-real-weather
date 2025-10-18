@@ -498,7 +498,7 @@ func GenerateMETAR(wx WeatherData, rmk string) (string, error) {
 		metar += fmt.Sprintf(
 			"%03d%02dKT ",
 			int(data.Wind.Degrees),
-			int(data.Wind.SpeedMPS*MPSToKt),
+			int(data.Wind.SpeedMPS*MPSToKt+0.5),
 		)
 	}
 
