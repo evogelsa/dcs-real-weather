@@ -220,12 +220,14 @@ be found here][5] if you want to learn more.
         `icao` will be used. Set `icao` to `""` to use `icao-list`.
     * `options.weather.runway-elevation`: number
       * This is the runway/airport elevation of the ICAO configured in meters.
-      This is used to convert cloud heights between MSL and AGL values for METAR
-      accuracy. Using this value the METAR will report the clouds in hundreds of
-      feet AGL. Additionally the elevation is used to properly represent the QNH
-      in DCS. This value will also be used for the reference height in wind
-      calculation if the Open Meteo API is disabled and
-      `options.weather.wind.fixed-reference` is false.
+      This value influences the following values in the output mission:
+        * Cloud heights - Used to convert between MSL and AGL values for METAR
+        accuracy. METAR will report clouds in hundreds of feet AGL
+        * QNH - Used to properly represent the QNH in DCS
+        * Temperature - Used to adjust sea level temperature based on a standard
+          atmosphere lapse rate
+        * Winds - Used as the reference height in wind calculation if Open Meteo
+          API is disabled and `options.weather.wind.fixed-reference` is false
     * `options.weather.wind`: table
       * This section defines wind specific weather options.
       * `options.weather.wind.enable`: boolean
