@@ -444,6 +444,8 @@ func updatePressure(data *weather.WeatherData, l *lua.LState) error {
 // updateTemperature applies temperature to mission state
 func updateTemperature(data *weather.WeatherData, l *lua.LState) error {
 	temp := data.Data[0].Temperature.Celsius
+	adjust := config.Get().Options.Weather.RunwayElevation * weather.CPerMeterLapseRate
+	temp += adjust // adjust sea level temperature based on ISA lapse rate
 
 	if err := l.DoString(
 		fmt.Sprintf("mission.weather.season.temperature = %0.3f\n", temp),

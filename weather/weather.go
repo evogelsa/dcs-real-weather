@@ -63,17 +63,18 @@ const (
 )
 
 const (
-	MPSToKt       = 1.944
-	KtToMPS       = 0.5144
-	MPSToEDUnits  = 10.0194
-	MetersToFeet  = 3.281
-	FeetToMeters  = 0.3048
-	HPaToInHg     = 0.02953
-	InHgToHPa     = 33.86
-	HPaPerMeter   = 0.111
-	InHgToMMHg    = 25.4
-	MilesToMeters = 5280 * FeetToMeters
-	MetersToMiles = MetersToFeet / 5280
+	MPSToKt            = 1.944
+	KtToMPS            = 0.5144
+	MPSToEDUnits       = 10.0194
+	MetersToFeet       = 3.281
+	FeetToMeters       = 0.3048
+	HPaToInHg          = 0.02953
+	InHgToHPa          = 33.86
+	HPaPerMeter        = 0.111
+	InHgToMMHg         = 25.4
+	MilesToMeters      = 5280 * FeetToMeters
+	MetersToMiles      = MetersToFeet / 5280
+	CPerMeterLapseRate = 6.5 / 1000 // ISA lapse rate
 )
 
 const (
