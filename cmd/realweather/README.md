@@ -254,6 +254,11 @@ be found here][5] if you want to learn more.
         * This defines the maximum direction the wind will come from in degrees.
         If the wind is coming from a direction greater than this, it will be
         clamped to the defined value.
+      * `options.weather.wind.scale-factor`: number
+        * This is a multiplier for wind and gust speeds. For example, 1.0 will
+        result in wind speeds equal to the METAR, and 2.0 will result in double
+        the METAR speeds. Wind maximum and minimum will still apply after the
+        factor.
       * `options.weather.wind.stability`: number
         * This is an advanced configuration option to set the simulated
         atmospheric stability for Real Weather. This value is used when
