@@ -85,6 +85,7 @@ type Configuration struct {
 				GustMaximum      float64 `toml:"gust-maximum"`
 				DirectionMinimum float64 `toml:"direction-minimum"`
 				DirectionMaximum float64 `toml:"direction-maximum"`
+				ScaleFactor      float64 `toml:"scale-factor"`
 				Stability        float64 `toml:"stability"`
 				FixedReference   bool    `toml:"fixed-reference"`
 			} `toml:"wind"`
@@ -447,6 +448,10 @@ func checkOptionsWind() {
 		logger.Errorf("wind direction maximum %f is above 359", config.Options.Weather.Wind.DirectionMaximum)
 		config.Options.Weather.Wind.DirectionMaximum = 359
 		logger.Warnln("wind direction maximum defaulted to 359")
+	}
+
+	if config.Options.Weather.Wind.ScaleFactor == 0 {
+		logger.Warnln("wind scale factor is zero and will result in no winds")
 	}
 
 	// add 360 to minimum to cover case where its desired to have min/max

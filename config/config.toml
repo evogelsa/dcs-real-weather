@@ -138,6 +138,7 @@ gust-minimum = 0        # m/s minimum gust to set (must be >=0)
 gust-maximum = 50       # m/s maximum gust to set (must be <= 50)
 direction-minimum = 0   # degrees, min direction wind comes from, >=0 and <= 359
 direction-maximum = 359 # degrees, max direction wind comes from, >=0 and <= 359
+scale-factor = 1.0      # conversion multiplier to apply to winds and gusts
 
 # advanced options, used for calculating winds aloft if api.openmeteo.enable is
 # set to false, otherwise these are unused.

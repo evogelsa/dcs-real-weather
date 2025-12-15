@@ -465,14 +465,18 @@ func updateTemperature(data *weather.WeatherData, l *lua.LState) error {
 // updateWind uses open meteo data to get winds aloft data then applies this to
 // the mission state
 func updateWind(data *weather.WeatherData, windsAloft weather.WindsAloft, l *lua.LState) error {
-	speedGround := windSpeed(1, data)
+	// get initial wind for each level and apply scale factor
+	scaleFactor := config.Get().Options.Weather.Wind.ScaleFactor
+	speedGround := windSpeed(1, data) * scaleFactor
+	speed2000 := windsAloft.WindSpeed1900 * scaleFactor
+	speed8000 := windsAloft.WindSpeed7200 * scaleFactor
 
 	// cap wind speeds to configured values
 	minWind := config.Get().Options.Weather.Wind.Minimum
 	maxWind := config.Get().Options.Weather.Wind.Maximum
 	speedGround = util.Clamp(speedGround, minWind, maxWind)
-	speed2000 := util.Clamp(windsAloft.WindSpeed1900, minWind, maxWind)
-	speed8000 := util.Clamp(windsAloft.WindSpeed7200, minWind, maxWind)
+	speed2000 = util.Clamp(speed2000, minWind, maxWind)
+	speed8000 = util.Clamp(speed8000, minWind, maxWind)
 
 	// set speed to data out
 	data.Data[1].Wind.SpeedMPS = speedGround
@@ -532,7 +536,7 @@ func updateWind(data *weather.WeatherData, windsAloft weather.WindsAloft, l *lua
 	)
 
 	// apply gustiness/turbulence to mission
-	gust := data.Data[0].Wind.GustMPS
+	gust := data.Data[0].Wind.GustMPS * scaleFactor
 	minGust := config.Get().Options.Weather.Wind.GustMinimum
 	maxGust := config.Get().Options.Weather.Wind.GustMaximum
 	gust = util.Clamp(gust, minGust, maxGust)
@@ -560,9 +564,11 @@ func updateWind(data *weather.WeatherData, windsAloft weather.WindsAloft, l *lua
 // and applies winds aloft using wind profile power law. This function also
 // applies turbulence/gust data to the mission
 func updateWindLegacy(data *weather.WeatherData, l *lua.LState) error {
-	speedGround := windSpeed(1, data)
-	speed2000 := windSpeed(2000, data)
-	speed8000 := windSpeed(8000, data)
+	// calculate initial wind for each level and multiply by scale factor
+	scaleFactor := config.Get().Options.Weather.Wind.ScaleFactor
+	speedGround := windSpeed(1, data) * scaleFactor
+	speed2000 := windSpeed(2000, data) * scaleFactor
+	speed8000 := windSpeed(8000, data) * scaleFactor
 
 	// cap wind speeds to configured values
 	minWind := config.Get().Options.Weather.Wind.Minimum
@@ -628,7 +634,7 @@ func updateWindLegacy(data *weather.WeatherData, l *lua.LState) error {
 	)
 
 	// apply gustiness/turbulence to mission
-	gust := data.Data[0].Wind.GustMPS
+	gust := data.Data[0].Wind.GustMPS * scaleFactor
 	minGust := config.Get().Options.Weather.Wind.GustMinimum
 	maxGust := config.Get().Options.Weather.Wind.GustMaximum
 	gust = util.Clamp(gust, minGust, maxGust)
