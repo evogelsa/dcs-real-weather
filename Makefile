@@ -29,13 +29,13 @@ linux-amd64: generate
 	@echo "Building for Linux (amd64)"
 	@echo "--------------------------------"
 	-@mkdir "bin"
-	-@mkdir "bin/linux"
+	-@mkdir "bin/linux-amd64"
 	-rm resource.syso
-	env GOOS=linux GOARCH=amd64 go build -o bin/linux/realweather -trimpath -ldflags=\"-s -w\" cmd/realweather/main.go
-	cp config/config.toml bin/linux/config.toml
-	cp oss-licenses.txt bin/linux/oss-licenses.txt
+	env GOOS=linux GOARCH=amd64 go build -o bin/linux-amd64/realweather -trimpath -ldflags=\"-s -w\" cmd/realweather/main.go
+	cp config/config.toml bin/linux-amd64/config.toml
+	cp oss-licenses.txt bin/linux-amd64/oss-licenses.txt
 	$(eval VERSION := $(shell cat versioninfo/version.txt))
-	tar czf bin/linux/realweather_linux_amd64_$(VERSION).tar.gz -C bin/linux/ realweather config.toml oss-licenses.txt
+	tar czf bin/linux-amd64/realweather_linux_amd64_$(VERSION).tar.gz -C bin/linux-amd64/ realweather config.toml oss-licenses.txt
 
 .PHONY: linux-arm
 linux-arm: generate
@@ -43,13 +43,13 @@ linux-arm: generate
 	@echo "Building for Linux (arm)"
 	@echo "--------------------------------"
 	-@mkdir "bin"
-	-@mkdir "bin/linux"
+	-@mkdir "bin/linux-arm"
 	-rm resource.syso
-	env GOOS=linux GOARCH=arm go build -o bin/linux/realweather -trimpath -ldflags=\"-s -w\" cmd/realweather/main.go
-	cp config/config.toml bin/linux/config.toml
-	cp oss-licenses.txt bin/linux/oss-licenses.txt
+	env GOOS=linux GOARCH=arm go build -o bin/linux-arm/realweather -trimpath -ldflags=\"-s -w\" cmd/realweather/main.go
+	cp config/config.toml bin/linux-arm/config.toml
+	cp oss-licenses.txt bin/linux-arm/oss-licenses.txt
 	$(eval VERSION := $(shell cat versioninfo/version.txt))
-	tar czf bin/linux/realweather_linux_arm_$(VERSION).tar.gz -C bin/linux/ realweather config.toml oss-licenses.txt
+	tar czf bin/linux-arm/realweather_linux_arm_$(VERSION).tar.gz -C bin/linux-arm/ realweather config.toml oss-licenses.txt
 
 .PHONY: windows-bot
 windows-bot: generate
@@ -71,13 +71,13 @@ linux-amd64-bot: generate
 	@echo "Building bot for Linux (amd64)"
 	@echo "--------------------------------"
 	-@mkdir "bin"
-	-@mkdir "bin/linux"
+	-@mkdir "bin/linux-amd64"
 	-rm resource.syso
-	env GOOS=linux GOARCH=amd64 go build -o bin/linux/rwbot -trimpath -ldflags=\"-s -w\" cmd/bot/main.go
-	cp cmd/bot/config/botconfig.json bin/linux/botconfig.json
-	cp oss-licenses.txt bin/linux/oss-licenses.txt
+	env GOOS=linux GOARCH=amd64 go build -o bin/linux-amd64/rwbot -trimpath -ldflags=\"-s -w\" cmd/bot/main.go
+	cp cmd/bot/config/botconfig.json bin/linux-amd64/botconfig.json
+	cp oss-licenses.txt bin/linux-amd64/oss-licenses.txt
 	$(eval VERSION := $(shell cat versioninfo/version.txt))
-	tar czf bin/linux/rwbot_linux_amd64_$(VERSION).tar.gz -C bin/linux/ rwbot botconfig.json oss-licenses.txt
+	tar czf bin/linux-amd64/rwbot_linux_amd64_$(VERSION).tar.gz -C bin/linux-amd64/ rwbot botconfig.json oss-licenses.txt
 
 .PHONY: linux-arm-bot
 linux-arm-bot: generate
@@ -85,13 +85,13 @@ linux-arm-bot: generate
 	@echo "Building bot for Linux (arm)"
 	@echo "--------------------------------"
 	-@mkdir "bin"
-	-@mkdir "bin/linux"
+	-@mkdir "bin/linux-arm"
 	-rm resource.syso
-	env GOOS=linux GOARCH=arm go build -o bin/linux/rwbot -trimpath -ldflags=\"-s -w\" cmd/bot/main.go
-	cp cmd/bot/config/botconfig.json bin/linux/botconfig.json
-	cp oss-licenses.txt bin/linux/oss-licenses.txt
+	env GOOS=linux GOARCH=arm go build -o bin/linux-arm/rwbot -trimpath -ldflags=\"-s -w\" cmd/bot/main.go
+	cp cmd/bot/config/botconfig.json bin/linux-arm/botconfig.json
+	cp oss-licenses.txt bin/linux-arm/oss-licenses.txt
 	$(eval VERSION := $(shell cat versioninfo/version.txt))
-	tar czf bin/linux/rwbot_linux_arm_$(VERSION).tar.gz -C bin/linux/ rwbot botconfig.json oss-licenses.txt
+	tar czf bin/linux-arm/rwbot_linux_arm_$(VERSION).tar.gz -C bin/linux-arm/ rwbot botconfig.json oss-licenses.txt
 
 .PHONY: bundle-artifacts
 bundle-artifacts:
@@ -104,7 +104,7 @@ bundle-artifacts:
 	-rm bin/bundle/*
 	-cp bin/windows/realweather_$(VERSION).zip bin/bundle
 	-cp bin/windows/rwbot_$(VERSION).zip bin/bundle
-	-cp bin/linux/realweather_linux_amd64_$(VERSION).tar.gz bin/bundle
-	-cp bin/linux/rwbot_linux_amd64_$(VERSION).tar.gz bin/bundle
-	-cp bin/linux/realweather_linux_arm_$(VERSION).tar.gz bin/bundle
-	-cp bin/linux/rwbot_linux_arm_$(VERSION).tar.gz bin/bundle
+	-cp bin/linux-amd64/realweather_linux_amd64_$(VERSION).tar.gz bin/bundle
+	-cp bin/linux-amd64/rwbot_linux_amd64_$(VERSION).tar.gz bin/bundle
+	-cp bin/linux-arm/realweather_linux_arm_$(VERSION).tar.gz bin/bundle
+	-cp bin/linux-arm/rwbot_linux_arm_$(VERSION).tar.gz bin/bundle
