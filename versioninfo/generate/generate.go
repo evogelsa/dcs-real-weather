@@ -41,8 +41,8 @@ const versionInfo = `{
 		  "CharsetID": "0"
 	  }
 	},
-	"IconPath": "%s",
-	"ManifestPath": ""
+	"IconPath": "../../versioninfo/icon.ico",
+	"ManifestPath": "../../versioninfo/app.manifest"
 }
 `
 
@@ -92,7 +92,6 @@ func main() {
 
 	versionInfoOut := "versioninfo.json"
 	metaOut := "versioninfo.go"
-	iconPath := "../../versioninfo/icon.ico"
 	versionOut := "version.txt"
 	if len(os.Args) > 2 {
 		versionInfoOut = filepath.Join(os.Args[2], versionInfoOut)
@@ -119,7 +118,6 @@ func main() {
 			minor,
 			patch,
 			commitNum,
-			iconPath,
 		)),
 		os.ModePerm,
 	)
