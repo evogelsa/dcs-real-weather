@@ -288,6 +288,9 @@ func updateDust(data *weather.WeatherData, l *lua.LState) error {
 	dust := checkDust(data)
 
 	if dust > 0 {
+		// update output visibility
+		data.Data[1].Visibility.MetersFloat = float64(dust)
+
 		if err := l.DoString(
 			fmt.Sprintf(
 				"mission.weather.dust_density = %d\n"+
@@ -335,6 +338,9 @@ func updateFog(data *weather.WeatherData, l *lua.LState) error {
 		)
 		return nil
 	}
+
+	// update output visibility
+	data.Data[1].Visibility.MetersFloat = float64(fogVis)
 
 	switch weather.Fog(config.Get().Options.Weather.Fog.Mode) {
 	case weather.FogLegacy:
