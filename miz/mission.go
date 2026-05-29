@@ -200,6 +200,9 @@ func handleCustomClouds(data *weather.WeatherData, l *lua.LState, preset string,
 	precip := precipNone                      //   0 - 2
 	base = util.Clamp(base, 300, 5000)        // 300 - 5000
 
+	// update selected base since legacy clouds have limit between 300 - 5000m
+	weather.SelectedBase = base - int(config.Get().Options.Weather.RunwayElevation+0.5)
+
 	//  0 - clear
 	//  1 - few
 	//  2 - few
