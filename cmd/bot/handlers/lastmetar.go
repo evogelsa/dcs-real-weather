@@ -11,7 +11,7 @@ import (
 	"github.com/evogelsa/DCS-real-weather/v2/cmd/bot/config"
 )
 
-var reMETAR = regexp.MustCompile(`^\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2} METAR: (?P<metar>.*)`)
+var reMETAR = regexp.MustCompile(`METAR: (?P<metar>.*)`)
 
 func LastMETAR(s *dg.Session, i *dg.InteractionCreate) {
 	const command = `/last-metar`
